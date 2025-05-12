@@ -1,3 +1,5 @@
+import 'package:otpAnd/utils.dart';
+
 import 'objs.dart';
 
 Plan parsePlan(Map<String, dynamic> planJson) {
@@ -14,16 +16,20 @@ Plan parsePlan(Map<String, dynamic> planJson) {
 Leg parseLeg(Map<String, dynamic> legJson) {
   return Leg(
     mode: legJson['mode'] ?? '',
+    headsign: legJson['headsign'] ?? '??',
     from: parsePlace(legJson['from'] as Map<String, dynamic>),
     to: parsePlace(legJson['to'] as Map<String, dynamic>),
     route:
         legJson['route'] != null
             ? parseRouteInfo(legJson['route'] as Map<String, dynamic>)
             : null,
-    legGeometry:
-        legJson['legGeometry'] != null
-            ? parseLegGeometry(legJson['legGeometry'] as Map<String, dynamic>)
-            : null,
+    duration: legJson['duration'] as num,
+    distance: legJson['distance'] as num,
+    intermediateStops:
+        (legJson['intermediateStops'] as List?)
+            ?.map((stop) => parseStop(stop as Map<String, dynamic>))
+            .toList(),
+    interlineWithPreviousLeg: legJson['interlineWithPreviousLeg'] as bool,
   );
 }
 
@@ -69,14 +75,33 @@ RouteInfo parseRouteInfo(Map<String, dynamic> routeJson) {
     gtfsId: routeJson['gtfsId'] as String?,
     longName: routeJson['longName'] as String?,
     shortName: routeJson['shortName'] as String?,
+    color: getColorFromCode(routeJson['color'] as String?),
+    textColor: getColorFromCode(routeJson['textColor'] as String?),
   );
 }
 
-LegGeometry parseLegGeometry(Map<String, dynamic> geomJson) {
-  return LegGeometry(points: geomJson['points'] as String?);
+Stop parseStop(Map<String, dynamic> stopJson) {
+  return Stop(
+    name: stopJson['name'] ?? '??',
+    id: stopJson['id'] ?? '??',
+    parentStation:
+        stopJson['parentStation'] != null
+            ? parseStop(stopJson['parentStation'] as Map<String, dynamic>)
+            : null,
+    platformCode: stopJson['platformCode'] as String?,
+  );
 }
 
 /// Parse a list of plans from the raw API result
 List<Plan> parsePlans(List<dynamic> rawPlans) {
   return rawPlans.map((e) => parsePlan(e as Map<String, dynamic>)).toList();
+}
+
+Stop parseGeocodeStop(Map<String, dynamic> stopJson) {
+  return Stop(
+    name: stopJson['description'] ?? '??',
+    id: stopJson['id'],
+    latitude: stopJson['lat'],
+    longitude: stopJson['longitude'],
+  );
 }

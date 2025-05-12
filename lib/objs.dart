@@ -1,3 +1,5 @@
+import 'package:flutter/widgets.dart';
+
 class Plan {
   final String start;
   final String end;
@@ -8,17 +10,25 @@ class Plan {
 
 class Leg {
   final String mode;
+  final String headsign;
   final Place from;
   final Place to;
   final RouteInfo? route;
-  final LegGeometry? legGeometry;
+  final num duration;
+  final num distance;
+  final List<Stop>? intermediateStops;
+  final bool interlineWithPreviousLeg;
 
   Leg({
     required this.mode,
+    required this.headsign,
     required this.from,
     required this.to,
     this.route,
-    this.legGeometry,
+    required this.duration,
+    required this.distance,
+    this.intermediateStops,
+    required this.interlineWithPreviousLeg,
   });
 }
 
@@ -56,12 +66,32 @@ class RouteInfo {
   final String? gtfsId;
   final String? longName;
   final String? shortName;
+  final Color? color;
+  final Color? textColor;
 
-  RouteInfo({this.gtfsId, this.longName, this.shortName});
+  RouteInfo({
+    this.gtfsId,
+    this.longName,
+    this.shortName,
+    this.color,
+    this.textColor,
+  });
 }
 
-class LegGeometry {
-  final String? points;
+class Stop {
+  final String name;
+  final String id;
+  final Stop? parentStation;
+  final String? platformCode;
+  final double? latitude;
+  final double? longitude;
 
-  LegGeometry({this.points});
+  Stop({
+    required this.name,
+    required this.id,
+    this.parentStation,
+    this.platformCode,
+    this.latitude,
+    this.longitude,
+  });
 }

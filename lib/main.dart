@@ -2,7 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:timeline_tile/timeline_tile.dart';
+import 'package:otpAnd/utils.dart';
+import 'package:timelines_plus/timelines_plus.dart';
 
 import 'objs.dart';
 import 'extractor.dart';
@@ -262,7 +263,7 @@ class _OTPHomePageState extends State<OTPHomePage> {
           break;
         case "TRANSIT":
           modesStr =
-              "modes: { direct: [WALK], transit: { transit: [{ mode: BUS }, { mode: RAIL }, { mode: SUBWAY }, { mode: TRAM }, { mode: FERRY }] } }";
+              "modes: { direct: [WALK FLEX], transit: { transit: [{ mode: BUS }, { mode: RAIL }, { mode: SUBWAY }, { mode: TRAM }, { mode: FERRY }] } }";
           break;
       }
 
@@ -283,6 +284,7 @@ class _OTPHomePageState extends State<OTPHomePage> {
               end
               legs {
                 mode
+								headsign
                 from {
                   name
                   lat
@@ -311,10 +313,21 @@ class _OTPHomePageState extends State<OTPHomePage> {
                   gtfsId
                   longName
                   shortName
+									color
+									textColor
+                },
+                duration
+                distance
+								intermediateStops {
+                  name
+                  parentStation {
+										name
+                    id
+                  }
+                  platformCode
+                  id
                 }
-                legGeometry {
-                  points
-                }
+								interlineWithPreviousLeg
               }
             }
           }
@@ -411,7 +424,7 @@ Color colorForMode(String mode) {
 String? formatTime(String? iso) {
   if (iso == null) return null;
   try {
-    final dt = DateTime.parse(iso);
+    final dt = DateTime.parse(iso).toLocal();
     return DateFormat('HH:mm').format(dt);
   } catch (_) {
     return iso;
@@ -492,119 +505,187 @@ class PlanWidget extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 18), // spacer
-            // TIMELINE: alternate place tile, leg info, place tile, ...
-            ...[
-              for (final leg in legs) ...[TimelineItem(leg: leg)],
-            ],
+            FixedTimeline.tileBuilder(
+              theme: TimelineThemeData(
+                nodePosition: 0,
+                color: Colors.blueAccent,
+                indicatorTheme: IndicatorThemeData(size: 26, position: 0),
+                connectorTheme: ConnectorThemeData(
+                  thickness: 2.0,
+                  color: Colors.blueAccent,
+                ),
+              ),
+              builder: TimelineTileBuilder.connected(
+                connectionDirection: ConnectionDirection.before,
+                itemCount: legs.length + 1,
+                contentsBuilder: (context, index) {
+                  if (index < legs.length) {
+                    // Leg info
+                    final leg = legs[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(left: 18.0, bottom: 4.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(leg.from.name),
+                              Text(
+                                formatTime(leg.from.departure?.scheduledTime) ??
+                                    '??:??',
+                              ),
+                            ],
+                          ),
+                          Card(
+                            color: Colors.grey.shade100,
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Column(
+                                children: [
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        margin: const EdgeInsets.only(right: 8),
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              iconForMode(leg.mode),
+                                              color: colorForMode(leg.mode),
+                                            ),
+                                            if (leg.route?.shortName !=
+                                                null) ...[
+                                              const SizedBox(width: 6),
+                                              ClipRRect(
+                                                borderRadius:
+                                                    BorderRadius.circular(6),
+                                                child: ColoredBox(
+                                                  color:
+                                                      leg.route?.color ??
+                                                      colorForMode(leg.mode),
+                                                  child: SizedBox(
+                                                    width: 24,
+                                                    height: 24,
+                                                    child: Center(
+                                                      child: Text(
+                                                        leg.route?.shortName ??
+                                                            '??',
+                                                        style: TextStyle(
+                                                          color:
+                                                              leg
+                                                                  .route
+                                                                  ?.textColor,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: Text(
+                                          leg.headsign,
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Text(
+                                    '${displayDistance(leg.distance)} - ${displayTime(leg.duration)}${leg.intermediateStops != null ? ' - ${leg.intermediateStops!.length} stops' : ''}',
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  } else {
+                    // Destination
+                    final place = legs.last.to;
+                    return Padding(
+                      padding: const EdgeInsets.only(
+                        left: 18.0,
+                        top: 4.0,
+                        bottom: 4.0,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            "Destination",
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            place.name,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          Text(
+                            formatTime(place.arrival?.scheduledTime) ?? '',
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                },
+                indicatorBuilder: (context, index) {
+                  if (index == 0) {
+                    return const DotIndicator(
+                      size: 24,
+                      color: Colors.green,
+                      child: Icon(
+                        Icons.location_pin,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                    );
+                  } else if (index == legs.length) {
+                    return const DotIndicator(
+                      size: 24,
+                      color: Colors.red,
+                      child: Icon(Icons.flag, color: Colors.white, size: 16),
+                    );
+                  } else {
+                    return const OutlinedDotIndicator(
+                      size: 20,
+                      color: Colors.blue,
+                      backgroundColor: Colors.white,
+                      borderWidth: 2.0,
+                    );
+                  }
+                },
+                connectorBuilder: (context, index, type) {
+                  if (index == 0) {
+                    return null;
+                  }
+                  return const SolidLineConnector();
+                },
+              ),
+            ),
           ],
         ),
       ),
-    );
-  }
-}
-
-class TimelineItem extends StatelessWidget {
-  final Leg leg;
-  final bool first;
-  final bool last;
-
-  const TimelineItem({
-    super.key,
-    required this.leg,
-    this.first = false,
-    this.last = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        TimelineTile(
-          alignment: TimelineAlign.manual,
-          lineXY: 0.17,
-          isFirst: first,
-          isLast: last,
-          indicatorStyle: IndicatorStyle(
-            width: 26,
-            color:
-                first
-                    ? Colors.green
-                    : last
-                    ? Colors.red
-                    : Colors.blue,
-            iconStyle: IconStyle(
-              iconData:
-                  first
-                      ? Icons.circle
-                      : last
-                      ? Icons.flag
-                      : Icons.location_on,
-              color: Colors.white,
-            ),
-          ),
-          beforeLineStyle: const LineStyle(
-            thickness: 2,
-            color: Colors.blueAccent,
-          ),
-          afterLineStyle: const LineStyle(
-            thickness: 2,
-            color: Colors.blueAccent,
-          ),
-          startChild: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            child: Text(
-              formatTime(
-                    first
-                        ? leg.from.departure?.scheduledTime
-                        : leg.to.arrival?.scheduledTime,
-                  ) ??
-                  '??:??',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          endChild: Padding(
-            padding: const EdgeInsetsDirectional.only(
-              start: 18.0,
-              top: 4.0,
-              bottom: 4.0,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  first
-                      ? "Origin"
-                      : last
-                      ? "Destination"
-                      : leg.from.name,
-                  style: TextStyle(
-                    fontWeight:
-                        first || last ? FontWeight.bold : FontWeight.normal,
-                  ),
-                ),
-                if (!last)
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Icon(
-                        iconForMode(leg.mode),
-                        color: colorForMode(leg.mode),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        legDescription(leg),
-                        style: TextStyle(
-                          fontWeight: FontWeight.w500,
-                          color: colorForMode(leg.mode),
-                        ),
-                      ),
-                    ],
-                  ),
-              ],
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

@@ -1,4 +1,4 @@
-import 'package:otpAnd/utils.dart';
+import 'package:otpand/utils.dart';
 
 import 'objs.dart';
 
@@ -16,7 +16,8 @@ Plan parsePlan(Map<String, dynamic> planJson) {
 Leg parseLeg(Map<String, dynamic> legJson) {
   return Leg(
     mode: legJson['mode'] ?? '',
-    headsign: legJson['headsign'] ?? '??',
+    headsign: legJson['headsign'],
+    transitLeg: legJson['transitLeg'] as bool,
     from: parsePlace(legJson['from'] as Map<String, dynamic>),
     to: parsePlace(legJson['to'] as Map<String, dynamic>),
     route:
@@ -103,5 +104,14 @@ Stop parseGeocodeStop(Map<String, dynamic> stopJson) {
     id: stopJson['id'],
     latitude: stopJson['lat'],
     longitude: stopJson['longitude'],
+  );
+}
+
+Location parseLocation(Map<String, dynamic> locationJson) {
+  return Location(
+    name: locationJson['name'] ?? '',
+    displayName: locationJson['name'] ?? 'Unknown',
+    lat: double.parse((locationJson['lat'] as String?) ?? '0.0'),
+    lon: double.parse((locationJson['lon'] as String?) ?? '0.0'),
   );
 }

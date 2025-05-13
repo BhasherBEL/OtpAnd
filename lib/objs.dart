@@ -10,7 +10,8 @@ class Plan {
 
 class Leg {
   final String mode;
-  final String headsign;
+  final String? headsign;
+  final bool transitLeg;
   final Place from;
   final Place to;
   final RouteInfo? route;
@@ -21,7 +22,8 @@ class Leg {
 
   Leg({
     required this.mode,
-    required this.headsign,
+    this.headsign,
+    required this.transitLeg,
     required this.from,
     required this.to,
     this.route,
@@ -93,5 +95,19 @@ class Stop {
     this.platformCode,
     this.latitude,
     this.longitude,
+  });
+}
+
+class Location {
+  final String name;
+  final String displayName;
+  final double lat;
+  final double lon;
+
+  Location({
+    required this.name,
+    required this.displayName,
+    required this.lat,
+    required this.lon,
   });
 }

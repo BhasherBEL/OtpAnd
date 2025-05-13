@@ -2,11 +2,12 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:otpAnd/utils.dart';
+import 'package:otpand/utils.dart';
 import 'package:timelines_plus/timelines_plus.dart';
 
 import 'objs.dart';
 import 'extractor.dart';
+import 'widgets/searchbar.dart';
 
 void main() {
   runApp(OTPApp());
@@ -18,7 +19,7 @@ class OTPApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'OTPAnd',
+      title: 'OtpAnd',
       theme: ThemeData(primarySwatch: Colors.blue),
       home: OTPHomePage(),
     );
@@ -33,21 +34,11 @@ class OTPHomePage extends StatefulWidget {
 }
 
 class _OTPHomePageState extends State<OTPHomePage> {
-  final TextEditingController fromLatCtrl = TextEditingController(
-    text: '50.803449',
-  );
-  final TextEditingController fromLonCtrl = TextEditingController(
-    text: '4.405465',
-  );
-  final TextEditingController toLatCtrl = TextEditingController(
-    text: '50.89820',
-  );
-  final TextEditingController toLonCtrl = TextEditingController(
-    text: '4.34035',
-  );
+  Location? fromLocation;
+  Location? toLocation;
 
   String selectedMode = 'WALK';
-  String timeType = 'now'; // now, start, arrive
+  String timeType = 'now';
   DateTime? selectedDateTime;
 
   bool isLoading = false;
@@ -64,51 +55,22 @@ class _OTPHomePageState extends State<OTPHomePage> {
         padding: EdgeInsets.all(16),
         child: Column(
           children: [
-            Row(
-              children: [
-                Flexible(
-                  child: TextField(
-                    controller: fromLatCtrl,
-                    decoration: InputDecoration(labelText: "From latitude"),
-                    keyboardType: TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                  ),
-                ),
-                SizedBox(width: 8),
-                Flexible(
-                  child: TextField(
-                    controller: fromLonCtrl,
-                    decoration: InputDecoration(labelText: "From longitude"),
-                    keyboardType: TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                  ),
-                ),
-              ],
+            SearchBarWidget(
+              hintText: "From...",
+              onLocationSelected: (location) {
+                setState(() {
+                  fromLocation = location;
+                });
+              },
             ),
-            Row(
-              children: [
-                Flexible(
-                  child: TextField(
-                    controller: toLatCtrl,
-                    decoration: InputDecoration(labelText: "To latitude"),
-                    keyboardType: TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                  ),
-                ),
-                SizedBox(width: 8),
-                Flexible(
-                  child: TextField(
-                    controller: toLonCtrl,
-                    decoration: InputDecoration(labelText: "To longitude"),
-                    keyboardType: TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                  ),
-                ),
-              ],
+            SizedBox(height: 8),
+            SearchBarWidget(
+              hintText: "To...",
+              onLocationSelected: (location) {
+                setState(() {
+                  toLocation = location;
+                });
+              },
             ),
             SizedBox(height: 16),
             Row(
@@ -230,11 +192,19 @@ class _OTPHomePageState extends State<OTPHomePage> {
       results.clear();
     });
 
+    if (fromLocation == null || toLocation == null) {
+      setState(() {
+        errorMsg = "Please select both origin and destination.";
+        isLoading = false;
+      });
+      return;
+    }
+
     try {
-      double fromLat = double.parse(fromLatCtrl.text.trim());
-      double fromLon = double.parse(fromLonCtrl.text.trim());
-      double toLat = double.parse(toLatCtrl.text.trim());
-      double toLon = double.parse(toLonCtrl.text.trim());
+      double fromLat = fromLocation!.lat;
+      double fromLon = fromLocation!.lon;
+      double toLat = toLocation!.lat;
+      double toLon = toLocation!.lon;
 
       String dtIso;
       String localTZ =
@@ -285,6 +255,7 @@ class _OTPHomePageState extends State<OTPHomePage> {
               legs {
                 mode
 								headsign
+								transitLeg
                 from {
                   name
                   lat
@@ -334,6 +305,8 @@ class _OTPHomePageState extends State<OTPHomePage> {
         }
       }
       ''';
+
+      print(gql.split('\n').map((e) => e.trim()).join(' '));
 
       final resp = await http.post(
         Uri.parse('https://maps.bhasher.com/otp/gtfs/v1'),
@@ -470,14 +443,9 @@ class PlanWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final legs = plan.legs;
-    final places = <Place>[];
-    // Build ordered list of places: origin, all stops, destination
-    places.add(legs.first.from);
-    for (final leg in legs) {
-      places.add(leg.to);
-    }
 
     return Card(
+      color: Colors.white,
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       margin: const EdgeInsets.symmetric(vertical: 12),
@@ -491,15 +459,15 @@ class PlanWidget extends StatelessWidget {
                 Icon(Icons.location_on, color: Colors.blue, size: 28),
                 const SizedBox(width: 8),
                 Text(
-                  places.first.name,
+                  legs.first.from.name,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const Spacer(),
                 Text(
-                  "${formatTime(places.first.departure?.scheduledTime) ?? ''} → "
-                  "${formatTime(places.last.arrival?.scheduledTime) ?? ''}",
+                  "${formatTime(legs.first.from.departure?.scheduledTime) ?? ''} → "
+                  "${formatTime(legs.last.to.arrival?.scheduledTime) ?? ''}",
                   style: TextStyle(color: Colors.grey.shade700),
                 ),
               ],
@@ -576,8 +544,8 @@ class PlanWidget extends StatelessWidget {
                                                       leg.route?.color ??
                                                       colorForMode(leg.mode),
                                                   child: SizedBox(
-                                                    width: 24,
-                                                    height: 24,
+                                                    width: 32,
+                                                    height: 32,
                                                     child: Center(
                                                       child: Text(
                                                         leg.route?.shortName ??
@@ -599,17 +567,23 @@ class PlanWidget extends StatelessWidget {
                                       ),
                                       Expanded(
                                         child: Text(
-                                          leg.headsign,
+                                          leg.transitLeg
+                                              ? leg.headsign ??
+                                                  leg.route?.longName ??
+                                                  'Unknown'
+                                              : '${displayDistance(leg.distance)} - ${displayTime(leg.duration)}',
                                           style: TextStyle(
+                                            fontSize: 16,
                                             fontWeight: FontWeight.w500,
                                           ),
                                         ),
                                       ),
                                     ],
                                   ),
-                                  Text(
-                                    '${displayDistance(leg.distance)} - ${displayTime(leg.duration)}${leg.intermediateStops != null ? ' - ${leg.intermediateStops!.length} stops' : ''}',
-                                  ),
+                                  if (leg.transitLeg)
+                                    Text(
+                                      '${displayDistance(leg.distance)} - ${displayTime(leg.duration)}${leg.intermediateStops != null ? ' - ${leg.intermediateStops!.length} stops' : ''}',
+                                    ),
                                 ],
                               ),
                             ),

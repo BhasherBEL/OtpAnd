@@ -1,16 +1,4 @@
-# otpand
+# OtpAnd
 
-A new Flutter project.
+OtpAnd is a free and open source cross-platform (MaaS)[https://en.wikipedia.org/wiki/Mobility_as_a_service] application for planning mobility trough public transport, walking, cycling, and driving, backed by (OpenTripPlanner)[https://www.opentripplanner.org/]'s and (OpenStreetMap)[https://www.openstreetmap.org]'s data. It provides a user-friendly interface to plan mobility, with high level of personalization.
 
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.

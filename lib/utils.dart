@@ -39,6 +39,17 @@ String displayTime(num time) {
   return '${round(time / 3600, 0)} h ${round((time % 3600) / 60, 0)} min';
 }
 
+String displayDistanceInTime(num distance) {
+  final time = distance / 1.11;
+  if (time < 3600) {
+    return '${max(round(time / 60, 0), 1)}';
+  }
+  if (time % 3600 == 0) {
+    return '${round(time / 3600, 0)}h';
+  }
+  return '${round(time / 3600, 0)}h${round((time % 3600) / 60, 0)}';
+}
+
 Color? getColorFromCode(String? code) {
   if (code == null) return null;
   if (code.length == 6) {

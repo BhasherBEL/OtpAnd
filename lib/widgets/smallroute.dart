@@ -32,7 +32,6 @@ class SmallRoute extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // First Row
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -50,10 +49,8 @@ class SmallRoute extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 8),
-              // Second Row: Route legs (scrollable, proportional to duration, but never smaller than content)
               LayoutBuilder(
                 builder: (context, constraints) {
-                  // 1. Calculate min width for each leg
                   final minWidths =
                       legs.map((leg) {
                         if (leg.mode == "WALK") {
@@ -65,17 +62,14 @@ class SmallRoute extends StatelessWidget {
                         }
                       }).toList();
 
-                  // 2. Calculate total min width
                   final totalMinWidth = minWidths.fold<double>(
                     0,
                     (a, b) => a + b,
                   );
 
-                  // 3. Calculate proportional widths
                   final availableWidth = constraints.maxWidth;
-                  // Subtract total horizontal padding between tiles
-                  final totalHorizontalPadding =
-                      2.0 * 2 * legs.length; // 2.0 left + 2.0 right per tile
+
+                  final totalHorizontalPadding = 2.0 * 2 * legs.length;
                   final adjustedAvailableWidth = (availableWidth -
                           totalHorizontalPadding)
                       .clamp(0.0, double.infinity);
@@ -89,7 +83,6 @@ class SmallRoute extends StatelessWidget {
                     (sum, leg) => sum + leg.duration,
                   );
 
-                  // 4. Calculate final width for each leg
                   final widths = <double>[];
                   for (int i = 0; i < legs.length; i++) {
                     final proportion =
@@ -98,7 +91,6 @@ class SmallRoute extends StatelessWidget {
                     widths.add(minWidths[i] + addWidth);
                   }
 
-                  // 5. If not enough space, allow scrolling
                   final row = Row(
                     children: [
                       for (int i = 0; i < legs.length; i++)
@@ -113,7 +105,6 @@ class SmallRoute extends StatelessWidget {
                   );
 
                   if (availableWidth < totalMinWidth) {
-                    // Not enough space, allow horizontal scroll
                     return SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: ConstrainedBox(
@@ -122,7 +113,6 @@ class SmallRoute extends StatelessWidget {
                       ),
                     );
                   } else {
-                    // Enough space, show row as is
                     return row;
                   }
                 },
@@ -154,12 +144,12 @@ class _LegTile extends StatelessWidget {
     if (leg.mode == "WALK") {
       leading = const Icon(Icons.directions_walk, size: 18);
       label = Text(
-        '${leg.distance.round()}',
+        displayDistanceInTime(leg.distance),
         style: TextStyle(fontWeight: FontWeight.w600, color: textColor),
       );
     } else {
       leading = Icon(
-        leg.mode == "BUS" ? Icons.directions_bus : Icons.train, // crude mapping
+        leg.mode == "BUS" ? Icons.directions_bus : Icons.train,
         size: 18,
         color: textColor,
       );
@@ -184,7 +174,6 @@ class _LegTile extends StatelessWidget {
   }
 }
 
-/// Utility: Maps leg mode to colors. Customize this for your style!
 Color _legColor(Leg leg) {
   if (leg.mode == "WALK") return Colors.grey.shade300;
   if (leg.mode == "BUS") return Colors.amber.shade600;

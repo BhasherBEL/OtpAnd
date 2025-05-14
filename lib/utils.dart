@@ -31,12 +31,12 @@ String displayDistance(num distance) {
 
 String displayTime(num time) {
   if (time < 60) {
-    return '${round(time, -1)}s';
+    return '${round(time, -1)} sec';
   }
   if (time < 3600) {
-    return '${round(time / 60, 0)}min';
+    return '${round(time / 60, 0)} min';
   }
-  return '${round(time / 3600, 0)}h${round((time % 3600) / 60, 0)}';
+  return '${round(time / 3600, 0)} h ${round((time % 3600) / 60, 0)} min';
 }
 
 Color? getColorFromCode(String? code) {
@@ -129,9 +129,9 @@ String calculateDuration(DateTime start, DateTime end) {
   final hours = duration.inHours;
   final minutes = duration.inMinutes.remainder(60);
   if (hours > 0) {
-    return '${hours}h ${minutes}m';
+    return '${hours}h ${minutes}min';
   } else {
-    return '${minutes}m';
+    return '${minutes}min';
   }
 }
 
@@ -140,7 +140,7 @@ num calculateDurationFromString(String? start, String? end) {
   try {
     final startTime = DateTime.parse(start).toLocal();
     final endTime = DateTime.parse(end).toLocal();
-    return endTime.difference(startTime).inMinutes;
+    return endTime.difference(startTime).inSeconds;
   } catch (e) {
     return 0;
   }

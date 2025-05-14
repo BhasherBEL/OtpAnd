@@ -5,7 +5,6 @@ import 'package:otpand/utils.dart';
 class SmallRoute extends StatelessWidget {
   final Plan plan;
   final VoidCallback? onTap;
-
   const SmallRoute({super.key, required this.plan, this.onTap});
 
   @override
@@ -22,14 +21,174 @@ class SmallRoute extends StatelessWidget {
     );
 
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      child: ListTile(
+      color: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+      elevation: 0,
+      margin: EdgeInsets.symmetric(vertical: 5),
+      child: InkWell(
         onTap: onTap,
-        leading: Icon(Icons.directions, color: Colors.blue),
-        title: Text('$departure → $arrival'),
-        subtitle: Text('Duration: $duration'),
-        trailing: Icon(Icons.chevron_right),
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // First Row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '$departure - $arrival',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  Text(
+                    duration,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              // Second Row: Route legs (scrollable, proportional to duration, but never smaller than content)
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  // 1. Calculate min width for each leg
+                  final minWidths =
+                      legs.map((leg) {
+                        if (leg.mode == "WALK") {
+                          return 48.0 +
+                              (leg.distance.round().toString().length * 8);
+                        } else {
+                          return 48.0 +
+                              ((leg.route?.shortName ?? '').length * 10);
+                        }
+                      }).toList();
+
+                  // 2. Calculate total min width
+                  final totalMinWidth = minWidths.fold<double>(
+                    0,
+                    (a, b) => a + b,
+                  );
+
+                  // 3. Calculate proportional widths
+                  final availableWidth = constraints.maxWidth;
+                  // Subtract total horizontal padding between tiles
+                  final totalHorizontalPadding =
+                      2.0 * 2 * legs.length; // 2.0 left + 2.0 right per tile
+                  final adjustedAvailableWidth = (availableWidth -
+                          totalHorizontalPadding)
+                      .clamp(0.0, double.infinity);
+                  final extraWidth =
+                      (adjustedAvailableWidth > totalMinWidth)
+                          ? adjustedAvailableWidth - totalMinWidth
+                          : 0.0;
+
+                  final totalDuration = legs.fold<num>(
+                    0,
+                    (sum, leg) => sum + leg.duration,
+                  );
+
+                  // 4. Calculate final width for each leg
+                  final widths = <double>[];
+                  for (int i = 0; i < legs.length; i++) {
+                    final proportion =
+                        (legs[i].duration / totalDuration).toDouble();
+                    final addWidth = extraWidth * proportion;
+                    widths.add(minWidths[i] + addWidth);
+                  }
+
+                  // 5. If not enough space, allow scrolling
+                  final row = Row(
+                    children: [
+                      for (int i = 0; i < legs.length; i++)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 2),
+                          child: SizedBox(
+                            width: widths[i],
+                            child: _LegTile(leg: legs[i]),
+                          ),
+                        ),
+                    ],
+                  );
+
+                  if (availableWidth < totalMinWidth) {
+                    // Not enough space, allow horizontal scroll
+                    return SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(minWidth: totalMinWidth),
+                        child: row,
+                      ),
+                    );
+                  } else {
+                    // Enough space, show row as is
+                    return row;
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
+}
+
+class _LegTile extends StatelessWidget {
+  final Leg leg;
+
+  const _LegTile({required this.leg});
+
+  @override
+  Widget build(BuildContext context) {
+    final bgColor = _legColor(leg);
+    final textColor =
+        leg.route?.textColor ??
+        (ThemeData.estimateBrightnessForColor(bgColor) == Brightness.dark
+            ? Colors.white
+            : Colors.black);
+
+    Widget? leading;
+    Widget label;
+    if (leg.mode == "WALK") {
+      leading = const Icon(Icons.directions_walk, size: 18);
+      label = Text(
+        '${leg.distance.round()}',
+        style: TextStyle(fontWeight: FontWeight.w600, color: textColor),
+      );
+    } else {
+      leading = Icon(
+        leg.mode == "BUS" ? Icons.directions_bus : Icons.train, // crude mapping
+        size: 18,
+        color: textColor,
+      );
+      label = Text(
+        leg.route?.shortName ?? '',
+        style: TextStyle(fontWeight: FontWeight.bold, color: textColor),
+      );
+    }
+
+    return Container(
+      constraints: const BoxConstraints(minWidth: 48),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [leading, const SizedBox(width: 4), label],
+      ),
+    );
+  }
+}
+
+/// Utility: Maps leg mode to colors. Customize this for your style!
+Color _legColor(Leg leg) {
+  if (leg.mode == "WALK") return Colors.grey.shade300;
+  if (leg.mode == "BUS") return Colors.amber.shade600;
+  if (leg.mode == "RAIL" || leg.mode == "TRAIN")
+    return Colors.lightBlue.shade300;
+  return Colors.grey.shade400;
 }

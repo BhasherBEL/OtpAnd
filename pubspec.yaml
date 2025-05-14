@@ -38,6 +38,7 @@ dependencies:
   http: ^1.4.0
   intl: ^0.20.2
   timelines_plus: ^1.0.6
+  dotted_line: ^3.2.3
 
 dev_dependencies:
   flutter_test:

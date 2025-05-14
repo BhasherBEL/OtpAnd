@@ -1,6 +1,10 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'objs.dart';
+
+// --- Utility functions ---
 
 num round(num n, int demicals) {
   if (demicals < 0) {
@@ -41,4 +45,103 @@ Color? getColorFromCode(String? code) {
     return Color(int.parse('FF$code', radix: 16));
   }
   return null;
+}
+
+// --- Moved from homepage.dart ---
+
+IconData iconForMode(String mode) {
+  switch (mode) {
+    case "WALK":
+      return Icons.directions_walk;
+    case "BICYCLE":
+      return Icons.directions_bike;
+    case "CAR":
+      return Icons.directions_car;
+    case "BUS":
+      return Icons.directions_bus;
+    case "RAIL":
+    case "SUBWAY":
+      return Icons.train;
+    case "TRAM":
+      return Icons.tram;
+    case "FERRY":
+      return Icons.directions_boat;
+    default:
+      return Icons.trip_origin;
+  }
+}
+
+Color colorForMode(String mode) {
+  switch (mode) {
+    case "WALK":
+      return Colors.green;
+    case "BUS":
+      return Colors.blue;
+    case "SUBWAY":
+      return Colors.deepOrange;
+    case "TRAM":
+      return Colors.purple;
+    case "RAIL":
+      return Colors.teal;
+    default:
+      return Colors.grey.shade400;
+  }
+}
+
+String? formatTime(String? iso) {
+  if (iso == null) return null;
+  try {
+    final dt = DateTime.parse(iso).toLocal();
+    return DateFormat('HH:mm').format(dt);
+  } catch (_) {
+    return iso;
+  }
+}
+
+String legDescription(Leg leg) {
+  if (leg.mode == "WALK") {
+    return "Walk";
+  } else if (leg.mode == "BICYCLE") {
+    return "Bike";
+  } else if (leg.mode == "CAR") {
+    return "Car";
+  } else if (leg.mode == "BUS" ||
+      leg.mode == "RAIL" ||
+      leg.mode == "SUBWAY" ||
+      leg.mode == "TRAM" ||
+      leg.mode == "FERRY") {
+    String route =
+        leg.route?.shortName != null ? " ${leg.route!.shortName}" : "";
+    return "${capitalize(leg.mode)}$route";
+  } else if (leg.route != null) {
+    String route =
+        leg.route!.shortName != null ? " ${leg.route!.shortName}" : "";
+    return "${capitalize(leg.mode)}$route";
+  }
+  return capitalize(leg.mode);
+}
+
+String capitalize(String s) =>
+    s.isNotEmpty ? s[0].toUpperCase() + s.substring(1).toLowerCase() : s;
+
+String calculateDuration(DateTime start, DateTime end) {
+  final duration = end.difference(start);
+  final hours = duration.inHours;
+  final minutes = duration.inMinutes.remainder(60);
+  if (hours > 0) {
+    return '${hours}h ${minutes}m';
+  } else {
+    return '${minutes}m';
+  }
+}
+
+num calculateDurationFromString(String? start, String? end) {
+  if (start == null || end == null) return 0;
+  try {
+    final startTime = DateTime.parse(start).toLocal();
+    final endTime = DateTime.parse(end).toLocal();
+    return endTime.difference(startTime).inMinutes;
+  } catch (e) {
+    return 0;
+  }
 }

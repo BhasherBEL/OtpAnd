@@ -42,7 +42,7 @@ Future<List<Plan>> submitQuery({
       break;
     case "TRANSIT":
       modesStr =
-          "modes: { direct: [WALK FLEX], transit: { transit: [{ mode: BUS }, { mode: RAIL }, { mode: SUBWAY }, { mode: TRAM }, { mode: FERRY }] } }";
+          "modes: { direct: [WALK], transit: { transit: [{ mode: BUS }, { mode: RAIL }, { mode: SUBWAY }, { mode: TRAM }, { mode: FERRY }] } }";
       break;
   }
 
@@ -62,6 +62,7 @@ Future<List<Plan>> submitQuery({
           start
           end
           legs {
+						id
             mode
             headsign
             transitLeg
@@ -90,21 +91,11 @@ Future<List<Plan>> submitQuery({
               }
             }
             route {
-              gtfsId
-              longName
-              shortName
-              color
-              textColor
+              id
             },
             duration
             distance
             intermediateStops {
-              name
-              parentStation {
-                name
-                id
-              }
-              platformCode
               id
             }
             interlineWithPreviousLeg

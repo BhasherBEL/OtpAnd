@@ -1,4 +1,5 @@
-import 'package:flutter/widgets.dart';
+import 'package:otpand/objects/route.dart';
+import 'package:otpand/objects/stop.dart';
 
 class Plan {
   final String start;
@@ -62,40 +63,6 @@ class EstimatedTime {
   final int? delay;
 
   EstimatedTime({this.time, this.delay});
-}
-
-class RouteInfo {
-  final String? gtfsId;
-  final String? longName;
-  final String? shortName;
-  final Color? color;
-  final Color? textColor;
-
-  RouteInfo({
-    this.gtfsId,
-    this.longName,
-    this.shortName,
-    this.color,
-    this.textColor,
-  });
-}
-
-class Stop {
-  final String name;
-  final String id;
-  final Stop? parentStation;
-  final String? platformCode;
-  final double? latitude;
-  final double? longitude;
-
-  Stop({
-    required this.name,
-    required this.id,
-    this.parentStation,
-    this.platformCode,
-    this.latitude,
-    this.longitude,
-  });
 }
 
 class Location {

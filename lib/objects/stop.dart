@@ -1,0 +1,42 @@
+class Stop {
+  final int id;
+  final String otpId;
+  final String name;
+  final String? platformCode;
+  final double lat;
+  final double lon;
+
+  Stop({
+    required this.id,
+    required this.otpId,
+    required this.name,
+    this.platformCode,
+    required this.lat,
+    required this.lon,
+  });
+
+  static Stop parse(Map<String, dynamic> json) {
+    return Stop(
+      id: json['id'] as int,
+      otpId: json['otpId'] as String,
+      name: json['name'] as String,
+      platformCode: json['platformCode'] as String?,
+      lat: (json['lat'] as num).toDouble(),
+      lon: (json['lon'] as num).toDouble(),
+    );
+  }
+
+  static List<Stop> parseAll(List<dynamic> list) {
+    return list.map((e) => Stop.parse(e as Map<String, dynamic>)).toList();
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'lat': lat,
+      'lon': lon,
+      'platformCode': platformCode,
+    };
+  }
+}

@@ -1,35 +1,51 @@
-import 'package:otpand/utils.dart';
+import 'package:otpand/db/crud/routes.dart';
+import 'package:otpand/db/crud/stops.dart';
+import 'package:otpand/objects/stop.dart';
 
 import 'objs.dart';
 
-Plan parsePlan(Map<String, dynamic> planJson) {
+Future<Plan> parsePlan(Map<String, dynamic> planJson) async {
+  List<Leg> legs = [];
+
+  for (final legJson in planJson['legs']) {
+    legs.add(await parseLeg(legJson as Map<String, dynamic>));
+  }
+
   return Plan(
     start: planJson['start'] ?? '',
     end: planJson['end'] ?? '',
-    legs:
-        (planJson['legs'] as List)
-            .map((leg) => parseLeg(leg as Map<String, dynamic>))
-            .toList(),
+    legs: legs,
   );
 }
 
-Leg parseLeg(Map<String, dynamic> legJson) {
+Future<Leg> parseLeg(Map<String, dynamic> legJson) async {
+  final route =
+      legJson['route'] != null
+          ? await RouteDao().getByOtpId(legJson['route']['id'] as String)
+          : null;
+
+  List<Stop>? intermediateStops;
+
+  if (legJson['intermediateStops'] != null) {
+    intermediateStops = [];
+    for (final s in legJson['intermediateStops'] as List) {
+      final stop = await StopDao().getByOtpId(s['id'] as String);
+      if (stop != null) {
+        intermediateStops.add(stop);
+      }
+    }
+  }
+
   return Leg(
     mode: legJson['mode'] ?? '',
     headsign: legJson['headsign'],
     transitLeg: legJson['transitLeg'] as bool,
     from: parsePlace(legJson['from'] as Map<String, dynamic>),
     to: parsePlace(legJson['to'] as Map<String, dynamic>),
-    route:
-        legJson['route'] != null
-            ? parseRouteInfo(legJson['route'] as Map<String, dynamic>)
-            : null,
+    route: route,
     duration: legJson['duration'] as num,
     distance: legJson['distance'] as num,
-    intermediateStops:
-        (legJson['intermediateStops'] as List?)
-            ?.map((stop) => parseStop(stop as Map<String, dynamic>))
-            .toList(),
+    intermediateStops: intermediateStops,
     interlineWithPreviousLeg: legJson['interlineWithPreviousLeg'] as bool,
   );
 }
@@ -71,39 +87,9 @@ EstimatedTime parseEstimatedTime(Map<String, dynamic> estJson) {
   );
 }
 
-RouteInfo parseRouteInfo(Map<String, dynamic> routeJson) {
-  return RouteInfo(
-    gtfsId: routeJson['gtfsId'] as String?,
-    longName: routeJson['longName'] as String?,
-    shortName: routeJson['shortName'] as String?,
-    color: getColorFromCode(routeJson['color'] as String?),
-    textColor: getColorFromCode(routeJson['textColor'] as String?),
-  );
-}
-
-Stop parseStop(Map<String, dynamic> stopJson) {
-  return Stop(
-    name: stopJson['name'] ?? '??',
-    id: stopJson['id'] ?? '??',
-    parentStation:
-        stopJson['parentStation'] != null
-            ? parseStop(stopJson['parentStation'] as Map<String, dynamic>)
-            : null,
-    platformCode: stopJson['platformCode'] as String?,
-  );
-}
-
-/// Parse a list of plans from the raw API result
-List<Plan> parsePlans(List<dynamic> rawPlans) {
-  return rawPlans.map((e) => parsePlan(e as Map<String, dynamic>)).toList();
-}
-
-Stop parseGeocodeStop(Map<String, dynamic> stopJson) {
-  return Stop(
-    name: stopJson['description'] ?? '??',
-    id: stopJson['id'],
-    latitude: stopJson['lat'],
-    longitude: stopJson['longitude'],
+Future<List<Plan>> parsePlans(List<dynamic> rawPlans) async {
+  return await Future.wait(
+    rawPlans.map((e) => parsePlan(e as Map<String, dynamic>)),
   );
 }
 

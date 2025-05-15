@@ -54,7 +54,7 @@ class SmallRoute extends StatelessWidget {
                   final minWidths =
                       legs.map((leg) {
                         if (leg.mode == "WALK") {
-                          return 48.0 +
+                          return 36.0 +
                               (leg.distance.round().toString().length * 8);
                         } else {
                           return 48.0 +
@@ -104,17 +104,14 @@ class SmallRoute extends StatelessWidget {
                     ],
                   );
 
-                  if (availableWidth < totalMinWidth) {
-                    return SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(minWidth: totalMinWidth),
-                        child: row,
-                      ),
-                    );
-                  } else {
-                    return row;
-                  }
+                  // Always wrap in SingleChildScrollView to prevent overflow
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(minWidth: totalMinWidth),
+                      child: row,
+                    ),
+                  );
                 },
               ),
             ],

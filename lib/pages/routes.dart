@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:otpand/objs.dart';
-import 'package:otpand/pages/homepage.dart';
 import 'package:otpand/pages/route.dart';
 import 'package:otpand/api/plan.dart';
+import 'package:otpand/utils/colors.dart';
 import 'package:otpand/widgets/smallroute.dart';
 import 'package:otpand/widgets/searchbar.dart';
 import 'package:otpand/widgets/datetime_picker.dart';
@@ -74,6 +74,7 @@ class _RoutesPageState extends State<RoutesPage> {
     } catch (e) {
       setState(() {
         errorMsg = e.toString();
+        print(errorMsg);
         isLoading = false;
       });
     }
@@ -125,11 +126,8 @@ class _RoutesPageState extends State<RoutesPage> {
 
   @override
   Widget build(BuildContext context) {
-    const primary500 = Color(0xFF198DE5);
-    const primary50 = Color(0xFFE3F2FD);
-
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle(statusBarColor: HomePage.primary500),
+      value: SystemUiOverlayStyle(statusBarColor: primary500),
       child: Scaffold(
         backgroundColor: primary50,
         body: SafeArea(

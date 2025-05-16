@@ -17,6 +17,7 @@ enum RouteMode {
       case 'bus':
         return bus;
       case 'rail':
+      case 'train':
         return rail;
       case 'subway':
         return subway;
@@ -29,8 +30,7 @@ enum RouteMode {
 }
 
 class RouteInfo {
-  final int id;
-  final String otpId;
+  final String gtfsId;
   final String longName;
   final String shortName;
   final Color? color;
@@ -38,8 +38,7 @@ class RouteInfo {
   final RouteMode mode;
 
   RouteInfo({
-    required this.id,
-    required this.otpId,
+    required this.gtfsId,
     required this.longName,
     required this.shortName,
     this.color,
@@ -49,8 +48,7 @@ class RouteInfo {
 
   static RouteInfo parse(Map<String, dynamic> json) {
     return RouteInfo(
-      id: json['id'] as int,
-      otpId: json['otpId'] as String,
+      gtfsId: json['gtfsId'] as String,
       longName: json['longName'] as String,
       shortName: json['shortName'] as String,
       color: getColorFromCode(json['color'] as String?),
@@ -65,8 +63,7 @@ class RouteInfo {
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
-      'otpId': otpId,
+      'gtfsId': gtfsId,
       'longName': longName,
       'shortName': shortName,
       'color': color?.value,

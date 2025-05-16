@@ -5,61 +5,57 @@ import '../helper.dart';
 class RouteDao {
   final dbHelper = DatabaseHelper();
 
-  Future<int> getOrInsert(Map<String, dynamic> route) async {
+  Future<void> batchInsert(List<Map<String, dynamic>> routes) async {
+    if (routes.isEmpty) return;
     final db = await dbHelper.database;
-    final result = await db.query(
-      'routes',
-      where: 'otpId = ?',
-      whereArgs: [route['otpId']],
-      limit: 1,
-    );
-    if (result.isNotEmpty) {
-      return result.first['id'] as int;
+    final batch = db.batch();
+    for (final route in routes) {
+      batch.insert(
+        'routes',
+        route,
+        conflictAlgorithm: ConflictAlgorithm.ignore,
+      );
     }
-    return await db.insert(
+    await batch.commit(noResult: true);
+  }
+
+  Future<void> insert(Map<String, dynamic> route) async {
+    final db = await dbHelper.database;
+    await db.insert(
       'routes',
       route,
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
 
-  Future<int> insert(Map<String, dynamic> route) async {
+  Future<void> batchInsertAgencies(List<Map<String, String>> links) async {
+    if (links.isEmpty) return;
     final db = await dbHelper.database;
-    return await db.insert(
-      'routes',
-      route,
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    final batch = db.batch();
+    for (final link in links) {
+      batch.insert(
+        'agencies_routes',
+        link,
+        conflictAlgorithm: ConflictAlgorithm.ignore,
+      );
+    }
+    await batch.commit(noResult: true);
   }
 
-  Future<int> insertAgency(int routeId, int agencyId) async {
+  Future<void> insertAgency(String routeId, String agencyId) async {
     final db = await dbHelper.database;
-    return await db.insert('agencies_routes', {
+    await db.insert('agencies_routes', {
       'route_id': routeId,
       'agency_id': agencyId,
-    }, conflictAlgorithm: ConflictAlgorithm.replace);
+    }, conflictAlgorithm: ConflictAlgorithm.ignore);
   }
 
-  Future<RouteInfo?> get(int id) async {
+  Future<RouteInfo?> get(String gtfsId) async {
     final db = await dbHelper.database;
     final maps = await db.query(
       'routes',
-      where: 'id = ?',
-      whereArgs: [id],
-      limit: 1,
-    );
-    if (maps.isNotEmpty) {
-      return RouteInfo.parse(maps.first);
-    }
-    return null;
-  }
-
-  Future<RouteInfo?> getByOtpId(String otpId) async {
-    final db = await dbHelper.database;
-    final maps = await db.query(
-      'routes',
-      where: 'otpId = ?',
-      whereArgs: [otpId],
+      where: 'gtfsId = ?',
+      whereArgs: [gtfsId],
       limit: 1,
     );
     if (maps.isNotEmpty) {
@@ -74,17 +70,17 @@ class RouteDao {
     return RouteInfo.parseAll(maps);
   }
 
-  Future<int> delete(String id) async {
+  Future<int> delete(String gtfsId) async {
     final db = await dbHelper.database;
-    return await db.delete('routes', where: 'id = ?', whereArgs: [id]);
+    return await db.delete('routes', where: 'gtfsId = ?', whereArgs: [gtfsId]);
   }
 
-  Future<List<RouteInfo>> getFromAgency(int agencyId) async {
+  Future<List<RouteInfo>> getFromAgency(String agencyId) async {
     final db = await dbHelper.database;
     final maps = await db.rawQuery(
       '''
       SELECT r.* FROM routes r
-      INNER JOIN agencies_routes ar ON r.id = ar.route_id
+      INNER JOIN agencies_routes ar ON r.gtfsId = ar.route_id
       WHERE ar.agency_id = ?
     ''',
       [agencyId],
@@ -92,12 +88,12 @@ class RouteDao {
     return RouteInfo.parseAll(maps);
   }
 
-  Future<List<RouteInfo>> getFromStop(int stopId) async {
+  Future<List<RouteInfo>> getFromStop(String stopId) async {
     final db = await dbHelper.database;
     final maps = await db.rawQuery(
       '''
       SELECT r.* FROM routes r
-      INNER JOIN routes_stops sr ON r.id = sr.route_id
+      INNER JOIN routes_stops sr ON r.gtfsId = sr.route_id
       WHERE sr.stop_id = ?
     ''',
       [stopId],

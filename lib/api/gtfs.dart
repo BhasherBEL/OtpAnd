@@ -18,6 +18,7 @@ Future<void> checkAndSyncGtfsData() async {
     final diff = now.difference(lastSync);
     print('Last GTFS sync was ${diff.inHours} hours ago');
     if (diff.inHours < 23) {
+      print('No need to fetch newer GTFS data');
       return;
     }
   }
@@ -29,139 +30,27 @@ Future<void> checkAndSyncGtfsData() async {
 }
 
 Future<void> fetchAndStoreGtfsData() async {
-  const int pageSize = 100;
-
-  // Helper to fetch all routes for an agency with pagination
-  Future<List<Map<String, dynamic>>> fetchAllRoutes(String agencyId) async {
-    List<Map<String, dynamic>> allRoutes = [];
-    String? after;
-    bool hasNextPage = true;
-
-    while (hasNextPage) {
-      final String gql = '''
-      {
-        agency(id: "$agencyId") {
-          routes(first: $pageSize${after != null ? ', after: "$after"' : ''}) {
-            pageInfo {
-              hasNextPage
-              endCursor
-            }
-            edges {
-              node {
-                id
-                longName
-                shortName
-                color
-                textColor
-                mode
-                stops(first: $pageSize) {
-                  pageInfo {
-                    hasNextPage
-                    endCursor
-                  }
-                  edges {
-                    node {
-                      id
-                      name
-                      platformCode
-                      lat
-                      lon
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-      ''';
-
-      final resp = await http.post(
-        Uri.parse('$OTP_API_URL/otp/gtfs/v1'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'query': gql}),
-      );
-
-      if (resp.statusCode != 200) {
-        throw Exception('Failed to fetch GTFS routes: ${resp.statusCode}');
-      }
-
-      final data = jsonDecode(resp.body);
-      final routesData = data['data']?['agency']?['routes'];
-      if (routesData == null) break;
-
-      for (final edge in routesData['edges'] ?? []) {
-        final routeNode = edge['node'];
-        // Fetch all stops for this route with pagination
-        List<Map<String, dynamic>> allStops = [];
-        var stopsData = routeNode['stops'];
-        if (stopsData != null) {
-          for (final stopEdge in stopsData['edges'] ?? []) {
-            allStops.add(stopEdge['node']);
-          }
-          // If stops are paginated, fetch more
-          bool stopsHasNext = stopsData['pageInfo']['hasNextPage'] ?? false;
-          String? stopsAfter = stopsData['pageInfo']['endCursor'];
-          while (stopsHasNext && stopsAfter != null) {
-            final String stopsGql = '''
-            {
-              route(id: "${routeNode['id']}") {
-                stops(first: $pageSize, after: "$stopsAfter") {
-                  pageInfo {
-                    hasNextPage
-                    endCursor
-                  }
-                  edges {
-                    node {
-                      id
-                      name
-                      platformCode
-                      lat
-                      lon
-                    }
-                  }
-                }
-              }
-            }
-            ''';
-            final stopsResp = await http.post(
-              Uri.parse('$OTP_API_URL/otp/gtfs/v1'),
-              headers: {'Content-Type': 'application/json'},
-              body: jsonEncode({'query': stopsGql}),
-            );
-            if (stopsResp.statusCode != 200) {
-              throw Exception(
-                'Failed to fetch GTFS stops: ${stopsResp.statusCode}',
-              );
-            }
-            final stopsJson = jsonDecode(stopsResp.body);
-            final stopsPage = stopsJson['data']?['route']?['stops'];
-            if (stopsPage == null) break;
-            for (final stopEdge in stopsPage['edges'] ?? []) {
-              allStops.add(stopEdge['node']);
-            }
-            stopsHasNext = stopsPage['pageInfo']['hasNextPage'] ?? false;
-            stopsAfter = stopsPage['pageInfo']['endCursor'];
-          }
-        }
-        routeNode['stops'] = allStops;
-        allRoutes.add(routeNode);
-      }
-
-      hasNextPage = routesData['pageInfo']['hasNextPage'] ?? false;
-      after = routesData['pageInfo']['endCursor'];
-    }
-    return allRoutes;
-  }
-
-  // Fetch all agencies first
   const String agenciesGql = '''
   {
     agencies {
-      id
+      gtfsId
       name
       url
-
+      routes {
+        gtfsId
+        longName
+        shortName
+        color
+        textColor
+        mode
+        stops {
+          gtfsId
+          name
+          platformCode
+          lat
+          lon
+        }
+      }
     }
   }
   ''';
@@ -176,50 +65,74 @@ Future<void> fetchAndStoreGtfsData() async {
     throw Exception('Failed to fetch GTFS agencies: ${resp.statusCode}');
   }
 
+  print(resp.body.length);
+
   final data = jsonDecode(resp.body);
   if (data['data'] == null || data['data']['agencies'] == null) {
     throw Exception('No agencies found in GTFS data');
   }
 
-  final agencies = data['data']['agencies'];
   final agencyDao = AgencyDao();
   final routeDao = RouteDao();
   final stopDao = StopDao();
 
+  final agencies = data['data']['agencies'];
+
+  final List<Map<String, dynamic>> agencyMaps = [];
+  final List<Map<String, dynamic>> routeMaps = [];
+  final List<Map<String, dynamic>> stopMaps = [];
+  final List<Map<String, String>> agencyRouteLinks = [];
+  final List<Map<String, String>> routeStopLinks = [];
+
   for (final agency in agencies) {
-    final agencyId = await agencyDao.getOrInsert({
-      'otpId': agency['id'],
+    agencyMaps.add({
+      'gtfsId': agency['gtfsId'],
       'name': agency['name'],
       'url': agency['url'],
     });
 
-    // Fetch all routes (and their stops) for this agency
-    final routes = await fetchAllRoutes(agency['id']);
+    final routes = agency['routes'] ?? [];
 
     for (final route in routes) {
-      final routeId = await routeDao.getOrInsert({
-        'otpId': route['id'],
-        'agency_id': agencyId,
+      routeMaps.add({
+        'gtfsId': route['gtfsId'],
         'longName': route['longName'],
         'shortName': route['shortName'],
         'color': route['color'],
         'textColor': route['textColor'],
         'mode': route['mode'],
       });
+      agencyRouteLinks.add({
+        'agency_id': agency['gtfsId'],
+        'route_id': route['gtfsId'],
+      });
 
-      await routeDao.insertAgency(routeId, agencyId);
+      final stops = route['stops'] ?? [];
 
-      for (final stop in route['stops'] ?? []) {
-        final stopId = await stopDao.getOrInsert({
-          'otpId': stop['id'],
+      for (final stop in stops) {
+        stopMaps.add({
+          'gtfsId': stop['gtfsId'],
           'name': stop['name'],
           'platformCode': stop['platformCode'],
           'lat': stop['lat'],
           'lon': stop['lon'],
         });
-
-        await stopDao.insertRoute(stopId, routeId);
+        routeStopLinks.add({
+          'route_id': route['gtfsId'],
+          'stop_id': stop['gtfsId'],
+        });
       }
     }
   }
+
+  await agencyDao.batchInsert(agencyMaps);
+  print('Agencies inserted: ${agencyMaps.length}');
+  await routeDao.batchInsert(routeMaps);
+  print('Routes inserted: ${routeMaps.length}');
+  await stopDao.batchInsert(stopMaps);
+  print('Stops inserted: ${stopMaps.length}');
+  await routeDao.batchInsertAgencies(agencyRouteLinks);
+  print('Agency-Route links inserted: ${agencyRouteLinks.length}');
+  await stopDao.batchInsertRoutes(routeStopLinks);
+  print('Route-Stop links inserted: ${routeStopLinks.length}');
 }

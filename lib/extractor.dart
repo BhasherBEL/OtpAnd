@@ -21,7 +21,7 @@ Future<Plan> parsePlan(Map<String, dynamic> planJson) async {
 Future<Leg> parseLeg(Map<String, dynamic> legJson) async {
   final route =
       legJson['route'] != null
-          ? await RouteDao().getByOtpId(legJson['route']['id'] as String)
+          ? await RouteDao().get(legJson['route']['gtfsId'] as String)
           : null;
 
   List<Stop>? intermediateStops;
@@ -29,7 +29,7 @@ Future<Leg> parseLeg(Map<String, dynamic> legJson) async {
   if (legJson['intermediateStops'] != null) {
     intermediateStops = [];
     for (final s in legJson['intermediateStops'] as List) {
-      final stop = await StopDao().getByOtpId(s['id'] as String);
+      final stop = await StopDao().get(s['gtfsId'] as String);
       if (stop != null) {
         intermediateStops.add(stop);
       }

@@ -1,14 +1,12 @@
 class Stop {
-  final int id;
-  final String otpId;
+  final String gtfsId;
   final String name;
   final String? platformCode;
   final double lat;
   final double lon;
 
   Stop({
-    required this.id,
-    required this.otpId,
+    required this.gtfsId,
     required this.name,
     this.platformCode,
     required this.lat,
@@ -17,8 +15,7 @@ class Stop {
 
   static Stop parse(Map<String, dynamic> json) {
     return Stop(
-      id: json['id'] as int,
-      otpId: json['otpId'] as String,
+      gtfsId: json['gtfsId'] as String,
       name: json['name'] as String,
       platformCode: json['platformCode'] as String?,
       lat: (json['lat'] as num).toDouble(),
@@ -32,7 +29,7 @@ class Stop {
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
+      'gtfsId': gtfsId,
       'name': name,
       'lat': lat,
       'lon': lon,

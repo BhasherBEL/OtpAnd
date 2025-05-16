@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:otpand/objects/route.dart';
 import 'package:otpand/objects/stop.dart';
 
@@ -33,6 +34,16 @@ class Leg {
     this.intermediateStops,
     required this.interlineWithPreviousLeg,
   });
+
+  get color {
+    if (route?.color != null) return route!.color;
+    if (mode == "WALK") return Colors.grey.shade300;
+    if (mode == "BUS") return Colors.amber.shade600;
+    if (mode == "RAIL" || mode == "TRAIN") {
+      return Colors.lightBlue.shade300;
+    }
+    return Colors.grey.shade400;
+  }
 }
 
 class Place {

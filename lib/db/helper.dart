@@ -25,28 +25,26 @@ class DatabaseHelper {
   Future _onCreate(Database db, int version) async {
     await db.execute('''
       CREATE TABLE agencies (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        otpId TEXT NOT NULL UNIQUE,
+        gtfsId TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         url TEXT NOT NULL
       )
     ''');
     await db.execute('''
       CREATE TABLE routes (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        otpId TEXT NOT NULL UNIQUE,
-        agency_id INTEGER,
+        gtfsId TEXT PRIMARY KEY,
+        agency_gtfsId TEXT,
         longName TEXT NOT NULL,
         shortName TEXT NOT NULL,
         color INTEGER,
         textColor INTEGER,
-        mode TEXT NOT NULL
+        mode TEXT NOT NULL,
+        FOREIGN KEY (agency_gtfsId) REFERENCES agencies(gtfsId)
       )
     ''');
     await db.execute('''
       CREATE TABLE stops (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        otpId TEXT NOT NULL UNIQUE,
+        gtfsId TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         platformCode TEXT,
         lat REAL NOT NULL,
@@ -56,21 +54,21 @@ class DatabaseHelper {
 
     await db.execute('''
       CREATE TABLE routes_stops (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        stop_id INTEGER NOT NULL,
-        route_id INTEGER NOT NULL,
-        FOREIGN KEY (stop_id) REFERENCES stops(id),
-        FOREIGN KEY (route_id) REFERENCES routes(id)
+        stop_id TEXT NOT NULL,
+        route_id TEXT NOT NULL,
+        PRIMARY KEY (stop_id, route_id),
+        FOREIGN KEY (stop_gtfsId) REFERENCES stops(gtfsId),
+        FOREIGN KEY (route_gtfsId) REFERENCES routes(gtfsId)
       )
     ''');
 
     await db.execute('''
       CREATE TABLE agencies_routes (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        agency_id INTEGER NOT NULL,
-        route_id INTEGER NOT NULL,
-        FOREIGN KEY (agency_id) REFERENCES agencies(id),
-        FOREIGN KEY (route_id) REFERENCES routes(id)
+        agency_id TEXT NOT NULL,
+        route_id TEXT NOT NULL,
+        PRIMARY KEY (agency_id, route_id),
+        FOREIGN KEY (agency_gtfsId) REFERENCES agencies(gtfsId),
+        FOREIGN KEY (route_gtfsId) REFERENCES routes(gtfsId)
       )
     ''');
   }

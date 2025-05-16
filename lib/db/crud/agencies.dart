@@ -5,22 +5,18 @@ import '../helper.dart';
 class AgencyDao {
   final dbHelper = DatabaseHelper();
 
-  Future<int> getOrInsert(Map<String, dynamic> agency) async {
+  Future<void> batchInsert(List<Map<String, dynamic>> agencies) async {
+    if (agencies.isEmpty) return;
     final db = await dbHelper.database;
-    final result = await db.query(
-      'agencies',
-      where: 'otpId = ?',
-      whereArgs: [agency['otpId']],
-      limit: 1,
-    );
-    if (result.isNotEmpty) {
-      return result.first['id'] as int;
+    final batch = db.batch();
+    for (final agency in agencies) {
+      batch.insert(
+        'agencies',
+        agency,
+        conflictAlgorithm: ConflictAlgorithm.ignore,
+      );
     }
-    return await db.insert(
-      'agencies',
-      agency,
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    await batch.commit(noResult: true);
   }
 
   Future<int> insert(Map<String, dynamic> agency) async {
@@ -32,12 +28,12 @@ class AgencyDao {
     );
   }
 
-  Future<Agency?> get(int id) async {
+  Future<Agency?> get(String gtfsId) async {
     final db = await dbHelper.database;
     final maps = await db.query(
       'agencies',
-      where: 'id = ?',
-      whereArgs: [id],
+      where: 'gtfsId = ?',
+      whereArgs: [gtfsId],
       limit: 1,
     );
     if (maps.isNotEmpty) {
@@ -52,17 +48,21 @@ class AgencyDao {
     return Agency.parseAll(maps);
   }
 
-  Future<int> delete(int id) async {
+  Future<int> delete(String gtfsId) async {
     final db = await dbHelper.database;
-    return await db.delete('agencies', where: 'id = ?', whereArgs: [id]);
+    return await db.delete(
+      'agencies',
+      where: 'gtfsId = ?',
+      whereArgs: [gtfsId],
+    );
   }
 
-  Future<List<Agency>> getFromRoute(int routeId) async {
+  Future<List<Agency>> getFromRoute(String routeId) async {
     final db = await dbHelper.database;
     final maps = await db.rawQuery(
       '''
       SELECT a.* FROM agencies a
-      INNER JOIN agencies_routes ar ON a.id = ar.agency_id
+      INNER JOIN agencies_routes ar ON a.gtfsId = ar.agency_id
       WHERE ar.route_id = ?
     ''',
       [routeId],

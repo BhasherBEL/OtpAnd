@@ -91,12 +91,12 @@ Future<List<Plan>> submitQuery({
               }
             }
             route {
-              id
+              gtfsId
             },
             duration
             distance
             intermediateStops {
-              id
+              gtfsId
             }
             interlineWithPreviousLeg
           }

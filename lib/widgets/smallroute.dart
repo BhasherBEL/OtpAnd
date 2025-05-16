@@ -129,7 +129,7 @@ class _LegTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = _legColor(leg);
+    final bgColor = leg.color;
     final textColor =
         leg.route?.textColor ??
         (ThemeData.estimateBrightnessForColor(bgColor) == Brightness.dark
@@ -169,12 +169,4 @@ class _LegTile extends StatelessWidget {
       ),
     );
   }
-}
-
-Color _legColor(Leg leg) {
-  if (leg.mode == "WALK") return Colors.grey.shade300;
-  if (leg.mode == "BUS") return Colors.amber.shade600;
-  if (leg.mode == "RAIL" || leg.mode == "TRAIN")
-    return Colors.lightBlue.shade300;
-  return Colors.grey.shade400;
 }

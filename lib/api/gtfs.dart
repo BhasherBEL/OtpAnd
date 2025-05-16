@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:otpand/config.dart';
 import 'package:otpand/db/crud/agencies.dart';
+import 'package:otpand/db/crud/directions.dart';
 import 'package:otpand/db/crud/routes.dart';
 import 'package:otpand/db/crud/stops.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -43,13 +44,16 @@ Future<void> fetchAndStoreGtfsData() async {
         color
         textColor
         mode
-        stops {
-          gtfsId
-          name
-          platformCode
-          lat
-          lon
-        }
+				patterns {
+					headsign
+					stops {
+						gtfsId
+						name
+						platformCode
+						lat
+						lon
+					}
+				}
       }
     }
   }
@@ -80,9 +84,10 @@ Future<void> fetchAndStoreGtfsData() async {
 
   final List<Map<String, dynamic>> agencyMaps = [];
   final List<Map<String, dynamic>> routeMaps = [];
-  final List<Map<String, dynamic>> stopMaps = [];
+  final Map<String, Map<String, dynamic>> stopMaps = {};
+  final List<Map<String, dynamic>> directionMaps = [];
   final List<Map<String, String>> agencyRouteLinks = [];
-  final List<Map<String, String>> routeStopLinks = [];
+  final List<Map<String, dynamic>> directionStopLinks = [];
 
   for (final agency in agencies) {
     agencyMaps.add({
@@ -107,32 +112,56 @@ Future<void> fetchAndStoreGtfsData() async {
         'route_gtfsId': route['gtfsId'],
       });
 
-      final stops = route['stops'] ?? [];
+      final patterns = route['patterns'] ?? [];
 
-      for (final stop in stops) {
-        stopMaps.add({
-          'gtfsId': stop['gtfsId'],
-          'name': stop['name'],
-          'platformCode': stop['platformCode'],
-          'lat': stop['lat'],
-          'lon': stop['lon'],
-        });
-        routeStopLinks.add({
+      for (int i = 0; i < patterns.length; i++) {
+        final pattern = patterns[i];
+        final stops = pattern['stops'] ?? [];
+
+        directionMaps.add({
           'route_gtfsId': route['gtfsId'],
-          'stop_gtfsId': stop['gtfsId'],
+          'headsign': pattern['headsign'] ?? stops.last['name'],
         });
+
+        for (int j = 0; j < stops.length; j++) {
+          final stop = stops[j];
+          stopMaps[stop['gtfsId']] = {
+            'gtfsId': stop['gtfsId'],
+            'name': stop['name'],
+            'platformCode': stop['platformCode'],
+            'lat': stop['lat'],
+            'lon': stop['lon'],
+          };
+          directionStopLinks.add({
+            'direction_origin': i,
+            'stop_gtfsId': stop['gtfsId'],
+            'order': j,
+          });
+        }
       }
     }
   }
 
   await agencyDao.batchInsert(agencyMaps);
   print('Agencies inserted: ${agencyMaps.length}');
+
   await routeDao.batchInsert(routeMaps);
   print('Routes inserted: ${routeMaps.length}');
-  await stopDao.batchInsert(stopMaps);
+
+  final directionsId = await DirectionDao().batchInsert(directionMaps);
+  print('Directions inserted: ${directionMaps.length}');
+
+  await stopDao.batchInsert(stopMaps.values.toList());
   print('Stops inserted: ${stopMaps.length}');
+
   await routeDao.batchInsertAgencies(agencyRouteLinks);
   print('Agency-Route links inserted: ${agencyRouteLinks.length}');
-  await stopDao.batchInsertRoutes(routeStopLinks);
-  print('Route-Stop links inserted: ${routeStopLinks.length}');
+
+  for (final directionStopLink in directionStopLinks) {
+    directionStopLink['direction_id'] =
+        directionsId[directionStopLink.remove('direction_origin')];
+  }
+
+  await stopDao.batchInsertDirection(directionStopLinks);
+  print('Direction-Stop links inserted: ${directionStopLinks.length}');
 }

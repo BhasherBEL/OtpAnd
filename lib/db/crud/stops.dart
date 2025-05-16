@@ -24,13 +24,13 @@ class StopDao {
     );
   }
 
-  Future<void> batchInsertRoutes(List<Map<String, String>> links) async {
+  Future<void> batchInsertDirection(List<Map<String, dynamic>> links) async {
     if (links.isEmpty) return;
     final db = await dbHelper.database;
     final batch = db.batch();
     for (final link in links) {
       batch.insert(
-        'routes_stops',
+        'direction_items',
         link,
         conflictAlgorithm: ConflictAlgorithm.ignore,
       );
@@ -38,11 +38,16 @@ class StopDao {
     await batch.commit(noResult: true);
   }
 
-  Future<void> insertRoute(String stopId, String routeId) async {
+  Future<void> insertDirection(
+    String stopId,
+    String directionId,
+    int order,
+  ) async {
     final db = await dbHelper.database;
-    await db.insert('routes_stops', {
+    await db.insert('direction_items', {
       'stop_gtfsId': stopId,
-      'route_gtfsId': routeId,
+      'direction_id': directionId,
+      'order': order,
     }, conflictAlgorithm: ConflictAlgorithm.ignore);
   }
 
@@ -71,16 +76,20 @@ class StopDao {
     return await db.delete('stops', where: 'gtfsId = ?', whereArgs: [gtfsId]);
   }
 
-  Future<List<Stop>> getFromRoute(String routeId) async {
+  Future<List<Stop>> getFromDirection(int directionId) async {
     final db = await dbHelper.database;
     final maps = await db.rawQuery(
       '''
-      SELECT s.* FROM stops s
-      INNER JOIN routes_stops sr ON s.gtfsId = sr.stop_gtfsId
-      WHERE sr.route_gtfsId = ?
-    ''',
-      [routeId],
+      SELECT stops.*
+      FROM stops
+      JOIN direction_items ON stops.gtfsId = direction_items.stop_gtfsId
+      WHERE direction_items.direction_id = ?
+      ORDER BY direction_items."order"
+      ''',
+      [directionId],
     );
+    print('DirectionId: $directionId');
+    print('StopsBefore: ${maps.length}');
     return Stop.parseAll(maps);
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:otpand/db/crud/routes.dart';
 import 'package:otpand/objects/route.dart';
+import 'package:otpand/pages/line.dart';
 
 class LinesPage extends StatefulWidget {
   const LinesPage({super.key});
@@ -98,6 +99,13 @@ class _LinesPageState extends State<LinesPage> {
                       ),
                       title: Text(route.longName),
                       subtitle: Text(route.mode.name.toUpperCase()),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => LinePage(route: route),
+                          ),
+                        );
+                      },
                     );
                   },
                 );

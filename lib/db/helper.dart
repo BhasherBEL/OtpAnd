@@ -17,8 +17,8 @@ class DatabaseHelper {
   }
 
   Future<Database> _initDatabase() async {
-    final documentsDirectory = await getApplicationDocumentsDirectory();
-    final path = join(documentsDirectory.path, 'app.db');
+    final documentsDirectory = await getDownloadsDirectory();
+    final path = join(documentsDirectory!.path, 'app.db');
     return await openDatabase(path, version: 1, onCreate: _onCreate);
   }
 
@@ -37,7 +37,7 @@ class DatabaseHelper {
         shortName TEXT NOT NULL,
         color INTEGER,
         textColor INTEGER,
-        mode TEXT NOT NULL,
+        mode TEXT NOT NULL
       )
     ''');
     await db.execute('''
@@ -51,22 +51,30 @@ class DatabaseHelper {
     ''');
 
     await db.execute('''
-      CREATE TABLE routes_stops (
-        stop_gtfsId TEXT NOT NULL,
-        route_gtfsId TEXT NOT NULL,
-        PRIMARY KEY (stop_gtfsId, route_gtfsId),
-        FOREIGN KEY (stop_gtfsId) REFERENCES stops(gtfsId),
-        FOREIGN KEY (route_gtfsId) REFERENCES routes(gtfsId)
-      )
-    ''');
-
-    await db.execute('''
       CREATE TABLE agencies_routes (
         agency_gtfsId TEXT NOT NULL,
         route_gtfsId TEXT NOT NULL,
         PRIMARY KEY (agency_gtfsId, route_gtfsId),
         FOREIGN KEY (agency_gtfsId) REFERENCES agencies(gtfsId),
         FOREIGN KEY (route_gtfsId) REFERENCES routes(gtfsId)
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE directions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        route_gtfsId TEXT NOT NULL,
+        headsign TEXT NOT NULL
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE direction_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        direction_id INTEGER NOT NULL,
+        stop_gtfsId TEXT NOT NULL,
+        "order" INTEGER NOT NULL,
+        FOREIGN KEY (direction_id) REFERENCES directions(id)
       )
     ''');
   }

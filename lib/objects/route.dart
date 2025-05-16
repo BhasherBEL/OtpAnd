@@ -47,12 +47,15 @@ class RouteInfo {
   });
 
   static RouteInfo parse(Map<String, dynamic> json) {
+    if (json['shortName'] == '95') {
+      print(json['color']);
+    }
     return RouteInfo(
       gtfsId: json['gtfsId'] as String,
       longName: json['longName'] as String,
       shortName: json['shortName'] as String,
-      color: getColorFromCode(json['color'] as String?),
-      textColor: getColorFromCode(json['textColor'] as String?),
+      color: getColorFromCode(json['color']),
+      textColor: getColorFromCode(json['textColor']),
       mode: RouteMode.fromString(json['mode'] as String?),
     );
   }

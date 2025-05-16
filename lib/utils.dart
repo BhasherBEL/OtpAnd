@@ -4,8 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'objs.dart';
 
-// --- Utility functions ---
-
 num round(num n, int demicals) {
   if (demicals < 0) {
     return (n / pow(10, -demicals)).round() * pow(10, -demicals);
@@ -50,15 +48,21 @@ String displayDistanceInTime(num distance) {
   return '${round(time / 3600, 0)}h${round((time % 3600) / 60, 0)}';
 }
 
-Color? getColorFromCode(String? code) {
+Color? getColorFromCode(dynamic code) {
   if (code == null) return null;
-  if (code.length == 6) {
-    return Color(int.parse('FF$code', radix: 16));
+  if (code is int) {
+    String hex = code.toRadixString(16).padLeft(6, '0');
+    return Color(int.parse('FF$hex', radix: 16));
+  }
+  if (code is String) {
+    String hex = code.replaceFirst('#', '');
+    if (hex.length == 6) {
+      hex = 'FF$hex';
+    }
+    return Color(int.parse(hex, radix: 16));
   }
   return null;
 }
-
-// --- Moved from homepage.dart ---
 
 IconData iconForMode(String mode) {
   switch (mode) {

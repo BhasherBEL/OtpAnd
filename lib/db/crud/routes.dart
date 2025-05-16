@@ -45,8 +45,8 @@ class RouteDao {
   Future<void> insertAgency(String routeId, String agencyId) async {
     final db = await dbHelper.database;
     await db.insert('agencies_routes', {
-      'route_id': routeId,
-      'agency_id': agencyId,
+      'route_gtfsId': routeId,
+      'agency_gtfsId': agencyId,
     }, conflictAlgorithm: ConflictAlgorithm.ignore);
   }
 
@@ -80,8 +80,8 @@ class RouteDao {
     final maps = await db.rawQuery(
       '''
       SELECT r.* FROM routes r
-      INNER JOIN agencies_routes ar ON r.gtfsId = ar.route_id
-      WHERE ar.agency_id = ?
+      INNER JOIN agencies_routes ar ON r.gtfsId = ar.route_gtfsId
+      WHERE ar.agency_gtfsId = ?
     ''',
       [agencyId],
     );
@@ -93,8 +93,8 @@ class RouteDao {
     final maps = await db.rawQuery(
       '''
       SELECT r.* FROM routes r
-      INNER JOIN routes_stops sr ON r.gtfsId = sr.route_id
-      WHERE sr.stop_id = ?
+      INNER JOIN routes_stops sr ON r.gtfsId = sr.route_gtfsId
+      WHERE sr.stop_gtfsId = ?
     ''',
       [stopId],
     );

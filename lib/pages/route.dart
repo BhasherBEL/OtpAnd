@@ -27,7 +27,6 @@ class RoutePage extends StatelessWidget {
               padding: const EdgeInsets.all(14),
               child: Column(
                 children: [
-                  // TITLE BAR
                   Row(
                     children: [
                       Icon(Icons.location_on, color: Colors.blue, size: 28),

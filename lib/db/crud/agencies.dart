@@ -62,8 +62,8 @@ class AgencyDao {
     final maps = await db.rawQuery(
       '''
       SELECT a.* FROM agencies a
-      INNER JOIN agencies_routes ar ON a.gtfsId = ar.agency_id
-      WHERE ar.route_id = ?
+      INNER JOIN agencies_routes ar ON a.gtfsId = ar.agency_gtfsId
+      WHERE ar.route_gtfsId = ?
     ''',
       [routeId],
     );

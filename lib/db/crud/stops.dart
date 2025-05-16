@@ -41,8 +41,8 @@ class StopDao {
   Future<void> insertRoute(String stopId, String routeId) async {
     final db = await dbHelper.database;
     await db.insert('routes_stops', {
-      'stop_id': stopId,
-      'route_id': routeId,
+      'stop_gtfsId': stopId,
+      'route_gtfsId': routeId,
     }, conflictAlgorithm: ConflictAlgorithm.ignore);
   }
 
@@ -76,8 +76,8 @@ class StopDao {
     final maps = await db.rawQuery(
       '''
       SELECT s.* FROM stops s
-      INNER JOIN routes_stops sr ON s.gtfsId = sr.stop_id
-      WHERE sr.route_id = ?
+      INNER JOIN routes_stops sr ON s.gtfsId = sr.stop_gtfsId
+      WHERE sr.route_gtfsId = ?
     ''',
       [routeId],
     );

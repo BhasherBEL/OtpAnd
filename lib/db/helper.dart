@@ -33,13 +33,11 @@ class DatabaseHelper {
     await db.execute('''
       CREATE TABLE routes (
         gtfsId TEXT PRIMARY KEY,
-        agency_gtfsId TEXT,
         longName TEXT NOT NULL,
         shortName TEXT NOT NULL,
         color INTEGER,
         textColor INTEGER,
         mode TEXT NOT NULL,
-        FOREIGN KEY (agency_gtfsId) REFERENCES agencies(gtfsId)
       )
     ''');
     await db.execute('''
@@ -54,9 +52,9 @@ class DatabaseHelper {
 
     await db.execute('''
       CREATE TABLE routes_stops (
-        stop_id TEXT NOT NULL,
-        route_id TEXT NOT NULL,
-        PRIMARY KEY (stop_id, route_id),
+        stop_gtfsId TEXT NOT NULL,
+        route_gtfsId TEXT NOT NULL,
+        PRIMARY KEY (stop_gtfsId, route_gtfsId),
         FOREIGN KEY (stop_gtfsId) REFERENCES stops(gtfsId),
         FOREIGN KEY (route_gtfsId) REFERENCES routes(gtfsId)
       )
@@ -64,9 +62,9 @@ class DatabaseHelper {
 
     await db.execute('''
       CREATE TABLE agencies_routes (
-        agency_id TEXT NOT NULL,
-        route_id TEXT NOT NULL,
-        PRIMARY KEY (agency_id, route_id),
+        agency_gtfsId TEXT NOT NULL,
+        route_gtfsId TEXT NOT NULL,
+        PRIMARY KEY (agency_gtfsId, route_gtfsId),
         FOREIGN KEY (agency_gtfsId) REFERENCES agencies(gtfsId),
         FOREIGN KEY (route_gtfsId) REFERENCES routes(gtfsId)
       )

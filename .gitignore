@@ -12,7 +12,7 @@ build/
 .idea/
 .android/
 .dart_tool/
-.flutter-plugins-dependencies/
-.flutter-plugins/
+.flutter-plugins-dependencies
+.flutter-plugins
 
 local.properties

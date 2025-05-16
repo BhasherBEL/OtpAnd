@@ -103,8 +103,8 @@ Future<void> fetchAndStoreGtfsData() async {
         'mode': route['mode'],
       });
       agencyRouteLinks.add({
-        'agency_id': agency['gtfsId'],
-        'route_id': route['gtfsId'],
+        'agency_gtfsId': agency['gtfsId'],
+        'route_gtfsId': route['gtfsId'],
       });
 
       final stops = route['stops'] ?? [];
@@ -118,8 +118,8 @@ Future<void> fetchAndStoreGtfsData() async {
           'lon': stop['lon'],
         });
         routeStopLinks.add({
-          'route_id': route['gtfsId'],
-          'stop_id': stop['gtfsId'],
+          'route_gtfsId': route['gtfsId'],
+          'stop_gtfsId': stop['gtfsId'],
         });
       }
     }

@@ -73,13 +73,26 @@ class _LinesPageState extends State<LinesPage> {
                   itemBuilder: (context, index) {
                     final route = filteredRoutes[index];
                     return ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: route.color ?? Colors.grey,
-                        child: Text(
-                          route.shortName,
-                          style: TextStyle(
-                            color: route.textColor ?? Colors.white,
-                            fontWeight: FontWeight.bold,
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: route.color ?? Colors.grey,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        alignment: Alignment.center,
+                        child: Padding(
+                          padding: const EdgeInsets.all(4.0),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              route.shortName,
+                              style: TextStyle(
+                                color: route.textColor ?? Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
                           ),
                         ),
                       ),

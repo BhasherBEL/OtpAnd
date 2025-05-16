@@ -46,7 +46,8 @@ class DatabaseHelper {
         name TEXT NOT NULL,
         platformCode TEXT,
         lat REAL NOT NULL,
-        lon REAL NOT NULL
+        lon REAL NOT NULL,
+				mode TEXT 
       )
     ''');
 

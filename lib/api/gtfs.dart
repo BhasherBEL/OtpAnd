@@ -52,6 +52,7 @@ Future<void> fetchAndStoreGtfsData() async {
 						platformCode
 						lat
 						lon
+						vehicleMode
 					}
 				}
       }
@@ -131,6 +132,7 @@ Future<void> fetchAndStoreGtfsData() async {
             'platformCode': stop['platformCode'],
             'lat': stop['lat'],
             'lon': stop['lon'],
+            'mode': stop['vehicleMode'],
           };
           directionStopLinks.add({
             'direction_origin': i,

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:otpand/objects/route.dart';
-import 'package:otpand/objects/stop.dart';
+import 'package:otpand/objects/timedStop.dart';
 
 class Plan {
   final String start;
@@ -19,7 +19,7 @@ class Leg {
   final RouteInfo? route;
   final num duration;
   final num distance;
-  final List<Stop>? intermediateStops;
+  final List<TimedStop>? intermediateStops;
   final bool interlineWithPreviousLeg;
 
   Leg({
@@ -67,13 +67,30 @@ class DepartureArrival {
   final EstimatedTime? estimated;
 
   DepartureArrival({this.scheduledTime, this.estimated});
+
+  static DepartureArrival parse(Map<String, dynamic> json) {
+    return DepartureArrival(
+      scheduledTime: json['scheduledTime'] as String?,
+      estimated:
+          json['estimated'] != null
+              ? EstimatedTime.parse(json['estimated'] as Map<String, dynamic>)
+              : null,
+    );
+  }
 }
 
 class EstimatedTime {
   final String? time;
-  final int? delay;
+  final String? delay;
 
   EstimatedTime({this.time, this.delay});
+
+  static EstimatedTime parse(Map<String, dynamic> json) {
+    return EstimatedTime(
+      time: json['time'] as String?,
+      delay: json['delay'] as String?,
+    );
+  }
 }
 
 class Location {

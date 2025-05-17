@@ -56,11 +56,6 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
           onTap: _openSearchModal,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              color: Colors.grey[200],
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey[400]!),
-            ),
             child: Row(
               children: [
                 Icon(Icons.search, color: Colors.grey[600]),

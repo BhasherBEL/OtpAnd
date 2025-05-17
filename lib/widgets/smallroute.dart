@@ -104,7 +104,6 @@ class SmallRoute extends StatelessWidget {
                     ],
                   );
 
-                  // Always wrap in SingleChildScrollView to prevent overflow
                   return SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: ConstrainedBox(
@@ -141,7 +140,7 @@ class _LegTile extends StatelessWidget {
     if (leg.mode == "WALK") {
       leading = const Icon(Icons.directions_walk, size: 18);
       label = Text(
-        displayDistanceInTime(leg.distance),
+        displayTimeShort(leg.duration),
         style: TextStyle(fontWeight: FontWeight.w600, color: textColor),
       );
     } else {

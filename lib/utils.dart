@@ -16,15 +16,15 @@ num round(num n, int demicals) {
 
 String displayDistance(num distance) {
   if (distance < 100) {
-    return '${round(distance, -1)}m';
+    return '${round(distance, -1)} m';
   }
   if (distance < 1000) {
-    return '${round(distance, -2)}m';
+    return '${round(distance, -2)} m';
   }
   if (distance < 10000) {
-    return '${round(distance / 1000, 1)}km';
+    return '${round(distance / 1000, 1)} km';
   }
-  return '${round(distance / 1000, 0)}km';
+  return '${round(distance / 1000, 0)} km';
 }
 
 String displayTime(num time) {
@@ -37,8 +37,7 @@ String displayTime(num time) {
   return '${round(time / 3600, 0)} h ${round((time % 3600) / 60, 0)} min';
 }
 
-String displayDistanceInTime(num distance) {
-  final time = distance / 1.11;
+String displayTimeShort(num time) {
   if (time < 3600) {
     return '${max(round(time / 60, 0), 1)}';
   }
@@ -46,6 +45,11 @@ String displayDistanceInTime(num distance) {
     return '${round(time / 3600, 0)}h';
   }
   return '${round(time / 3600, 0)}h${round((time % 3600) / 60, 0)}';
+}
+
+String displayDistanceInTime(num distance) {
+  final time = distance / 1.11;
+  return displayTimeShort(time);
 }
 
 Color? getColorFromCode(dynamic code) {
@@ -100,6 +104,15 @@ Color colorForMode(String mode) {
       return Colors.teal;
     default:
       return Colors.grey.shade400;
+  }
+}
+
+DateTime? parseTime(String? iso) {
+  if (iso == null) return null;
+  try {
+    return DateTime.parse(iso).toLocal();
+  } catch (_) {
+    return null;
   }
 }
 

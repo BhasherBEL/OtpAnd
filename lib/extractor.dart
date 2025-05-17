@@ -1,6 +1,6 @@
 import 'package:otpand/db/crud/routes.dart';
 import 'package:otpand/db/crud/stops.dart';
-import 'package:otpand/objects/stop.dart';
+import 'package:otpand/objects/timedStop.dart';
 
 import 'objs.dart';
 
@@ -24,14 +24,20 @@ Future<Leg> parseLeg(Map<String, dynamic> legJson) async {
           ? await RouteDao().get(legJson['route']['gtfsId'] as String)
           : null;
 
-  List<Stop>? intermediateStops;
+  List<TimedStop>? intermediateStops;
 
-  if (legJson['intermediateStops'] != null) {
+  if (legJson['intermediatePlaces'] != null) {
     intermediateStops = [];
-    for (final s in legJson['intermediateStops'] as List) {
-      final stop = await StopDao().get(s['gtfsId'] as String);
+    for (final s in legJson['intermediatePlaces'] as List) {
+      final stop = await StopDao().get(s['stop']['gtfsId'] as String);
       if (stop != null) {
-        intermediateStops.add(stop);
+        intermediateStops.add(
+          TimedStop(
+            stop: stop,
+            arrival: DepartureArrival.parse(s['arrival']),
+            departure: DepartureArrival.parse(s['departure']),
+          ),
+        );
       }
     }
   }
@@ -83,7 +89,7 @@ DepartureArrival parseDepartureArrival(Map<String, dynamic> daJson) {
 EstimatedTime parseEstimatedTime(Map<String, dynamic> estJson) {
   return EstimatedTime(
     time: estJson['time'] as String?,
-    delay: estJson['delay'] as int?,
+    delay: estJson['delay'] as String?,
   );
 }
 

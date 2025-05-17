@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:otpand/api.dart';
+import 'package:otpand/db/crud/stops.dart';
 import 'package:otpand/objs.dart';
+import 'package:otpand/utils/gnss.dart';
 
 class SearchBarWidget extends StatefulWidget {
   final String? initialValue;
@@ -21,111 +23,27 @@ class SearchBarWidget extends StatefulWidget {
 }
 
 class _SearchBarWidgetState extends State<SearchBarWidget> {
-  final TextEditingController _controller = TextEditingController();
-  final FocusNode _focusNode = FocusNode();
-  String _lastSearchedText = '';
-  bool _isLoading = false;
-  String? _error;
-
-  List<Location> _suggestions = [];
-  bool _suggestionsLoading = false;
-
-  @override
-  void dispose() {
-    _focusNode.dispose();
-    _controller.dispose();
-    super.dispose();
-  }
+  String? _selectedText;
 
   @override
   void initState() {
     super.initState();
-    if (widget.initialValue != null) {
-      _controller.text = widget.initialValue!;
-    }
-    _controller.addListener(_onTextChanged);
-    _focusNode.addListener(() {
-      if (!_focusNode.hasFocus) {
-        if (_controller.text.trim() != _lastSearchedText.trim()) {
-          _search();
-        }
-      }
-    });
+    _selectedText = widget.initialValue;
   }
 
-  void _onTextChanged() async {
-    final text = _controller.text.trim();
-    if (text.isEmpty) {
+  void _openSearchModal() async {
+    final result = await showModalBottomSheet<Location?>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.white,
+      builder: (context) => const _FullScreenSearchModal(),
+    );
+    if (result != null) {
       setState(() {
-        _suggestions = [];
-        _suggestionsLoading = false;
+        _selectedText = result.displayName;
       });
-      return;
-    }
-    setState(() {
-      _suggestionsLoading = true;
-    });
-    try {
-      final stops = []; // TODO
-      setState(() {
-        _suggestions =
-            stops
-                .map(
-                  (stop) => Location(
-                    name: stop.name,
-                    displayName: stop.name,
-                    lat: stop.latitude ?? 0,
-                    lon: stop.longitude ?? 0,
-                  ),
-                )
-                .toList();
-        _suggestionsLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _suggestions = [];
-        _suggestionsLoading = false;
-      });
-    }
-  }
-
-  @override
-  void didUpdateWidget(covariant SearchBarWidget oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.initialValue != oldWidget.initialValue &&
-        widget.initialValue != _controller.text) {
-      _controller.text = widget.initialValue ?? '';
-    }
-  }
-
-  Future<void> _search() async {
-    final trimmedText = _controller.text.trim();
-    _lastSearchedText = trimmedText;
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-    try {
-      final location = await geoCodeNominatimApi(trimmedText);
-      if (location != null) {
-        setState(() {
-          _controller.text = location.displayName;
-          _isLoading = false;
-        });
-        widget.onLocationSelected(location);
-      } else {
-        setState(() {
-          _error = "No location found.";
-          _isLoading = false;
-        });
-        widget.onLocationSelected(null);
-      }
-    } catch (e) {
-      setState(() {
-        _error = "Error: $e";
-        _isLoading = false;
-      });
-      widget.onLocationSelected(null);
+      widget.onLocationSelected(result);
     }
   }
 
@@ -134,89 +52,34 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        RawAutocomplete<Location>(
-          textEditingController: _controller,
-          focusNode: _focusNode,
-          optionsBuilder: (TextEditingValue textEditingValue) {
-            if (textEditingValue.text.isEmpty) {
-              return const Iterable<Location>.empty();
-            }
-            return _suggestions;
-          },
-          displayStringForOption: (Location loc) => loc.displayName,
-          onSelected: (Location selection) {
-            setState(() {
-              _controller.text = selection.displayName;
-              _error = null;
-            });
-            widget.onLocationSelected(selection);
-          },
-          fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
-            return TextField(
-              controller: controller,
-              focusNode: focusNode,
-              decoration: InputDecoration(
-                isDense: true,
-                labelText: widget.hintText,
-                border: InputBorder.none,
-                suffixIcon:
-                    (_isLoading || _suggestionsLoading)
-                        ? Padding(
-                          padding: const EdgeInsets.only(left: 12.0),
-                          child: SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                        )
-                        : IconButton(
-                          icon: Icon(Icons.search),
-                          onPressed: _search,
-                        ),
-                errorText: _error,
-              ),
-              onSubmitted: (_) => _search(),
-            );
-          },
-          optionsViewBuilder: (context, onSelected, options) {
-            if (_suggestionsLoading) {
-              return Align(
-                alignment: Alignment.topLeft,
-                child: Material(
-                  elevation: 4.0,
-                  child: Container(
-                    padding: EdgeInsets.all(16),
-                    child: Center(
-                      child: CircularProgressIndicator(strokeWidth: 2),
+        GestureDetector(
+          onTap: _openSearchModal,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey[400]!),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.search, color: Colors.grey[600]),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _selectedText ?? widget.hintText,
+                    style: TextStyle(
+                      color:
+                          _selectedText == null
+                              ? Colors.grey[500]
+                              : Colors.black,
+                      fontSize: 16,
                     ),
                   ),
                 ),
-              );
-            }
-            if (options.isEmpty) {
-              return SizedBox.shrink();
-            }
-            return Align(
-              alignment: Alignment.topLeft,
-              child: Material(
-                elevation: 4.0,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(maxHeight: 200, minWidth: 200),
-                  child: ListView.builder(
-                    padding: EdgeInsets.zero,
-                    itemCount: options.length,
-                    itemBuilder: (BuildContext context, int index) {
-                      final Location option = options.elementAt(index);
-                      return ListTile(
-                        title: Text(option.displayName),
-                        onTap: () => onSelected(option),
-                      );
-                    },
-                  ),
-                ),
-              ),
-            );
-          },
+              ],
+            ),
+          ),
         ),
         if (widget.selectedLocation != null)
           Padding(
@@ -227,6 +90,243 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
             ),
           ),
       ],
+    );
+  }
+}
+
+class _FullScreenSearchModal extends StatefulWidget {
+  const _FullScreenSearchModal();
+
+  @override
+  State<_FullScreenSearchModal> createState() => _FullScreenSearchModalState();
+}
+
+class _FullScreenSearchModalState extends State<_FullScreenSearchModal> {
+  final TextEditingController _controller = TextEditingController();
+  String _lastSearchedText = '';
+  bool _loading = false;
+  String? _error;
+  List<Location> _suggestions = [];
+  List<Location> _allStops = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStops();
+    _controller.addListener(_onTextChanged);
+  }
+
+  Future<void> _loadStops() async {
+    setState(() => _loading = true);
+    final stops = await StopDao().getAll();
+    setState(() {
+      _allStops =
+          stops
+              .map(
+                (stop) => Location(
+                  name: stop.name,
+                  displayName: stop.name,
+                  lat: stop.lat,
+                  lon: stop.lon,
+                ),
+              )
+              .toList();
+      _suggestions = _allStops;
+      _loading = false;
+    });
+  }
+
+  void _onTextChanged() {
+    final text = _controller.text.trim();
+    if (text.isEmpty) {
+      setState(() => _suggestions = _allStops);
+      return;
+    }
+    setState(() {
+      _suggestions =
+          _allStops
+              .where(
+                (stop) => stop.name.toLowerCase().contains(text.toLowerCase()),
+              )
+              .toList();
+    });
+  }
+
+  Future<void> _searchAddress() async {
+    final trimmedText = _controller.text.trim();
+    if (trimmedText.isEmpty || trimmedText == _lastSearchedText) {
+      return;
+    }
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    _lastSearchedText = trimmedText;
+    final location = await geoCodeNominatimApi(trimmedText);
+    if (!mounted) return;
+    if (location != null) {
+      Navigator.of(context).pop(location);
+    } else {
+      setState(() {
+        _error = "No location found.";
+        _loading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final safePadding = MediaQuery.of(context).padding;
+    return SafeArea(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: Column(
+              children: [
+                Padding(
+                  padding: EdgeInsets.only(
+                    top: safePadding.top + 8,
+                    left: 16,
+                    right: 16,
+                    bottom: 8,
+                  ),
+                  child: TextField(
+                    controller: _controller,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      hintText: "Search for a location...",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      suffixIcon:
+                          _loading
+                              ? Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              )
+                              : IconButton(
+                                icon: Icon(Icons.search),
+                                onPressed: _searchAddress,
+                              ),
+                      errorText: _error,
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical: 12,
+                        horizontal: 12,
+                      ),
+                    ),
+                    onSubmitted: (_) => _searchAddress(),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  child: ListTile(
+                    leading: Icon(Icons.my_location, color: Colors.blue),
+                    title: Text("Current Location"),
+                    onTap: () async {
+                      setState(() {
+                        _loading = true;
+                        _error = null;
+                      });
+                      try {
+                        final loc = await getCurrentLocation();
+                        if (!mounted) return;
+                        if (loc != null) {
+                          Navigator.of(context).pop(loc);
+                        } else {
+                          setState(() {
+                            _error = "Location unavailable.";
+                            _loading = false;
+                          });
+                        }
+                      } catch (e) {
+                        setState(() {
+                          _error = "Location error: ${e.toString()}";
+                          _loading = false;
+                        });
+                      }
+                    },
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      "Favourite",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      "Transit Stop",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child:
+                      _loading
+                          ? Center(child: CircularProgressIndicator())
+                          : ListView.builder(
+                            itemCount: _suggestions.length,
+                            itemBuilder: (context, index) {
+                              final stop = _suggestions[index];
+                              return ListTile(
+                                title: Text(stop.displayName),
+                                onTap: () => Navigator.of(context).pop(stop),
+                              );
+                            },
+                          ),
+                ),
+                Padding(
+                  padding: EdgeInsets.only(
+                    left: 16,
+                    right: 16,
+                    bottom: safePadding.bottom + 8,
+                    top: 8,
+                  ),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: TextButton(
+                      onPressed: _searchAddress,
+                      child: const Text("Search address"),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }

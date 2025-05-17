@@ -42,6 +42,23 @@ Future<Leg> parseLeg(Map<String, dynamic> legJson) async {
     }
   }
 
+  final List<DepartureArrival> otherDepartures = [];
+  if (legJson['previousLegs'] != null) {
+    for (final leg in legJson['previousLegs']) {
+      if (leg['from']['departure'] != null) {
+        otherDepartures.add(DepartureArrival.parse(leg['from']['departure']));
+      }
+    }
+  }
+  if (legJson['nextLegs'] != null) {
+    for (final leg in legJson['nextLegs']) {
+      if (leg['from']['departure'] != null) {
+        otherDepartures.add(DepartureArrival.parse(leg['from']['departure']));
+      }
+    }
+  }
+  print(otherDepartures);
+
   return Leg(
     id: legJson['id'] as String?,
     mode: legJson['mode'] ?? '',
@@ -55,6 +72,7 @@ Future<Leg> parseLeg(Map<String, dynamic> legJson) async {
     distance: legJson['distance'] as num,
     intermediateStops: intermediateStops,
     interlineWithPreviousLeg: legJson['interlineWithPreviousLeg'] as bool,
+    otherDepartures: otherDepartures,
   );
 }
 

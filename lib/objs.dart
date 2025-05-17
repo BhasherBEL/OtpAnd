@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:otpand/objects/route.dart';
 import 'package:otpand/objects/timedStop.dart';
+import 'package:otpand/utils.dart';
 
 class Plan {
   final String start;
@@ -23,6 +24,7 @@ class Leg {
   final num distance;
   final List<TimedStop>? intermediateStops;
   final bool interlineWithPreviousLeg;
+  final List<DepartureArrival> otherDepartures;
 
   Leg({
     required this.id,
@@ -37,6 +39,7 @@ class Leg {
     required this.distance,
     this.intermediateStops,
     required this.interlineWithPreviousLeg,
+    required this.otherDepartures,
   });
 
   get color {
@@ -47,6 +50,17 @@ class Leg {
       return Colors.lightBlue.shade300;
     }
     return Colors.grey.shade400;
+  }
+
+  get otherDeparturesText {
+    if (otherDepartures.isEmpty) return "";
+    if (otherDepartures.length == 1) {
+      return formatTime(otherDepartures[0].realTime);
+    } else {
+      return "${otherDepartures.sublist(0, otherDepartures.length - 1).map((e) {
+        return formatTime(e.realTime);
+      }).join(", ")} and ${formatTime(otherDepartures.last.realTime)}";
+    }
   }
 }
 
@@ -80,6 +94,14 @@ class DepartureArrival {
               ? EstimatedTime.parse(json['estimated'] as Map<String, dynamic>)
               : null,
     );
+  }
+
+  get realTime {
+    if (estimated != null && estimated!.time != null) {
+      return estimated!.time;
+    } else {
+      return scheduledTime;
+    }
   }
 }
 

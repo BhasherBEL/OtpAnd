@@ -98,7 +98,6 @@ class _RoutePageState extends State<RoutePage>
     _timer = Timer.periodic(const Duration(minutes: 1), (_) {
       _updateLegs();
     });
-    _updateLegs();
   }
 
   void _stopAutoUpdate() {
@@ -555,6 +554,7 @@ class _RoutePageState extends State<RoutePage>
                               Padding(
                                 padding: const EdgeInsets.all(8.0),
                                 child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Row(
                                       crossAxisAlignment:
@@ -629,6 +629,15 @@ class _RoutePageState extends State<RoutePage>
                                         ),
                                       ],
                                     ),
+                                    if (leg.otherDepartures.isNotEmpty)
+                                      Padding(
+                                        padding: const EdgeInsets.only(
+                                          top: 8.0,
+                                        ),
+                                        child: Text(
+                                          'Also at ${leg.otherDeparturesText}',
+                                        ),
+                                      ),
                                     if (leg.transitLeg)
                                       IntermediateStopsWidget(
                                         stops: leg.intermediateStops!,

@@ -170,6 +170,28 @@ Future<Map<String, dynamic>> submitQuery({
 								}
 							}
               interlineWithPreviousLeg
+							previousLegs(numberOfLegs: 1) {
+								from {
+									departure {
+										estimated {
+											time
+											delay
+										}
+										scheduledTime
+									}
+								}
+							}
+							nextLegs(numberOfLegs: 2) {
+								from {
+									departure {
+										estimated {
+											time
+											delay
+										}
+										scheduledTime
+									}
+								}
+							}
             }
 
           }
@@ -275,6 +297,29 @@ Future<Leg?> fetchLegById(String legId) async {
           }
         }
         interlineWithPreviousLeg
+				previousLegs(numberOfLegs: 1) {
+					from {
+						departure {
+							estimated {
+								time
+								delay
+							}
+							scheduledTime
+						}
+					}
+				}
+				nextLegs(numberOfLegs: 2) {
+					from {
+						departure {
+							estimated {
+								time
+								delay
+							}
+							scheduledTime
+						}
+					}
+				}
+			}
       }
     }
   ''';

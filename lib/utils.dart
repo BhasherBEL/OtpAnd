@@ -28,13 +28,29 @@ String displayDistance(num distance) {
 }
 
 String displayTime(num time) {
-  if (time < 60) {
-    return '${round(time, -1)} sec';
+  if (time < 55) {
+    return '${round(time, -1)}s';
   }
-  if (time < 3600) {
+  if (time < 3570) {
     return '${round(time / 60, 0)} min';
   }
   return '${round(time / 3600, 0)} h ${round((time % 3600) / 60, 0)} min';
+}
+
+String displayPreciseTime(num time) {
+  if (time == 1) {
+    return '1 second';
+  }
+  if (time < 60) {
+    return '$time seconds';
+  }
+  if (time < 120) {
+    return '1 minute';
+  }
+  if (time < 3600) {
+    return '${round(time / 60, 0)} minutes';
+  }
+  return '${round(time / 3600, 0)} h ${round((time % 3600) / 60, 0)}';
 }
 
 String displayTimeShort(num time) {

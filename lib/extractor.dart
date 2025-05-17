@@ -43,9 +43,11 @@ Future<Leg> parseLeg(Map<String, dynamic> legJson) async {
   }
 
   return Leg(
+    id: legJson['id'] as String?,
     mode: legJson['mode'] ?? '',
     headsign: legJson['headsign'],
     transitLeg: legJson['transitLeg'] as bool,
+    realTime: legJson['realTime'] as bool,
     from: parsePlace(legJson['from'] as Map<String, dynamic>),
     to: parsePlace(legJson['to'] as Map<String, dynamic>),
     route: route,

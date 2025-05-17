@@ -4,7 +4,6 @@ import 'package:intl/intl.dart';
 import 'package:otpand/objs.dart';
 import 'package:otpand/extractor.dart';
 
-/// Returns a map: { "plans": List<Plan>, "pageInfo": Map }
 Future<Map<String, dynamic>> submitQuery({
   required Location fromLocation,
   required Location toLocation,
@@ -35,29 +34,9 @@ Future<Map<String, dynamic>> submitQuery({
     dtIso = DateFormat("yyyy-MM-ddTHH:mm").format(selectedDateTime) + localTZ;
   }
 
-  // build modes part
-  String modesStr = "";
-  switch (selectedMode) {
-    case "WALK":
-      modesStr = "modes: { direct: [WALK]}";
-      break;
-    case "BIKE":
-      modesStr = "modes: { direct: [BICYCLE]}";
-      break;
-    case "CAR":
-      modesStr = "modes: { direct: [CAR]}";
-      break;
-    case "TRANSIT":
-      modesStr =
-          "modes: { direct: [WALK], transit: { transit: [{ mode: BUS }, { mode: RAIL }, { mode: SUBWAY }, { mode: TRAM }, { mode: FERRY }] } }";
-      break;
-  }
-
-  // construct GraphQL
   String directionType =
       (timeType == "arrive") ? "latestArrival" : "earliestDeparture";
 
-  // Build variables map
   Map<String, dynamic> variables = {
     "origin": {
       "location": {
@@ -78,7 +57,6 @@ Future<Map<String, dynamic>> submitQuery({
   if (first != null) variables["first"] = first;
   if (last != null) variables["last"] = last;
 
-  // Build modes part for variables
   switch (selectedMode) {
     case "WALK":
       variables["modes"] = {
@@ -142,6 +120,7 @@ Future<Map<String, dynamic>> submitQuery({
               mode
               headsign
               transitLeg
+							realTime
               from {
                 name
                 lat
@@ -173,7 +152,6 @@ Future<Map<String, dynamic>> submitQuery({
               distance
 							intermediatePlaces {
 								stop {
-									name
 									gtfsId
 								}
 								arrival {
@@ -236,5 +214,89 @@ Future<Map<String, dynamic>> submitQuery({
     }
   } else {
     throw Exception("Error from backend: ${resp.statusCode}");
+  }
+}
+
+Future<Leg?> fetchLegById(String legId) async {
+  final String gql = '''
+    query LegById(\$id: String!) {
+      leg(id: \$id) {
+        id
+        mode
+        headsign
+        transitLeg
+				realTime
+        from {
+          name
+          lat
+          lon
+          departure {
+            scheduledTime
+            estimated {
+              time
+              delay
+            }
+          }
+        }
+        to {
+          name
+          lat
+          lon
+          arrival {
+            scheduledTime
+            estimated {
+              time
+              delay
+            }
+          }
+        }
+        route {
+          gtfsId
+        }
+        duration
+        distance
+        intermediatePlaces {
+          stop {
+            gtfsId
+          }
+          arrival {
+            scheduledTime
+            estimated {
+              time
+              delay
+            }
+          }
+          departure {
+            scheduledTime
+            estimated {
+              time
+              delay
+            }
+          }
+        }
+        interlineWithPreviousLeg
+      }
+    }
+  ''';
+
+  final resp = await http.post(
+    Uri.parse('https://maps.bhasher.com/otp/gtfs/v1'),
+    headers: {'Content-Type': 'application/json'},
+    body: jsonEncode({
+      'query': gql,
+      'variables': {'id': legId},
+    }),
+  );
+
+  if (resp.statusCode == 200) {
+    final data = jsonDecode(resp.body);
+    if (data['data'] != null && data['data']['leg'] != null) {
+      // Use your existing Leg parsing logic from extractor.dart
+      return parseLeg(data['data']['leg']);
+    } else {
+      return null;
+    }
+  } else {
+    return null;
   }
 }

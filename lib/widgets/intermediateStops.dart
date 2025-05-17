@@ -76,6 +76,7 @@ class _IntermediateStopsWidgetState extends State<IntermediateStopsWidget> {
                           ),
                         ),
                         Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Row(
                               children: [

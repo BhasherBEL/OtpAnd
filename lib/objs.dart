@@ -11,9 +11,11 @@ class Plan {
 }
 
 class Leg {
+  final String? id;
   final String mode;
   final String? headsign;
   final bool transitLeg;
+  final bool realTime;
   final Place from;
   final Place to;
   final RouteInfo? route;
@@ -23,9 +25,11 @@ class Leg {
   final bool interlineWithPreviousLeg;
 
   Leg({
+    required this.id,
     required this.mode,
     this.headsign,
     required this.transitLeg,
+    required this.realTime,
     required this.from,
     required this.to,
     this.route,

@@ -34,9 +34,9 @@ class _ProfilePageState extends State<ProfilePage> {
     'Transit',
     'Walk',
     'Bike',
-    'Bike P+R',
+    'Bike Park&Ride',
     'Car',
-    'Car P+R',
+    'Car Par&Ride',
     'Car Kiss&Ride',
   ];
 

@@ -6,6 +6,8 @@ import 'package:otpand/pages/routes.dart';
 import 'package:otpand/widgets/datetime_picker.dart';
 import 'package:otpand/widgets/searchbar.dart';
 import 'package:otpand/utils/colors.dart';
+import 'package:otpand/objects/profile.dart';
+import 'package:otpand/pages/profile.dart';
 
 class Journeys extends StatefulWidget {
   const Journeys({super.key});
@@ -21,6 +23,9 @@ class _JourneysState extends State<Journeys> {
     mode: DateTimePickerMode.now,
     dateTime: DateTime.now(),
   );
+
+  // Debug: blank profile
+  Profile profile = Profile.blank();
 
   @override
   Widget build(BuildContext context) {
@@ -150,18 +155,83 @@ class _JourneysState extends State<Journeys> {
                                           direction: Axis.horizontal,
                                           dashColor: Colors.grey,
                                         ),
+                                        // Profile picker row (full width)
                                         Row(
                                           children: [
                                             Expanded(
-                                              child: DateTimePicker(
-                                                value: dateTime,
-                                                onChanged: (value) {
-                                                  setState(() {
-                                                    dateTime = value;
-                                                  });
+                                              child: DropdownButtonFormField<
+                                                Profile
+                                              >(
+                                                value: profile,
+                                                items: [
+                                                  DropdownMenuItem(
+                                                    value: profile,
+                                                    child: Row(
+                                                      children: [
+                                                        CircleAvatar(
+                                                          backgroundColor:
+                                                              profile.color,
+                                                          radius: 10,
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 8,
+                                                        ),
+                                                        Text(
+                                                          profile
+                                                                  .name
+                                                                  .isNotEmpty
+                                                              ? profile.name
+                                                              : "Debug Profile",
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ],
+                                                onChanged: (selected) async {
+                                                  if (selected != null) {
+                                                    final updated =
+                                                        await Navigator.of(
+                                                          context,
+                                                        ).push<Profile>(
+                                                          MaterialPageRoute(
+                                                            builder:
+                                                                (
+                                                                  context,
+                                                                ) => ProfilePage(
+                                                                  profile:
+                                                                      selected,
+                                                                  onChanged: (
+                                                                    p,
+                                                                  ) {
+                                                                    setState(() {
+                                                                      profile =
+                                                                          p;
+                                                                    });
+                                                                  },
+                                                                ),
+                                                          ),
+                                                        );
+                                                    if (updated != null) {
+                                                      setState(() {
+                                                        profile = updated;
+                                                      });
+                                                    }
+                                                  }
                                                 },
+                                                decoration:
+                                                    const InputDecoration(
+                                                      labelText: "Profile",
+                                                      border: InputBorder.none,
+                                                      isDense: true,
+                                                      contentPadding:
+                                                          EdgeInsets.symmetric(
+                                                            vertical: 8,
+                                                            horizontal: 12,
+                                                          ),
+                                                    ),
                                               ),
                                             ),
+                                            const SizedBox(width: 8),
                                             Container(
                                               decoration: BoxDecoration(
                                                 color: primary500.withOpacity(
@@ -171,7 +241,32 @@ class _JourneysState extends State<Journeys> {
                                                     BorderRadius.circular(6),
                                               ),
                                               child: TextButton.icon(
-                                                onPressed: () {},
+                                                onPressed: () async {
+                                                  final updated =
+                                                      await Navigator.of(
+                                                        context,
+                                                      ).push<Profile>(
+                                                        MaterialPageRoute(
+                                                          builder:
+                                                              (
+                                                                context,
+                                                              ) => ProfilePage(
+                                                                profile:
+                                                                    profile,
+                                                                onChanged: (p) {
+                                                                  setState(() {
+                                                                    profile = p;
+                                                                  });
+                                                                },
+                                                              ),
+                                                        ),
+                                                      );
+                                                  if (updated != null) {
+                                                    setState(() {
+                                                      profile = updated;
+                                                    });
+                                                  }
+                                                },
                                                 icon: const Icon(
                                                   Icons.settings,
                                                   size: 18,
@@ -192,6 +287,22 @@ class _JourneysState extends State<Journeys> {
                                                       MaterialTapTargetSize
                                                           .shrinkWrap,
                                                 ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        // DateTime picker row (full width)
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: DateTimePicker(
+                                                value: dateTime,
+                                                onChanged: (value) {
+                                                  setState(() {
+                                                    dateTime = value;
+                                                  });
+                                                },
                                               ),
                                             ),
                                           ],

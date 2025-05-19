@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:otpand/db/crud/stops.dart';
 import 'package:otpand/objects/stop.dart';
+import 'package:otpand/pages/stop.dart';
 import 'package:otpand/utils.dart';
 
 class StopsPage extends StatefulWidget {
@@ -69,13 +70,36 @@ class _StopsPageState extends State<StopsPage> {
                                 search,
                               ));
                     }).toList();
+
                 if (filteredStops.isEmpty) {
                   return const Center(child: Text('No stops found.'));
                 }
+
+                final sortedStops =
+                    filteredStops..sort((aS, bS) {
+                      final a = aS.name.toLowerCase();
+                      final b = bS.name.toLowerCase();
+
+                      if (_filter.isEmpty) return a.compareTo(b);
+
+                      if (a.startsWith(_filter) && !b.startsWith(_filter)) {
+                        return -1;
+                      }
+                      if (b.startsWith(_filter) && !a.startsWith(_filter)) {
+                        return 1;
+                      }
+
+                      if (a.length != b.length) {
+                        return a.length - b.length;
+                      }
+
+                      return a.compareTo(b);
+                    });
+
                 return ListView.builder(
-                  itemCount: filteredStops.length,
+                  itemCount: sortedStops.length,
                   itemBuilder: (context, index) {
-                    final stop = filteredStops[index];
+                    final stop = sortedStops[index];
                     // Use stop.mode if available, otherwise default to "BUS"
                     final mode = (stop as dynamic).mode ?? "BUS";
                     return ListTile(
@@ -90,7 +114,12 @@ class _StopsPageState extends State<StopsPage> {
                               ? Text('Platform: ${stop.platformCode}')
                               : null,
                       onTap: () {
-                        // TODO: Navigate to Stop details page if available
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => StopPage(stop: stop),
+                          ),
+                        );
                       },
                     );
                   },

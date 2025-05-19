@@ -33,7 +33,6 @@ class _JourneysState extends State<Journeys> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // HEADER
                 Stack(
                   children: [
                     Container(

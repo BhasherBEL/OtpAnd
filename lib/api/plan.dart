@@ -1,13 +1,14 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:otpand/objects/profile.dart';
 import 'package:otpand/objs.dart';
 import 'package:otpand/extractor.dart';
 
 Future<Map<String, dynamic>> submitQuery({
   required Location fromLocation,
   required Location toLocation,
-  required String selectedMode,
+  required Profile profile,
   required String timeType,
   required DateTime? selectedDateTime,
   String? after,
@@ -51,43 +52,13 @@ Future<Map<String, dynamic>> submitQuery({
       "label": toLocation.name,
     },
     "dateTime": {directionType: dtIso},
+    "modes": profile.getPlanModes(),
+    "preferences": profile.getPlanPreferences(),
   };
   if (after != null) variables["after"] = after;
   if (before != null) variables["before"] = before;
   if (first != null) variables["first"] = first;
   if (last != null) variables["last"] = last;
-
-  switch (selectedMode) {
-    case "WALK":
-      variables["modes"] = {
-        "direct": ["WALK"],
-      };
-      break;
-    case "BIKE":
-      variables["modes"] = {
-        "direct": ["BICYCLE"],
-      };
-      break;
-    case "CAR":
-      variables["modes"] = {
-        "direct": ["CAR"],
-      };
-      break;
-    case "TRANSIT":
-      variables["modes"] = {
-        "direct": ["WALK"],
-        "transit": {
-          "transit": [
-            {"mode": "BUS"},
-            {"mode": "RAIL"},
-            {"mode": "SUBWAY"},
-            {"mode": "TRAM"},
-            {"mode": "FERRY"},
-          ],
-        },
-      };
-      break;
-  }
 
   String gql = '''
     query PlanConnection(
@@ -99,6 +70,7 @@ Future<Map<String, dynamic>> submitQuery({
       \$first: Int
       \$last: Int
       \$modes: PlanModesInput
+			\$preferences: PlanPreferencesInput
     ) {
       planConnection(
         origin: \$origin
@@ -109,6 +81,7 @@ Future<Map<String, dynamic>> submitQuery({
         first: \$first
         last: \$last
         modes: \$modes
+				preferences: \$preferences
       ) {
         edges {
           cursor
@@ -208,11 +181,14 @@ Future<Map<String, dynamic>> submitQuery({
 
   ''';
 
+  print(variables);
+
   final resp = await http.post(
     Uri.parse('https://maps.bhasher.com/otp/gtfs/v1'),
     headers: {'Content-Type': 'application/json'},
     body: jsonEncode({'query': gql, 'variables': variables}),
   );
+  print(resp.body);
   if (resp.statusCode == 200) {
     final data = jsonDecode(resp.body);
     if (data['data'] != null &&

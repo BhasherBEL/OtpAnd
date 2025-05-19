@@ -135,26 +135,6 @@ class _LegTile extends StatelessWidget {
             ? Colors.white
             : Colors.black);
 
-    Widget? leading;
-    Widget label;
-    if (leg.mode == "WALK") {
-      leading = const Icon(Icons.directions_walk, size: 18);
-      label = Text(
-        displayTimeShort(leg.duration),
-        style: TextStyle(fontWeight: FontWeight.w600, color: textColor),
-      );
-    } else {
-      leading = Icon(
-        leg.mode == "BUS" ? Icons.directions_bus : Icons.train,
-        size: 18,
-        color: textColor,
-      );
-      label = Text(
-        leg.route?.shortName ?? '',
-        style: TextStyle(fontWeight: FontWeight.bold, color: textColor),
-      );
-    }
-
     return Container(
       constraints: const BoxConstraints(minWidth: 48),
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
@@ -164,7 +144,16 @@ class _LegTile extends StatelessWidget {
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: [leading, const SizedBox(width: 4), label],
+        children: [
+          Icon(iconForMode(leg.mode), size: 18, color: textColor),
+          const SizedBox(width: 4),
+          Text(
+            (leg.mode == "WALK" || leg.mode == "BICYCLE")
+                ? displayTimeShort(leg.duration)
+                : leg.route?.shortName ?? '',
+            style: TextStyle(fontWeight: FontWeight.w600, color: textColor),
+          ),
+        ],
       ),
     );
   }

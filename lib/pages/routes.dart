@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:otpand/objects/profile.dart';
 import 'package:otpand/objs.dart';
 import 'package:otpand/pages/route.dart';
 import 'package:otpand/api/plan.dart';
@@ -12,7 +13,7 @@ import 'package:dotted_line/dotted_line.dart';
 class RoutesPage extends StatefulWidget {
   final Location fromLocation;
   final Location toLocation;
-  final String selectedMode;
+  final Profile profile;
   final String timeType;
   final DateTime? selectedDateTime;
 
@@ -20,7 +21,7 @@ class RoutesPage extends StatefulWidget {
     super.key,
     required this.fromLocation,
     required this.toLocation,
-    required this.selectedMode,
+    required this.profile,
     required this.timeType,
     required this.selectedDateTime,
   });
@@ -32,7 +33,7 @@ class RoutesPage extends StatefulWidget {
 class _RoutesPageState extends State<RoutesPage> {
   late Location? fromLocation;
   late Location? toLocation;
-  late String selectedMode;
+  late Profile profile;
   late String timeType;
   late DateTime? selectedDateTime;
 
@@ -54,7 +55,7 @@ class _RoutesPageState extends State<RoutesPage> {
     super.initState();
     fromLocation = widget.fromLocation;
     toLocation = widget.toLocation;
-    selectedMode = widget.selectedMode;
+    profile = widget.profile;
     timeType = widget.timeType;
     selectedDateTime = widget.selectedDateTime;
     _fetchPlans();
@@ -95,7 +96,7 @@ class _RoutesPageState extends State<RoutesPage> {
       final resp = await submitQuery(
         fromLocation: fromLocation!,
         toLocation: toLocation!,
-        selectedMode: selectedMode,
+        profile: profile,
         timeType: timeType,
         selectedDateTime: selectedDateTime,
         after: after,

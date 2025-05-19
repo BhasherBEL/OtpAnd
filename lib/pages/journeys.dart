@@ -332,7 +332,7 @@ class _JourneysState extends State<Journeys> {
                                                   (context) => RoutesPage(
                                                     fromLocation: fromLocation!,
                                                     toLocation: toLocation!,
-                                                    selectedMode: "TRANSIT",
+                                                    profile: profile,
                                                     timeType:
                                                         dateTime.mode ==
                                                                 DateTimePickerMode

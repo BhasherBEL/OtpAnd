@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:otpand/pages/journeys.dart';
-import 'package:otpand/pages/lines.dart';
 import 'package:otpand/pages/settings.dart';
 import 'package:otpand/pages/stops.dart';
 
@@ -14,12 +13,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
 
-  static final List<Widget> _pages = [
-    Journeys(),
-    LinesPage(),
-    StopsPage(),
-    SettingsPage(),
-  ];
+  static final List<Widget> _pages = [Journeys(), StopsPage(), SettingsPage()];
 
   void _onItemTapped(int index) {
     setState(() {
@@ -40,7 +34,6 @@ class _HomePageState extends State<HomePage> {
             icon: Icon(Icons.directions_transit),
             label: 'Journey',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.route), label: 'Lines'),
           BottomNavigationBarItem(
             icon: Icon(Icons.location_on),
             label: 'Stops',

@@ -1,14 +1,22 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:otpand/utils.dart';
 
 enum RouteMode {
-  bus('bus'),
-  rail('rail'),
-  subway('subway'),
-  tram('tram'),
-  unknown('unknown');
+  bus('bus', Icons.directions_bus, Colors.blue),
+  rail('rail', Icons.train, Colors.teal),
+  subway('subway', Icons.subway, Colors.deepOrange),
+  tram('tram', Icons.tram, Colors.purple),
+  walk('walk', Icons.directions_walk, Colors.green),
+  bicycle('bicycle', Icons.directions_bike, Colors.lightGreen),
+  car('car', Icons.directions_car, Colors.red),
+  ferry('ferry', Icons.directions_boat, Colors.grey),
+  unknown('unknown', Icons.question_mark, Colors.grey);
 
-  const RouteMode(String title);
+  final String name;
+  final IconData icon;
+  final Color color;
+
+  const RouteMode(this.name, this.icon, this.color);
 
   static RouteMode fromString(String? mode) {
     if (mode == null) return unknown;

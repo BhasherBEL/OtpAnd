@@ -7,14 +7,22 @@ Future<List<TimedStop>> fetchNextDepartures(Stop stop) async {
   final String gql = '''
     query NextDepartures(\$id: String!) {
       stop(id: \$id) {
-        stoptimesWithoutPatterns(omitNonPickups: true) {
-          headsign
-          scheduledDeparture
-          realtimeDeparture
-          serviceDay
-          realtime
-          realtimeArrival
-          scheduledArrival
+        stoptimesWithoutPatterns(omitNonPickups: true, omitCanceled: true) {
+					headsign
+					scheduledDeparture
+					realtimeDeparture
+					serviceDay
+					realtime
+					realtimeArrival
+					scheduledArrival
+					trip {
+						gtfsId
+						tripHeadsign
+						tripShortName
+						route {
+							gtfsId
+						}
+					}
         }
       }
     }
@@ -34,10 +42,13 @@ Future<List<TimedStop>> fetchNextDepartures(Stop stop) async {
     if (data['data'] != null &&
         data['data']['stop'] != null &&
         data['data']['stop']['stoptimesWithoutPatterns'] != null) {
-      final List stoptimes = data['data']['stop']['stoptimesWithoutPatterns'];
-      return stoptimes
-          .map<TimedStop>((json) => TimedStop.parseFromStoptime(stop, json))
-          .toList();
+      final stoptimesWithoutPatterns =
+          data['data']['stop']['stoptimesWithoutPatterns'] as List;
+      return Future.wait(
+        stoptimesWithoutPatterns.map(
+          (json) => TimedStop.parseFromStoptime(stop, json),
+        ),
+      );
     } else {
       throw Exception("No stoptimes found for this stop.");
     }

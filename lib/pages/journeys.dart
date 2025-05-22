@@ -52,7 +52,7 @@ class _JourneysState extends State<Journeys> {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(statusBarColor: primary500),
       child: Scaffold(
-        backgroundColor: primary50, // Background color
+        backgroundColor: primary50,
         body: SafeArea(
           child: SingleChildScrollView(
             child: Column(
@@ -360,6 +360,9 @@ class _JourneysState extends State<Journeys> {
                                               toLocation =
                                                   result['toLocation'] ??
                                                   toLocation;
+                                              if (result['profile'] != null) {
+                                                profile = result['profile'];
+                                              }
                                             });
                                           }
                                         } else {

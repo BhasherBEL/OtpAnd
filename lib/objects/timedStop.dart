@@ -1,4 +1,5 @@
 import 'package:otpand/objects/stop.dart';
+import 'package:otpand/objects/trip.dart';
 import 'package:otpand/objs.dart';
 
 class TimedStop {
@@ -6,26 +7,20 @@ class TimedStop {
   final DepartureArrival arrival;
   final DepartureArrival departure;
   final String? headSign;
+  final Trip? trip;
 
   TimedStop({
     required this.stop,
     required this.arrival,
     required this.departure,
     this.headSign,
+    this.trip,
   });
 
-  static TimedStop parse(Map<String, dynamic> json) {
-    return TimedStop(
-      stop: Stop.parse(json['stop'] as Map<String, dynamic>),
-      arrival: DepartureArrival.parse(json['arrival'] as Map<String, dynamic>),
-      departure: DepartureArrival.parse(
-        json['departure'] as Map<String, dynamic>,
-      ),
-      headSign: json['headSign'] as String?,
-    );
-  }
-
-  static TimedStop parseFromStoptime(Stop stop, Map<String, dynamic> json) {
+  static Future<TimedStop> parseFromStoptime(
+    Stop stop,
+    Map<String, dynamic> json,
+  ) async {
     final bool realtime = json['realtime'] == true;
     final int serviceDay = json['serviceDay'] ?? 0;
 
@@ -55,11 +50,8 @@ class TimedStop {
                 : null,
       ),
       headSign: json['headsign'] as String?,
+      trip: json['trip'] != null ? await Trip.parse(json['trip']) : null,
     );
-  }
-
-  static List<TimedStop> parseAll(List<dynamic> list) {
-    return list.map((e) => TimedStop.parse(e as Map<String, dynamic>)).toList();
   }
 
   Map<String, dynamic> toMap() {
@@ -68,6 +60,7 @@ class TimedStop {
       'arrival': arrival,
       'departure': departure,
       'headSign': headSign,
+      'trip': trip?.toMap(),
     };
   }
 }

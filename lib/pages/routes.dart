@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:otpand/db/crud/profiles.dart';
 import 'package:otpand/objects/profile.dart';
 import 'package:otpand/objs.dart';
+import 'package:otpand/pages/profile.dart';
 import 'package:otpand/pages/route.dart';
 import 'package:otpand/api/plan.dart';
 import 'package:otpand/utils/colors.dart';
@@ -34,6 +36,7 @@ class _RoutesPageState extends State<RoutesPage> {
   late Location? fromLocation;
   late Location? toLocation;
   late Profile profile;
+  List<Profile> profiles = [];
   late String timeType;
   late DateTime? selectedDateTime;
 
@@ -58,6 +61,19 @@ class _RoutesPageState extends State<RoutesPage> {
     profile = widget.profile;
     timeType = widget.timeType;
     selectedDateTime = widget.selectedDateTime;
+    _loadProfiles();
+  }
+
+  Future<void> _loadProfiles() async {
+    // Load all profiles for the dropdown
+    final loadedProfiles = await ProfileDao.getAll();
+    setState(() {
+      profiles = loadedProfiles;
+      // If the current profile is not in the list, add it
+      if (!profiles.any((p) => p.id == profile.id)) {
+        profiles.insert(0, profile);
+      }
+    });
     _fetchPlans();
   }
 
@@ -108,8 +124,8 @@ class _RoutesPageState extends State<RoutesPage> {
         final newPlans = resp["plans"] as List<Plan>;
 
         newPlans.sort((a, b) {
-          final aTime = DateTime.tryParse(a.start) ?? DateTime.now();
-          final bTime = DateTime.tryParse(b.start) ?? DateTime.now();
+          final aTime = DateTime.tryParse(a.end) ?? DateTime.now();
+          final bTime = DateTime.tryParse(b.end) ?? DateTime.now();
           return aTime.compareTo(bTime);
         });
 
@@ -125,8 +141,8 @@ class _RoutesPageState extends State<RoutesPage> {
         }
 
         results.sort((a, b) {
-          final aTime = DateTime.tryParse(a.start) ?? DateTime.now();
-          final bTime = DateTime.tryParse(b.start) ?? DateTime.now();
+          final aTime = DateTime.tryParse(a.end) ?? DateTime.now();
+          final bTime = DateTime.tryParse(b.end) ?? DateTime.now();
           return aTime.compareTo(bTime);
         });
 
@@ -248,35 +264,140 @@ class _RoutesPageState extends State<RoutesPage> {
             right: 10,
             bottom: 10,
           ),
-          child: Row(
+          child: Column(
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SearchBarWidget(
-                      initialValue: fromLocation?.displayName,
-                      selectedLocation: fromLocation,
-                      hintText: "From",
-                      onLocationSelected: _onFromLocationChanged,
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SearchBarWidget(
+                          initialValue: fromLocation?.displayName,
+                          selectedLocation: fromLocation,
+                          hintText: "From",
+                          onLocationSelected: _onFromLocationChanged,
+                        ),
+                        DottedLine(
+                          direction: Axis.horizontal,
+                          dashColor: Colors.grey,
+                        ),
+                        SearchBarWidget(
+                          initialValue: toLocation?.displayName,
+                          selectedLocation: toLocation,
+                          hintText: "To",
+                          onLocationSelected: _onToLocationChanged,
+                        ),
+                      ],
                     ),
-                    DottedLine(
-                      direction: Axis.horizontal,
-                      dashColor: Colors.grey,
-                    ),
-                    SearchBarWidget(
-                      initialValue: toLocation?.displayName,
-                      selectedLocation: toLocation,
-                      hintText: "To",
-                      onLocationSelected: _onToLocationChanged,
-                    ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: 10),
+                  IconButton(
+                    icon: Icon(Icons.swap_vert, color: primary500, size: 40),
+                    onPressed: _onSwap,
+                  ),
+                ],
               ),
-              const SizedBox(width: 10),
-              IconButton(
-                icon: Icon(Icons.swap_vert, color: primary500, size: 40),
-                onPressed: _onSwap,
+              const SizedBox(height: 8),
+              // Profile picker row (full width, just below toLocation)
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<Profile>(
+                      value:
+                          profiles.isNotEmpty
+                              ? profiles.firstWhere(
+                                (p) => p.id == profile.id,
+                                orElse: () => profile,
+                              )
+                              : profile,
+                      items:
+                          profiles.map((p) {
+                            return DropdownMenuItem(
+                              value: p,
+                              child: Row(
+                                children: [
+                                  CircleAvatar(
+                                    backgroundColor: p.color,
+                                    radius: 10,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    p.name.isNotEmpty
+                                        ? p.name
+                                        : "Profile ${p.id}",
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                      onChanged: (selected) {
+                        if (selected == null) return;
+                        setState(() {
+                          profile = selected;
+                        });
+                        if (fromLocation != null && toLocation != null) {
+                          _fetchPlans();
+                        }
+                      },
+                      decoration: const InputDecoration(
+                        labelText: "Profile",
+                        border: InputBorder.none,
+                        isDense: true,
+                        contentPadding: EdgeInsets.symmetric(
+                          vertical: 8,
+                          horizontal: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: primary500.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: TextButton.icon(
+                      onPressed: () async {
+                        final updated = await Navigator.of(
+                          context,
+                        ).push<Profile>(
+                          MaterialPageRoute(
+                            builder: (context) => ProfilePage(profile: profile),
+                          ),
+                        );
+                        if (updated != null) {
+                          setState(() {
+                            profile = updated;
+                            profiles =
+                                profiles
+                                    .map(
+                                      (p) => p.id == updated.id ? updated : p,
+                                    )
+                                    .toList();
+                          });
+                          if (fromLocation != null && toLocation != null) {
+                            _fetchPlans();
+                          }
+                        }
+                      },
+                      icon: const Icon(
+                        Icons.settings,
+                        size: 18,
+                        color: primary500,
+                      ),
+                      label: const Text(
+                        "Options",
+                        style: TextStyle(color: primary500),
+                      ),
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.symmetric(horizontal: 6),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -331,6 +452,87 @@ class _RoutesPageState extends State<RoutesPage> {
     );
   }
 
+  Widget _buildProfilePicker() {
+    return Row(
+      children: [
+        Expanded(
+          child: DropdownButtonFormField<Profile>(
+            value:
+                profiles.isNotEmpty
+                    ? profiles.firstWhere(
+                      (p) => p.id == profile.id,
+                      orElse: () => profile,
+                    )
+                    : profile,
+            items:
+                profiles.map((p) {
+                  return DropdownMenuItem(
+                    value: p,
+                    child: Row(
+                      children: [
+                        CircleAvatar(backgroundColor: p.color, radius: 10),
+                        const SizedBox(width: 8),
+                        Text(p.name.isNotEmpty ? p.name : "Profile ${p.id}"),
+                      ],
+                    ),
+                  );
+                }).toList(),
+            onChanged: (selected) {
+              if (selected == null) return;
+              setState(() {
+                profile = selected;
+              });
+              if (fromLocation != null && toLocation != null) {
+                _fetchPlans();
+              }
+            },
+            decoration: const InputDecoration(
+              labelText: "Profile",
+              border: InputBorder.none,
+              isDense: true,
+              contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: primary500.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: TextButton.icon(
+            onPressed: () async {
+              final updated = await Navigator.of(context).push<Profile>(
+                MaterialPageRoute(
+                  builder: (context) => ProfilePage(profile: profile),
+                ),
+              );
+              if (updated != null) {
+                setState(() {
+                  profile = updated;
+                  profiles =
+                      profiles
+                          .map((p) => p.id == updated.id ? updated : p)
+                          .toList();
+                });
+                if (fromLocation != null && toLocation != null) {
+                  _fetchPlans();
+                }
+              }
+            },
+            icon: const Icon(Icons.settings, size: 18, color: primary500),
+            label: const Text("Options", style: TextStyle(color: primary500)),
+            style: TextButton.styleFrom(
+              padding: EdgeInsets.symmetric(horizontal: 6),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -340,6 +542,7 @@ class _RoutesPageState extends State<RoutesPage> {
           Navigator.pop(context, {
             'fromLocation': fromLocation,
             'toLocation': toLocation,
+            'profile': profile,
           });
         }
       },

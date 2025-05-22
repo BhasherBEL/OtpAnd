@@ -96,7 +96,7 @@ IconData iconForMode(String mode) {
       return Icons.directions_bus;
     case "RAIL":
     case "SUBWAY":
-      return Icons.train;
+      return Icons.subway;
     case "TRAM":
       return Icons.tram;
     case "FERRY":

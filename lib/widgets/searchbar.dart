@@ -31,6 +31,16 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
     _selectedText = widget.initialValue;
   }
 
+  @override
+  void didUpdateWidget(covariant SearchBarWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialValue != oldWidget.initialValue) {
+      setState(() {
+        _selectedText = widget.initialValue;
+      });
+    }
+  }
+
   void _openSearchModal() async {
     final result = await showModalBottomSheet<Location?>(
       context: context,
@@ -132,18 +142,36 @@ class _FullScreenSearchModalState extends State<_FullScreenSearchModal> {
   }
 
   void _onTextChanged() {
-    final text = _controller.text.trim();
+    final text = _controller.text.trim().toLowerCase();
     if (text.isEmpty) {
       setState(() => _suggestions = _allStops);
       return;
     }
+    final filteredStops =
+        _allStops
+            .where((stop) => stop.name.toLowerCase().contains(text))
+            .toList();
     setState(() {
       _suggestions =
-          _allStops
-              .where(
-                (stop) => stop.name.toLowerCase().contains(text.toLowerCase()),
-              )
-              .toList();
+          filteredStops..sort((aS, bS) {
+            final a = aS.name.toLowerCase();
+            final b = bS.name.toLowerCase();
+
+            if (_suggestions.isEmpty) return a.compareTo(b);
+
+            if (a.startsWith(text) && !b.startsWith(text)) {
+              return -1;
+            }
+            if (b.startsWith(text) && !a.startsWith(text)) {
+              return 1;
+            }
+
+            if (a.length != b.length) {
+              return a.length - b.length;
+            }
+
+            return a.compareTo(b);
+          });
     });
   }
 

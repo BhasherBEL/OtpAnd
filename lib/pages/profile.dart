@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:otpand/db/crud/profiles.dart';
 
 import 'package:otpand/objects/profile.dart';
 
 class ProfilePage extends StatefulWidget {
   final Profile profile;
-  final void Function(Profile)? onChanged;
 
-  const ProfilePage({super.key, required this.profile, this.onChanged});
+  const ProfilePage({super.key, required this.profile});
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -319,17 +319,17 @@ class _ProfilePageState extends State<ProfilePage> {
                       onPressed:
                           transitMinimalTransferTime > 0
                               ? () => setState(
-                                () => transitMinimalTransferTime -= 10,
+                                () => transitMinimalTransferTime -= 1,
                               )
                               : null,
                     ),
-                    Text("$transitMinimalTransferTime s"),
+                    Text("$transitMinimalTransferTime m"),
                     IconButton(
                       icon: const Icon(Icons.add),
                       onPressed:
-                          transitMinimalTransferTime < 1800
+                          transitMinimalTransferTime < 60
                               ? () => setState(
-                                () => transitMinimalTransferTime += 10,
+                                () => transitMinimalTransferTime += 1,
                               )
                               : null,
                     ),
@@ -443,8 +443,9 @@ class _ProfilePageState extends State<ProfilePage> {
             const SizedBox(height: 24),
 
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 final updatedProfile = Profile(
+                  id: widget.profile.id,
                   name: _nameController.text,
                   color: _selectedColor,
                   avoidDirectWalking: avoidDirectWalking,
@@ -470,13 +471,13 @@ class _ProfilePageState extends State<ProfilePage> {
                   carKissRide: carKissRide,
                   carPickup: carPickup,
                 );
-                if (widget.onChanged != null) {
-                  widget.onChanged!(updatedProfile);
+                await ProfileDao.update(updatedProfile.id, updatedProfile);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Profile saved!')),
+                  );
+                  Navigator.of(context).pop(updatedProfile);
                 }
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(const SnackBar(content: Text('Profile saved!')));
-                Navigator.of(context).pop(updatedProfile);
               },
               style: ElevatedButton.styleFrom(backgroundColor: _selectedColor),
               child: const Text('Save'),

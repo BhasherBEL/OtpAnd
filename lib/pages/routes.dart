@@ -333,118 +333,129 @@ class _RoutesPageState extends State<RoutesPage> {
 
   @override
   Widget build(BuildContext context) {
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle(statusBarColor: primary500),
-      child: Scaffold(
-        backgroundColor: primary50,
-        body: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Stack(
-                children: [
-                  Container(
-                    width: double.infinity,
-                    height: 200,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(color: primary500),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            "How do we get there?",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          Navigator.pop(context, {
+            'fromLocation': fromLocation,
+            'toLocation': toLocation,
+          });
+        }
+      },
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle(statusBarColor: primary500),
+        child: Scaffold(
+          backgroundColor: primary50,
+          body: SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Stack(
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      height: 200,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(color: primary500),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              "How do we get there?",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        _buildSearchCard(),
-                      ],
+                          const SizedBox(height: 8),
+                          _buildSearchCard(),
+                        ],
+                      ),
                     ),
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
                   ),
-                ],
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                child: DateTimePicker(
-                  value: DateTimePickerValue(
-                    mode:
-                        timeType == "now"
-                            ? DateTimePickerMode.now
-                            : (timeType == "start"
-                                ? DateTimePickerMode.departure
-                                : DateTimePickerMode.arrival),
-                    dateTime: selectedDateTime ?? DateTime.now(),
+                  child: DateTimePicker(
+                    value: DateTimePickerValue(
+                      mode:
+                          timeType == "now"
+                              ? DateTimePickerMode.now
+                              : (timeType == "start"
+                                  ? DateTimePickerMode.departure
+                                  : DateTimePickerMode.arrival),
+                      dateTime: selectedDateTime ?? DateTime.now(),
+                    ),
+                    onChanged: _onDateTimeChanged,
                   ),
-                  onChanged: _onDateTimeChanged,
                 ),
-              ),
-              Expanded(
-                child: Builder(
-                  builder: (context) {
-                    if (isLoading && results.isEmpty) {
-                      return Center(child: CircularProgressIndicator());
-                    }
-                    if (errorMsg != null && results.isEmpty) {
-                      return Center(
-                        child: Text(
-                          errorMsg!,
-                          style: TextStyle(color: Colors.red),
-                        ),
-                      );
-                    }
-                    if (results.isEmpty) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 150),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            if (hasPreviousPage)
-                              _buildPaginationButton(
-                                text: "Show earlier trips",
-                                isLoading: isPaginatingBackward,
-                                onPressed:
-                                    (isPaginatingBackward ||
-                                            startCursor == null)
-                                        ? null
-                                        : () =>
-                                            _fetchPlans(before: startCursor),
+                Expanded(
+                  child: Builder(
+                    builder: (context) {
+                      if (isLoading && results.isEmpty) {
+                        return Center(child: CircularProgressIndicator());
+                      }
+                      if (errorMsg != null && results.isEmpty) {
+                        return Center(
+                          child: Text(
+                            errorMsg!,
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        );
+                      }
+                      if (results.isEmpty) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 150),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              if (hasPreviousPage)
+                                _buildPaginationButton(
+                                  text: "Show earlier trips",
+                                  isLoading: isPaginatingBackward,
+                                  onPressed:
+                                      (isPaginatingBackward ||
+                                              startCursor == null)
+                                          ? null
+                                          : () =>
+                                              _fetchPlans(before: startCursor),
+                                ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16.0,
+                                ),
+                                child: Text("No plans found."),
                               ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 16.0,
-                              ),
-                              child: Text("No plans found."),
-                            ),
-                            if (hasNextPage)
-                              _buildPaginationButton(
-                                text: "Show later trips",
-                                isLoading: isPaginatingForward,
-                                onPressed:
-                                    (isPaginatingForward || endCursor == null)
-                                        ? null
-                                        : () => _fetchPlans(after: endCursor),
-                              ),
-                          ],
-                        ),
-                      );
-                    }
-                    return _buildListView();
-                  },
+                              if (hasNextPage)
+                                _buildPaginationButton(
+                                  text: "Show later trips",
+                                  isLoading: isPaginatingForward,
+                                  onPressed:
+                                      (isPaginatingForward || endCursor == null)
+                                          ? null
+                                          : () => _fetchPlans(after: endCursor),
+                                ),
+                            ],
+                          ),
+                        );
+                      }
+                      return _buildListView();
+                    },
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

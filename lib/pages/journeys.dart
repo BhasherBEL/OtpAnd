@@ -1,6 +1,7 @@
 import 'package:dotted_line/dotted_line.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:otpand/db/crud/profiles.dart';
 import 'package:otpand/objs.dart';
 import 'package:otpand/pages/routes.dart';
 import 'package:otpand/widgets/datetime_picker.dart';
@@ -24,8 +25,27 @@ class _JourneysState extends State<Journeys> {
     dateTime: DateTime.now(),
   );
 
-  // Debug: blank profile
-  Profile profile = Profile.blank();
+  List<Profile> profiles = [];
+  Profile? profile;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfiles();
+  }
+
+  Future<void> _loadProfiles() async {
+    final loadedProfiles = await ProfileDao.getAll();
+    if (loadedProfiles.isEmpty) {
+      loadedProfiles.add(await ProfileDao.newProfile());
+    }
+    setState(() {
+      profiles = loadedProfiles;
+      if (profiles.isNotEmpty) {
+        profile ??= profiles.first;
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -163,60 +183,34 @@ class _JourneysState extends State<Journeys> {
                                                 Profile
                                               >(
                                                 value: profile,
-                                                items: [
-                                                  DropdownMenuItem(
-                                                    value: profile,
-                                                    child: Row(
-                                                      children: [
-                                                        CircleAvatar(
-                                                          backgroundColor:
-                                                              profile.color,
-                                                          radius: 10,
+                                                items:
+                                                    profiles.map((p) {
+                                                      return DropdownMenuItem(
+                                                        value: p,
+                                                        child: Row(
+                                                          children: [
+                                                            CircleAvatar(
+                                                              backgroundColor:
+                                                                  p.color,
+                                                              radius: 10,
+                                                            ),
+                                                            const SizedBox(
+                                                              width: 8,
+                                                            ),
+                                                            Text(
+                                                              p.name.isNotEmpty
+                                                                  ? p.name
+                                                                  : "Profile ${p.id}",
+                                                            ),
+                                                          ],
                                                         ),
-                                                        const SizedBox(
-                                                          width: 8,
-                                                        ),
-                                                        Text(
-                                                          profile
-                                                                  .name
-                                                                  .isNotEmpty
-                                                              ? profile.name
-                                                              : "Debug Profile",
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ],
-                                                onChanged: (selected) async {
-                                                  if (selected != null) {
-                                                    final updated =
-                                                        await Navigator.of(
-                                                          context,
-                                                        ).push<Profile>(
-                                                          MaterialPageRoute(
-                                                            builder:
-                                                                (
-                                                                  context,
-                                                                ) => ProfilePage(
-                                                                  profile:
-                                                                      selected,
-                                                                  onChanged: (
-                                                                    p,
-                                                                  ) {
-                                                                    setState(() {
-                                                                      profile =
-                                                                          p;
-                                                                    });
-                                                                  },
-                                                                ),
-                                                          ),
-                                                        );
-                                                    if (updated != null) {
-                                                      setState(() {
-                                                        profile = updated;
-                                                      });
-                                                    }
-                                                  }
+                                                      );
+                                                    }).toList(),
+                                                onChanged: (selected) {
+                                                  if (selected == null) return;
+                                                  setState(() {
+                                                    profile = selected;
+                                                  });
                                                 },
                                                 decoration:
                                                     const InputDecoration(
@@ -242,6 +236,7 @@ class _JourneysState extends State<Journeys> {
                                               ),
                                               child: TextButton.icon(
                                                 onPressed: () async {
+                                                  if (profile == null) return;
                                                   final updated =
                                                       await Navigator.of(
                                                         context,
@@ -252,18 +247,23 @@ class _JourneysState extends State<Journeys> {
                                                                 context,
                                                               ) => ProfilePage(
                                                                 profile:
-                                                                    profile,
-                                                                onChanged: (p) {
-                                                                  setState(() {
-                                                                    profile = p;
-                                                                  });
-                                                                },
+                                                                    profile!,
                                                               ),
                                                         ),
                                                       );
                                                   if (updated != null) {
                                                     setState(() {
                                                       profile = updated;
+                                                      profiles =
+                                                          profiles
+                                                              .map(
+                                                                (p) =>
+                                                                    p.id ==
+                                                                            updated.id
+                                                                        ? updated
+                                                                        : p,
+                                                              )
+                                                              .toList();
                                                     });
                                                   }
                                                 },
@@ -323,16 +323,19 @@ class _JourneysState extends State<Journeys> {
                                           borderRadius: BorderRadius.zero,
                                         ),
                                       ),
-                                      onPressed: () {
+                                      onPressed: () async {
                                         if (fromLocation != null &&
-                                            toLocation != null) {
-                                          Navigator.of(context).push(
+                                            toLocation != null &&
+                                            profile != null) {
+                                          final result = await Navigator.of(
+                                            context,
+                                          ).push(
                                             MaterialPageRoute(
                                               builder:
                                                   (context) => RoutesPage(
                                                     fromLocation: fromLocation!,
                                                     toLocation: toLocation!,
-                                                    profile: profile,
+                                                    profile: profile!,
                                                     timeType:
                                                         dateTime.mode ==
                                                                 DateTimePickerMode
@@ -348,6 +351,17 @@ class _JourneysState extends State<Journeys> {
                                                   ),
                                             ),
                                           );
+                                          print(result);
+                                          if (result != null) {
+                                            setState(() {
+                                              fromLocation =
+                                                  result['fromLocation'] ??
+                                                  fromLocation;
+                                              toLocation =
+                                                  result['toLocation'] ??
+                                                  toLocation;
+                                            });
+                                          }
                                         } else {
                                           ScaffoldMessenger.of(
                                             context,

@@ -24,6 +24,36 @@ class DatabaseHelper {
 
   Future _onCreate(Database db, int version) async {
     await db.execute('''
+      CREATE TABLE profiles (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        color INTEGER NOT NULL,
+        avoidDirectWalking INTEGER NOT NULL,
+        walkPreference REAL NOT NULL,
+        walkSafetyPreference REAL NOT NULL,
+        walkSpeed REAL NOT NULL,
+        transit INTEGER NOT NULL,
+        transitPreference REAL NOT NULL,
+        transitWaitReluctance REAL NOT NULL,
+        transitTransferWorth REAL NOT NULL,
+        transitMinimalTransferTime INTEGER NOT NULL,
+        wheelchairAccessible INTEGER NOT NULL,
+        bike INTEGER NOT NULL,
+        bikePreference REAL NOT NULL,
+        bikeFlatnessPreference REAL NOT NULL,
+        bikeSafetyPreference REAL NOT NULL,
+        bikeSpeed REAL NOT NULL,
+        bikeFriendly INTEGER NOT NULL,
+        bikeParkRide INTEGER NOT NULL,
+        car INTEGER NOT NULL,
+        carPreference REAL NOT NULL,
+        carParkRide INTEGER NOT NULL,
+        carKissRide INTEGER NOT NULL,
+        carPickup INTEGER NOT NULL
+      )
+    ''');
+
+    await db.execute('''
       CREATE TABLE agencies (
         gtfsId TEXT PRIMARY KEY,
         name TEXT NOT NULL,

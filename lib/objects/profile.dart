@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:otpand/utils.dart';
 
 class Profile {
+  int id;
   String name;
   Color color;
 
@@ -32,6 +33,7 @@ class Profile {
   bool carPickup;
 
   Profile({
+    required this.id,
     required this.name,
     required this.color,
     required this.avoidDirectWalking,
@@ -58,32 +60,13 @@ class Profile {
     required this.carPickup,
   });
 
-  factory Profile.blank() => Profile(
-    name: 'New profile',
-    color: Colors.blue,
-    avoidDirectWalking: false,
-    walkPreference: 1.0, // 0.1 - 2
-    walkSafetyPreference: 0.5, // 0 - 1
-    walkSpeed: 5, // 2 - 10
-    transit: true,
-    transitPreference: 1.0, // 0.1 - 2
-    transitWaitReluctance: 1.0, // 0.1 - 2
-    transitTransferWorth: 0.0, // 0 - 15
-    transitMinimalTransferTime: 60, // 0 - 1800
-    wheelchairAccessible: false,
-    bike: false,
-    bikePreference: 1.0, // 0.1 - 2
-    bikeFlatnessPreference: 0.5, // 0 - 1
-    bikeSafetyPreference: 0.5, // 0 - 1
-    bikeSpeed: 15.0, // 5 - 40
-    bikeFriendly: false,
-    bikeParkRide: false,
-    car: false,
-    carPreference: 1.0, // 0.1 - 2
-    carParkRide: false,
-    carKissRide: false,
-    carPickup: false,
-  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Profile && runtimeType == other.runtimeType && id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 
   Map<String, dynamic> getPlanPreferences() {
     num bikeFlatnessRatio = round(
@@ -153,5 +136,69 @@ class Profile {
         "transfer": ["WALK", if (bikeFriendly) "BICYCLE"],
       },
     };
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'color': color.value,
+      'avoidDirectWalking': avoidDirectWalking ? 1 : 0,
+      'walkPreference': walkPreference,
+      'walkSafetyPreference': walkSafetyPreference,
+      'walkSpeed': walkSpeed,
+      'transit': transit ? 1 : 0,
+      'transitPreference': transitPreference,
+      'transitWaitReluctance': transitWaitReluctance,
+      'transitTransferWorth': transitTransferWorth,
+      'transitMinimalTransferTime': transitMinimalTransferTime,
+      'wheelchairAccessible': wheelchairAccessible ? 1 : 0,
+      'bike': bike ? 1 : 0,
+      'bikePreference': bikePreference,
+      'bikeFlatnessPreference': bikeFlatnessPreference,
+      'bikeSafetyPreference': bikeSafetyPreference,
+      'bikeSpeed': bikeSpeed,
+      'bikeFriendly': bikeFriendly ? 1 : 0,
+      'bikeParkRide': bikeParkRide ? 1 : 0,
+      'car': car ? 1 : 0,
+      'carPreference': carPreference,
+      'carParkRide': carParkRide ? 1 : 0,
+      'carKissRide': carKissRide ? 1 : 0,
+      'carPickup': carPickup ? 1 : 0,
+    };
+  }
+
+  static List<Profile> parseAll(List<dynamic> list) {
+    return list.map((e) => Profile.parse(e as Map<String, dynamic>)).toList();
+  }
+
+  static Profile parse(Map<String, dynamic> map) {
+    return Profile(
+      id: map['id'],
+      name: map['name'],
+      color: Color(map['color']),
+      avoidDirectWalking: map['avoidDirectWalking'] == 1,
+      walkPreference: map['walkPreference'],
+      walkSafetyPreference: map['walkSafetyPreference'],
+      walkSpeed: map['walkSpeed'],
+      transit: map['transit'] == 1,
+      transitPreference: map['transitPreference'],
+      transitWaitReluctance: map['transitWaitReluctance'],
+      transitTransferWorth: map['transitTransferWorth'],
+      transitMinimalTransferTime: map['transitMinimalTransferTime'],
+      wheelchairAccessible: map['wheelchairAccessible'] == 1,
+      bike: map['bike'] == 1,
+      bikePreference: map['bikePreference'],
+      bikeFlatnessPreference: map['bikeFlatnessPreference'],
+      bikeSafetyPreference: map['bikeSafetyPreference'],
+      bikeSpeed: map['bikeSpeed'],
+      bikeFriendly: map['bikeFriendly'] == 1,
+      bikeParkRide: map['bikeParkRide'] == 1,
+      car: map['car'] == 1,
+      carPreference: map['carPreference'],
+      carParkRide: map['carParkRide'] == 1,
+      carKissRide: map['carKissRide'] == 1,
+      carPickup: map['carPickup'] == 1,
+    );
   }
 }

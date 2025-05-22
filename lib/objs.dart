@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:otpand/objects/route.dart';
+import 'package:otpand/objects/stop.dart';
 import 'package:otpand/objects/timedStop.dart';
+import 'package:otpand/objects/trip.dart';
 import 'package:otpand/utils.dart';
 
 class Plan {
@@ -25,6 +27,8 @@ class Leg {
   final List<TimedStop>? intermediateStops;
   final bool interlineWithPreviousLeg;
   final List<DepartureArrival> otherDepartures;
+  final Trip? trip;
+  final String? serviceDate;
 
   Leg({
     required this.id,
@@ -40,6 +44,8 @@ class Leg {
     this.intermediateStops,
     required this.interlineWithPreviousLeg,
     required this.otherDepartures,
+    this.trip,
+    this.serviceDate,
   });
 
   get color {
@@ -70,6 +76,7 @@ class Place {
   final double lon;
   final DepartureArrival? departure;
   final DepartureArrival? arrival;
+  final Stop? stop;
 
   Place({
     required this.name,
@@ -77,6 +84,7 @@ class Place {
     required this.lon,
     this.departure,
     this.arrival,
+    this.stop,
   });
 }
 

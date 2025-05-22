@@ -3,8 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:otpand/objs.dart';
 import 'package:otpand/utils.dart';
 import 'package:otpand/utils/colors.dart';
+import 'package:otpand/widgets/routeIcon.dart';
 import 'package:timelines_plus/timelines_plus.dart';
 import 'package:otpand/widgets/intermediateStops.dart';
+import 'package:otpand/pages/trip.dart';
+import 'package:otpand/pages/stop.dart';
 import 'package:otpand/api/plan.dart';
 
 class RoutePage extends StatefulWidget {
@@ -390,7 +393,7 @@ class _RoutePageState extends State<RoutePage>
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
+                padding: const EdgeInsets.only(left: 8, right: 8, bottom: 32),
                 child: FixedTimeline.tileBuilder(
                   theme: TimelineThemeData(
                     nodePosition: 0,
@@ -439,20 +442,53 @@ class _RoutePageState extends State<RoutePage>
                           transferTime != null && transferTime > 0;
 
                       return Padding(
-                        padding: const EdgeInsets.only(left: 18.0, bottom: 4.0),
+                        padding: const EdgeInsets.only(left: 8.0, bottom: 4.0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
                               children: [
                                 Expanded(
-                                  child: Text(
-                                    place.name,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyMedium
-                                        ?.copyWith(fontWeight: FontWeight.w500),
-                                  ),
+                                  child:
+                                      (leg?.transitLeg == true ||
+                                              (leg == null &&
+                                                  previousLeg?.transitLeg ==
+                                                      true))
+                                          ? GestureDetector(
+                                            onTap: () {
+                                              final stop =
+                                                  leg?.from ?? previousLeg?.to;
+                                              if (place.stop != null) {
+                                                Navigator.of(context).push(
+                                                  MaterialPageRoute(
+                                                    builder:
+                                                        (context) => StopPage(
+                                                          stop: place.stop!,
+                                                        ),
+                                                  ),
+                                                );
+                                              }
+                                            },
+                                            child: Text(
+                                              place.name,
+                                              style: Theme.of(
+                                                context,
+                                              ).textTheme.bodyMedium?.copyWith(
+                                                fontWeight: FontWeight.w500,
+                                                decoration:
+                                                    TextDecoration.underline,
+                                                decorationColor: Colors.grey,
+                                              ),
+                                            ),
+                                          )
+                                          : Text(
+                                            place.name,
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.bodyMedium?.copyWith(
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
                                 ),
                                 if (hasTransfer)
                                   Text(
@@ -552,82 +588,56 @@ class _RoutePageState extends State<RoutePage>
                             ),
                             if (leg != null)
                               Padding(
-                                padding: const EdgeInsets.all(8.0),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8.0,
+                                ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      children: [
-                                        Container(
-                                          decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                          ),
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 4,
-                                          ),
-                                          margin: const EdgeInsets.only(
-                                            right: 8,
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              Icon(
-                                                iconForMode(leg.mode),
-                                                color: colorForMode(leg.mode),
-                                              ),
-                                              if (leg.route?.shortName !=
-                                                  null) ...[
-                                                const SizedBox(width: 6),
-                                                ClipRRect(
-                                                  borderRadius:
-                                                      BorderRadius.circular(6),
-                                                  child: ColoredBox(
-                                                    color:
-                                                        leg.route?.color ??
-                                                        colorForMode(leg.mode),
-                                                    child: SizedBox(
-                                                      width: 32,
-                                                      height: 32,
-                                                      child: Center(
-                                                        child: Text(
-                                                          leg
-                                                                  .route
-                                                                  ?.shortName ??
-                                                              '??',
-                                                          style: TextStyle(
-                                                            color:
-                                                                leg
-                                                                    .route
-                                                                    ?.textColor,
-                                                          ),
+                                    GestureDetector(
+                                      onTap:
+                                          leg.trip != null &&
+                                                  leg.serviceDate != null
+                                              ? () {
+                                                Navigator.of(context).push(
+                                                  MaterialPageRoute(
+                                                    builder:
+                                                        (context) => TripPage(
+                                                          trip: leg.trip!,
+                                                          serviceDate:
+                                                              leg.serviceDate!,
                                                         ),
-                                                      ),
-                                                    ),
                                                   ),
-                                                ),
-                                              ],
-                                            ],
-                                          ),
-                                        ),
-                                        Expanded(
-                                          child: Text(
-                                            leg.transitLeg
-                                                ? leg.headsign ??
-                                                    leg.route?.longName ??
-                                                    'Unknown'
-                                                : '${displayDistance(leg.distance)} - ${displayTime(leg.duration)}',
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w500,
+                                                );
+                                              }
+                                              : null,
+                                      child: Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+                                        children: [
+                                          if (leg.route != null)
+                                            RouteIconWidget(route: leg.route!),
+                                          Expanded(
+                                            child: Text(
+                                              leg.transitLeg
+                                                  ? leg.headsign ??
+                                                      leg.route?.longName ??
+                                                      'Unknown'
+                                                  : '${displayDistance(leg.distance)} - ${displayTime(leg.duration)}',
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w500,
+                                                decoration:
+                                                    leg.trip != null
+                                                        ? TextDecoration
+                                                            .underline
+                                                        : null,
+                                                decorationColor: Colors.grey,
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
                                     if (leg.otherDepartures.isNotEmpty)
                                       Padding(

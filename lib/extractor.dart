@@ -1,6 +1,7 @@
 import 'package:otpand/db/crud/routes.dart';
 import 'package:otpand/db/crud/stops.dart';
 import 'package:otpand/objects/timedStop.dart';
+import 'package:otpand/objects/trip.dart';
 
 import 'objs.dart';
 
@@ -57,7 +58,6 @@ Future<Leg> parseLeg(Map<String, dynamic> legJson) async {
       }
     }
   }
-  print(otherDepartures);
 
   return Leg(
     id: legJson['id'] as String?,
@@ -65,18 +65,23 @@ Future<Leg> parseLeg(Map<String, dynamic> legJson) async {
     headsign: legJson['headsign'],
     transitLeg: legJson['transitLeg'] as bool,
     realTime: legJson['realTime'] as bool,
-    from: parsePlace(legJson['from'] as Map<String, dynamic>),
-    to: parsePlace(legJson['to'] as Map<String, dynamic>),
+    from: await parsePlace(legJson['from'] as Map<String, dynamic>),
+    to: await parsePlace(legJson['to'] as Map<String, dynamic>),
     route: route,
+    trip:
+        legJson['trip'] != null
+            ? Trip.parseWithRoute(route, legJson['trip'])
+            : null,
     duration: legJson['duration'] as num,
     distance: legJson['distance'] as num,
     intermediateStops: intermediateStops,
     interlineWithPreviousLeg: legJson['interlineWithPreviousLeg'] as bool,
     otherDepartures: otherDepartures,
+    serviceDate: legJson['serviceDate'] as String?,
   );
 }
 
-Place parsePlace(Map<String, dynamic> placeJson) {
+Future<Place> parsePlace(Map<String, dynamic> placeJson) async {
   return Place(
     name: placeJson['name'] ?? '',
     lat: (placeJson['lat'] as num?)?.toDouble() ?? 0.0,
@@ -92,6 +97,10 @@ Place parsePlace(Map<String, dynamic> placeJson) {
             ? parseDepartureArrival(
               placeJson['arrival'] as Map<String, dynamic>,
             )
+            : null,
+    stop:
+        placeJson['stop'] != null
+            ? await StopDao().get(placeJson['stop']['gtfsId'] as String)
             : null,
   );
 }

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:otpand/objects/timedStop.dart';
+import 'package:otpand/objects/trip.dart';
 import 'package:otpand/objs.dart';
 import 'package:otpand/utils.dart';
+import 'package:otpand/pages/stop.dart';
 
 class IntermediateStopsWidget extends StatefulWidget {
   final List<TimedStop> stops;
@@ -70,9 +72,25 @@ class _IntermediateStopsWidgetState extends State<IntermediateStopsWidget> {
                         ),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: Text(
-                            stop.stop.name,
-                            style: Theme.of(context).textTheme.bodyMedium,
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) => StopPage(stop: stop.stop),
+                                ),
+                              );
+                            },
+                            child: Text(
+                              stop.stop.name,
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium?.copyWith(
+                                color: Colors.black,
+                                decoration: TextDecoration.underline,
+                                decorationColor: Colors.grey,
+                              ),
+                            ),
                           ),
                         ),
                         Column(

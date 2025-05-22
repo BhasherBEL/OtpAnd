@@ -1,3 +1,4 @@
+import 'package:otpand/db/crud/stops.dart';
 import 'package:otpand/objects/stop.dart';
 import 'package:otpand/objects/trip.dart';
 import 'package:otpand/objs.dart';
@@ -8,6 +9,7 @@ class TimedStop {
   final DepartureArrival departure;
   final String? headSign;
   final Trip? trip;
+  final String? serviceDate;
 
   TimedStop({
     required this.stop,
@@ -15,10 +17,11 @@ class TimedStop {
     required this.departure,
     this.headSign,
     this.trip,
+    this.serviceDate,
   });
 
   static Future<TimedStop> parseFromStoptime(
-    Stop stop,
+    Stop? stop,
     Map<String, dynamic> json,
   ) async {
     final bool realtime = json['realtime'] == true;
@@ -27,7 +30,8 @@ class TimedStop {
     String? toIso(int? secondsSinceMidnight) {
       if (secondsSinceMidnight == null) return null;
       final int unix = serviceDay + secondsSinceMidnight;
-      return DateTime.fromMillisecondsSinceEpoch(unix * 1000).toIso8601String();
+      final dt = DateTime.fromMillisecondsSinceEpoch(unix * 1000);
+      return dt.toIso8601String();
     }
 
     final String? scheduledArrival = toIso(json['scheduledArrival']);
@@ -35,8 +39,17 @@ class TimedStop {
     final String? scheduledDeparture = toIso(json['scheduledDeparture']);
     final String? realtimeDeparture = toIso(json['realtimeDeparture']);
 
+    stop ??= await StopDao().get(json['stop']['gtfsId'] as String);
+
+    String? serviceDate;
+    if (serviceDay != 0) {
+      final dt = DateTime.fromMillisecondsSinceEpoch(serviceDay * 1000);
+      serviceDate =
+          '${dt.year.toString().padLeft(4, '0')}${dt.month.toString().padLeft(2, '0')}${dt.day.toString().padLeft(2, '0')}';
+    }
+
     return TimedStop(
-      stop: stop,
+      stop: stop!,
       arrival: DepartureArrival(
         scheduledTime: scheduledArrival,
         estimated:
@@ -51,6 +64,7 @@ class TimedStop {
       ),
       headSign: json['headsign'] as String?,
       trip: json['trip'] != null ? await Trip.parse(json['trip']) : null,
+      serviceDate: serviceDate,
     );
   }
 
@@ -61,6 +75,17 @@ class TimedStop {
       'departure': departure,
       'headSign': headSign,
       'trip': trip?.toMap(),
+      'serviceDate': serviceDate,
     };
+  }
+
+  bool isPast() {
+    if (departure.realTime != null) {
+      DateTime dep = DateTime.parse(departure.realTime!);
+      return dep.isBefore(DateTime.now());
+    } else {
+      DateTime arr = DateTime.parse(arrival.realTime!);
+      return arr.isBefore(DateTime.now());
+    }
   }
 }

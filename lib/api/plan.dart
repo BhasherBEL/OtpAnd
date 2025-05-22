@@ -94,10 +94,14 @@ Future<Map<String, dynamic>> submitQuery({
               headsign
               transitLeg
 							realTime
+							serviceDate
               from {
                 name
                 lat
                 lon
+								stop {
+									gtfsId
+								}
                 departure {
                   scheduledTime
                   estimated {
@@ -110,6 +114,9 @@ Future<Map<String, dynamic>> submitQuery({
                 name
                 lat
                 lon
+								stop {
+									gtfsId
+								}
                 arrival {
                   scheduledTime
                   estimated {
@@ -121,6 +128,11 @@ Future<Map<String, dynamic>> submitQuery({
               route {
                 gtfsId
               }
+							trip {
+								gtfsId
+								tripHeadsign
+								tripShortName
+							}
               duration
               distance
 							intermediatePlaces {

@@ -9,14 +9,30 @@ class SmallRoute extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final legs = plan.legs;
+    final filteredLegs = <Leg>[];
+    for (int i = 0; i < plan.legs.length; i++) {
+      final leg = plan.legs[i];
+      if (i > 0 &&
+          leg.mode == "WALK" &&
+          plan.legs[i - 1].mode == "BICYCLE" &&
+          leg.distance < 100) {
+        continue;
+      }
+      filteredLegs.add(leg);
+    }
+
+    if (filteredLegs.isEmpty) {
+      filteredLegs.add(plan.legs.first);
+    }
+
     final departure =
-        formatTime(legs.first.from.departure?.scheduledTime) ?? '--:--';
-    final arrival = formatTime(legs.last.to.arrival?.scheduledTime) ?? '--:--';
+        formatTime(filteredLegs.first.from.departure?.scheduledTime) ?? '--:--';
+    final arrival =
+        formatTime(filteredLegs.last.to.arrival?.scheduledTime) ?? '--:--';
     final duration = displayTime(
       calculateDurationFromString(
-        legs.first.from.departure?.scheduledTime,
-        legs.last.to.arrival?.scheduledTime,
+        filteredLegs.first.from.departure?.scheduledTime,
+        filteredLegs.last.to.arrival?.scheduledTime,
       ),
     );
 
@@ -52,10 +68,10 @@ class SmallRoute extends StatelessWidget {
               LayoutBuilder(
                 builder: (context, constraints) {
                   final minWidths =
-                      legs.map((leg) {
-                        if (leg.mode == "WALK") {
-                          return 36.0 +
-                              (leg.distance.round().toString().length * 8);
+                      filteredLegs.map((leg) {
+                        if (leg.mode == "WALK" || leg.mode == "BICYCLE") {
+                          return 25.0 +
+                              (leg.distance.round().toString().length * 10);
                         } else {
                           return 48.0 +
                               ((leg.route?.shortName ?? '').length * 10);
@@ -69,7 +85,7 @@ class SmallRoute extends StatelessWidget {
 
                   final availableWidth = constraints.maxWidth;
 
-                  final totalHorizontalPadding = 2.0 * 2 * legs.length;
+                  final totalHorizontalPadding = 2.0 * 2 * filteredLegs.length;
                   final adjustedAvailableWidth = (availableWidth -
                           totalHorizontalPadding)
                       .clamp(0.0, double.infinity);
@@ -78,27 +94,27 @@ class SmallRoute extends StatelessWidget {
                           ? adjustedAvailableWidth - totalMinWidth
                           : 0.0;
 
-                  final totalDuration = legs.fold<num>(
+                  final totalDuration = filteredLegs.fold<num>(
                     0,
                     (sum, leg) => sum + leg.duration,
                   );
 
                   final widths = <double>[];
-                  for (int i = 0; i < legs.length; i++) {
+                  for (int i = 0; i < filteredLegs.length; i++) {
                     final proportion =
-                        (legs[i].duration / totalDuration).toDouble();
+                        (filteredLegs[i].duration / totalDuration).toDouble();
                     final addWidth = extraWidth * proportion;
                     widths.add(minWidths[i] + addWidth);
                   }
 
                   final row = Row(
                     children: [
-                      for (int i = 0; i < legs.length; i++)
+                      for (int i = 0; i < filteredLegs.length; i++)
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 2),
                           child: SizedBox(
                             width: widths[i],
-                            child: _LegTile(leg: legs[i]),
+                            child: _LegTile(leg: filteredLegs[i]),
                           ),
                         ),
                     ],

@@ -23,6 +23,15 @@ class Trip {
     );
   }
 
+  static Trip parseWithRoute(RouteInfo? route, Map<String, dynamic> json) {
+    return Trip(
+      gtfsId: json['gtfsId'] as String,
+      headsign: json['tripHeadsign'] as String?,
+      shortName: json['tripShortName'] as String?,
+      route: route,
+    );
+  }
+
   Map<String, dynamic> toMap() {
     return {'gtfsId': gtfsId, 'headsign': headsign, 'shortName': shortName};
   }

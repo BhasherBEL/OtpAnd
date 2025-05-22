@@ -96,11 +96,15 @@ class DepartureWidget extends StatelessWidget {
             const SizedBox(height: 4),
             GestureDetector(
               onTap:
-                  trip != null
+                  trip != null && timedStop.serviceDate != null
                       ? () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (context) => TripPage(trip: trip),
+                            builder:
+                                (context) => TripPage(
+                                  trip: trip,
+                                  serviceDate: timedStop.serviceDate!,
+                                ),
                           ),
                         );
                       }
@@ -109,7 +113,7 @@ class DepartureWidget extends StatelessWidget {
                 [
                   if (route?.shortName != null) route!.shortName,
                   if (trip?.shortName != null) trip!.shortName,
-                ].where((s) => s != null && s.isNotEmpty).join(' • '),
+                ].where((s) => s != null && s.isNotEmpty).join('•'),
                 style: const TextStyle(
                   fontSize: 14,
                   color: Colors.grey,

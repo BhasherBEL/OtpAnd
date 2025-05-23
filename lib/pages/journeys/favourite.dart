@@ -10,10 +10,12 @@ class FavouriteWidget extends StatelessWidget {
     super.key,
     required this.favourite,
     required this.onChanged,
+    this.color,
   });
 
   final Favourite favourite;
   final VoidCallback onChanged;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +33,7 @@ class FavouriteWidget extends StatelessWidget {
       },
       child: Container(
         decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
+          color: color ?? Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: primary500, width: 1),
         ),
@@ -44,8 +46,15 @@ class FavouriteWidget extends StatelessWidget {
                 children: [
                   if (favourite.stop != null &&
                       favourite.stop!.mode != null) ...[
-                    Icon(mode.icon, color: mode.color),
-                    const SizedBox(width: 4),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardColor,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      padding: const EdgeInsets.all(4),
+                      margin: const EdgeInsets.only(right: 8),
+                      child: Icon(mode.icon, color: mode.color, size: 20),
+                    ),
                   ],
                   Expanded(
                     child: Align(

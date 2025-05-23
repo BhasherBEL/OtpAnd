@@ -3,6 +3,10 @@ import 'package:otpand/api.dart';
 import 'package:otpand/db/crud/stops.dart';
 import 'package:otpand/objs.dart';
 import 'package:otpand/utils/gnss.dart';
+import 'package:otpand/db/crud/favourites.dart';
+import 'package:otpand/objects/favourite.dart';
+import 'package:otpand/widgets/search/favouriteItem.dart';
+import 'package:otpand/widgets/search/transitItem.dart';
 
 class SearchModal extends StatefulWidget {
   final bool showCurrentLocation;
@@ -47,11 +51,14 @@ class _SearchModalState extends State<SearchModal> {
   String? _error;
   List<Location> _suggestions = [];
   List<Location> _allStops = [];
+  List<Favourite> _favourites = [];
+  List<Favourite> _filteredFavourites = [];
 
   @override
   void initState() {
     super.initState();
     _loadStops();
+    _loadFavourites();
     _controller.addListener(_onTextChanged);
   }
 
@@ -76,15 +83,32 @@ class _SearchModalState extends State<SearchModal> {
     });
   }
 
+  Future<void> _loadFavourites() async {
+    final favs = await FavouriteDao().getAll();
+    if (mounted) {
+      setState(() {
+        _favourites = favs;
+        _filteredFavourites = favs;
+      });
+    }
+  }
+
   void _onTextChanged() {
     final text = _controller.text.trim().toLowerCase();
     if (text.isEmpty) {
-      setState(() => _suggestions = _allStops);
+      setState(() {
+        _suggestions = _allStops;
+        _filteredFavourites = _favourites;
+      });
       return;
     }
     final filteredStops =
         _allStops
             .where((stop) => stop.name.toLowerCase().contains(text))
+            .toList();
+    final filteredFavourites =
+        _favourites
+            .where((fav) => fav.name.toLowerCase().contains(text))
             .toList();
     setState(() {
       _suggestions =
@@ -107,6 +131,7 @@ class _SearchModalState extends State<SearchModal> {
 
             return a.compareTo(b);
           });
+      _filteredFavourites = filteredFavourites;
     });
   }
 
@@ -185,87 +210,122 @@ class _SearchModalState extends State<SearchModal> {
                     onSubmitted: (_) => _searchAddress(),
                   ),
                 ),
-                if (widget.showCurrentLocation)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    child: ListTile(
-                      leading: Icon(Icons.my_location, color: Colors.blue),
-                      title: Text("Current Location"),
-                      onTap: () async {
-                        setState(() {
-                          _loading = true;
-                          _error = null;
-                        });
-                        try {
-                          final loc = await getCurrentLocation();
-                          if (!mounted) return;
-                          if (loc != null) {
-                            Navigator.of(context).pop(loc);
-                          } else {
-                            setState(() {
-                              _error = "Location unavailable.";
-                              _loading = false;
-                            });
-                          }
-                        } catch (e) {
-                          setState(() {
-                            _error = "Location error: ${e.toString()}";
-                            _loading = false;
-                          });
-                        }
-                      },
-                    ),
-                  ),
-                if (widget.showFavourites)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 4,
-                    ),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        "Favourite",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                    ),
-                  ),
-                if (widget.showTransitStops)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 4,
-                    ),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        "Transit Stop",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                    ),
-                  ),
-                Expanded(
+                Flexible(
                   child:
                       _loading
                           ? Center(child: CircularProgressIndicator())
-                          : ListView.builder(
-                            itemCount: _suggestions.length,
-                            itemBuilder: (context, index) {
-                              final stop = _suggestions[index];
-                              return ListTile(
-                                title: Text(stop.displayName),
-                                onTap: () => Navigator.of(context).pop(stop),
-                              );
-                            },
+                          : ListView(
+                            padding: EdgeInsets.zero,
+                            children: [
+                              if (widget.showCurrentLocation)
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  child: ListTile(
+                                    leading: Icon(
+                                      Icons.my_location,
+                                      color: Colors.blue,
+                                    ),
+                                    title: Text("Current Location"),
+                                    onTap: () async {
+                                      setState(() {
+                                        _loading = true;
+                                        _error = null;
+                                      });
+                                      try {
+                                        final loc = await getCurrentLocation();
+                                        if (!context.mounted) return;
+                                        if (loc != null) {
+                                          Navigator.of(context).pop(loc);
+                                        } else {
+                                          setState(() {
+                                            _error = "Location unavailable.";
+                                            _loading = false;
+                                          });
+                                        }
+                                      } catch (e) {
+                                        setState(() {
+                                          _error =
+                                              "Location error: ${e.toString()}";
+                                          _loading = false;
+                                        });
+                                      }
+                                    },
+                                  ),
+                                ),
+                              if (widget.showFavourites &&
+                                  _filteredFavourites.isNotEmpty) ...[
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 4,
+                                  ),
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      "Favourite",
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.grey[700],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                ..._filteredFavourites.map(
+                                  (fav) => FavouriteItem(
+                                    favourite: fav,
+                                    onTap:
+                                        () => Navigator.of(
+                                          context,
+                                        ).pop(fav.toLocation()),
+                                  ),
+                                ),
+                              ],
+                              if (widget.showFavourites &&
+                                  _filteredFavourites.isEmpty &&
+                                  _controller.text.isEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 4,
+                                  ),
+                                  child: Text(
+                                    "No favourites yet.",
+                                    style: TextStyle(
+                                      color: Colors.grey[500],
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ),
+                              if (widget.showTransitStops &&
+                                  _suggestions.isNotEmpty) ...[
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 4,
+                                  ),
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      "Transit Stop",
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.grey[700],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                ..._suggestions.map(
+                                  (stop) => TransitItem(
+                                    stop: stop.stop!,
+                                    onTap:
+                                        () => Navigator.of(context).pop(stop),
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                 ),
                 Padding(

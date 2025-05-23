@@ -2,6 +2,7 @@ import 'package:dotted_line/dotted_line.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:otpand/db/crud/profiles.dart';
+import 'package:otpand/objects/history.dart';
 import 'package:otpand/objs.dart';
 import 'package:otpand/pages/journeys/favourites.dart';
 import 'package:otpand/pages/routes.dart';
@@ -21,18 +22,37 @@ class Journeys extends StatefulWidget {
 class _JourneysState extends State<Journeys> {
   Location? fromLocation;
   Location? toLocation;
-  DateTimePickerValue dateTime = DateTimePickerValue(
-    mode: DateTimePickerMode.now,
-    dateTime: DateTime.now(),
-  );
+  late DateTimePickerValue dateTime;
+  late final VoidCallback _historyListener;
 
   List<Profile> profiles = [];
   Profile? profile;
 
+  void updateFromHistory() {
+    fromLocation = History.current.value.fromLocation;
+    toLocation = History.current.value.toLocation;
+    dateTime =
+        History.current.value.dateTime ??
+        DateTimePickerValue(
+          mode: DateTimePickerMode.now,
+          dateTime: DateTime.now(),
+        );
+    profile = History.current.value.profile;
+  }
+
   @override
   void initState() {
     super.initState();
+    updateFromHistory();
     _loadProfiles();
+
+    _historyListener = () {
+      setState(() {
+        updateFromHistory();
+      });
+    };
+
+    History.current.addListener(_historyListener);
   }
 
   Future<void> _loadProfiles() async {
@@ -125,9 +145,9 @@ class _JourneysState extends State<Journeys> {
                                                 selectedLocation: fromLocation,
                                                 hintText: "From",
                                                 onLocationSelected: (location) {
-                                                  setState(() {
-                                                    fromLocation = location;
-                                                  });
+                                                  History.update(
+                                                    fromLocation: location,
+                                                  );
                                                 },
                                               ),
                                               DottedLine(
@@ -140,9 +160,9 @@ class _JourneysState extends State<Journeys> {
                                                 selectedLocation: toLocation,
                                                 hintText: "To",
                                                 onLocationSelected: (location) {
-                                                  setState(() {
-                                                    toLocation = location;
-                                                  });
+                                                  History.update(
+                                                    toLocation: location,
+                                                  );
                                                 },
                                               ),
                                             ],
@@ -156,11 +176,10 @@ class _JourneysState extends State<Journeys> {
                                             size: 40,
                                           ),
                                           onPressed: () {
-                                            setState(() {
-                                              final temp = fromLocation;
-                                              fromLocation = toLocation;
-                                              toLocation = temp;
-                                            });
+                                            History.update(
+                                              fromLocation: toLocation,
+                                              toLocation: fromLocation,
+                                            );
                                           },
                                         ),
                                       ],
@@ -209,9 +228,9 @@ class _JourneysState extends State<Journeys> {
                                                     }).toList(),
                                                 onChanged: (selected) {
                                                   if (selected == null) return;
-                                                  setState(() {
-                                                    profile = selected;
-                                                  });
+                                                  History.update(
+                                                    profile: selected,
+                                                  );
                                                 },
                                                 decoration:
                                                     const InputDecoration(
@@ -254,7 +273,6 @@ class _JourneysState extends State<Journeys> {
                                                       );
                                                   if (updated != null) {
                                                     setState(() {
-                                                      profile = updated;
                                                       profiles =
                                                           profiles
                                                               .map(
@@ -266,6 +284,9 @@ class _JourneysState extends State<Journeys> {
                                                               )
                                                               .toList();
                                                     });
+                                                    History.update(
+                                                      profile: updated,
+                                                    );
                                                   }
                                                 },
                                                 icon: const Icon(
@@ -300,9 +321,9 @@ class _JourneysState extends State<Journeys> {
                                               child: DateTimePicker(
                                                 value: dateTime,
                                                 onChanged: (value) {
-                                                  setState(() {
-                                                    dateTime = value;
-                                                  });
+                                                  History.update(
+                                                    dateTime: value,
+                                                  );
                                                 },
                                               ),
                                             ),
@@ -324,13 +345,11 @@ class _JourneysState extends State<Journeys> {
                                           borderRadius: BorderRadius.zero,
                                         ),
                                       ),
-                                      onPressed: () async {
+                                      onPressed: () {
                                         if (fromLocation != null &&
                                             toLocation != null &&
                                             profile != null) {
-                                          final result = await Navigator.of(
-                                            context,
-                                          ).push(
+                                          Navigator.of(context).push(
                                             MaterialPageRoute(
                                               builder:
                                                   (context) => RoutesPage(
@@ -352,20 +371,6 @@ class _JourneysState extends State<Journeys> {
                                                   ),
                                             ),
                                           );
-                                          print(result);
-                                          if (result != null) {
-                                            setState(() {
-                                              fromLocation =
-                                                  result['fromLocation'] ??
-                                                  fromLocation;
-                                              toLocation =
-                                                  result['toLocation'] ??
-                                                  toLocation;
-                                              if (result['profile'] != null) {
-                                                profile = result['profile'];
-                                              }
-                                            });
-                                          }
                                         } else {
                                           ScaffoldMessenger.of(
                                             context,
@@ -390,7 +395,32 @@ class _JourneysState extends State<Journeys> {
                     ),
                   ],
                 ),
-                FavouritesWidget(),
+                FavouritesWidget(
+                  onDragComplete: () {
+                    if (fromLocation != null &&
+                        toLocation != null &&
+                        profile != null) {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder:
+                              (context) => RoutesPage(
+                                fromLocation: fromLocation!,
+                                toLocation: toLocation!,
+                                profile: profile!,
+                                timeType:
+                                    dateTime.mode == DateTimePickerMode.now
+                                        ? "now"
+                                        : (dateTime.mode ==
+                                                DateTimePickerMode.departure
+                                            ? "depart"
+                                            : "arrive"),
+                                selectedDateTime: dateTime.dateTime,
+                              ),
+                        ),
+                      );
+                    }
+                  },
+                ),
               ],
             ),
           ),

@@ -8,7 +8,7 @@ import 'package:otpand/pages/route.dart';
 import 'package:otpand/api/plan.dart';
 import 'package:otpand/utils/colors.dart';
 import 'package:otpand/widgets/smallroute.dart';
-import 'package:otpand/widgets/searchbar.dart';
+import 'package:otpand/widgets/search/searchbar.dart';
 import 'package:otpand/widgets/datetime_picker.dart';
 import 'package:dotted_line/dotted_line.dart';
 

@@ -108,5 +108,16 @@ class DatabaseHelper {
         FOREIGN KEY (direction_id) REFERENCES directions(id)
       )
     ''');
+
+    await db.execute('''
+      CREATE TABLE favourites (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        lat REAL NOT NULL,
+        lon REAL NOT NULL,
+        stopGtfsId TEXT,
+				FOREIGN KEY (stopGtfsId) REFERENCES stops(gtfsId)
+      )
+    ''');
   }
 }

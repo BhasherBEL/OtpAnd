@@ -132,11 +132,13 @@ class Location {
   final String displayName;
   final double lat;
   final double lon;
+  final Stop? stop;
 
   Location({
     required this.name,
     required this.displayName,
     required this.lat,
     required this.lon,
+    this.stop,
   });
 }

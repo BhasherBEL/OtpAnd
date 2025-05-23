@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:otpand/db/crud/profiles.dart';
 import 'package:otpand/objs.dart';
+import 'package:otpand/pages/journeys/favourites.dart';
 import 'package:otpand/pages/routes.dart';
 import 'package:otpand/widgets/datetime_picker.dart';
-import 'package:otpand/widgets/searchbar.dart';
+import 'package:otpand/widgets/search/searchbar.dart';
 import 'package:otpand/utils/colors.dart';
 import 'package:otpand/objects/profile.dart';
 import 'package:otpand/pages/profile.dart';
@@ -389,6 +390,7 @@ class _JourneysState extends State<Journeys> {
                     ),
                   ],
                 ),
+                FavouritesWidget(),
               ],
             ),
           ),

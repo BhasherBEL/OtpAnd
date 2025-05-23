@@ -4,109 +4,43 @@ import 'package:otpand/db/crud/stops.dart';
 import 'package:otpand/objs.dart';
 import 'package:otpand/utils/gnss.dart';
 
-class SearchBarWidget extends StatefulWidget {
-  final String? initialValue;
-  final Location? selectedLocation;
-  final void Function(Location?) onLocationSelected;
-  final String hintText;
+class SearchModal extends StatefulWidget {
+  final bool showCurrentLocation;
+  final bool showFavourites;
+  final bool showTransitStops;
 
-  const SearchBarWidget({
+  const SearchModal({
     super.key,
-    this.initialValue,
-    this.selectedLocation,
-    required this.onLocationSelected,
-    this.hintText = "Search for a location...",
+    this.showCurrentLocation = true,
+    this.showFavourites = true,
+    this.showTransitStops = true,
   });
 
-  @override
-  State<SearchBarWidget> createState() => _SearchBarWidgetState();
-}
-
-class _SearchBarWidgetState extends State<SearchBarWidget> {
-  String? _selectedText;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedText = widget.initialValue;
-  }
-
-  @override
-  void didUpdateWidget(covariant SearchBarWidget oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.initialValue != oldWidget.initialValue) {
-      setState(() {
-        _selectedText = widget.initialValue;
-      });
-    }
-  }
-
-  void _openSearchModal() async {
-    final result = await showModalBottomSheet<Location?>(
+  static Future<Location?> show(
+    BuildContext context, {
+    bool showCurrentLocation = true,
+    bool showFavourites = true,
+    bool showTransitStops = true,
+  }) {
+    return showModalBottomSheet<Location?>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.white,
-      builder: (context) => const _FullScreenSearchModal(),
+      builder:
+          (context) => SearchModal(
+            showCurrentLocation: showCurrentLocation,
+            showFavourites: showFavourites,
+            showTransitStops: showTransitStops,
+          ),
     );
-    if (result != null) {
-      setState(() {
-        _selectedText = result.displayName;
-      });
-      widget.onLocationSelected(result);
-    }
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        GestureDetector(
-          onTap: _openSearchModal,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(
-              children: [
-                Icon(Icons.search, color: Colors.grey[600]),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    _selectedText ?? widget.hintText,
-                    style: TextStyle(
-                      color:
-                          _selectedText == null
-                              ? Colors.grey[500]
-                              : Colors.black,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        if (widget.selectedLocation != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 4.0),
-            child: Text(
-              "Selected: ${widget.selectedLocation!.displayName}",
-              style: TextStyle(color: Colors.green.shade700, fontSize: 12),
-            ),
-          ),
-      ],
-    );
-  }
+  State<SearchModal> createState() => _SearchModalState();
 }
 
-class _FullScreenSearchModal extends StatefulWidget {
-  const _FullScreenSearchModal();
-
-  @override
-  State<_FullScreenSearchModal> createState() => _FullScreenSearchModalState();
-}
-
-class _FullScreenSearchModalState extends State<_FullScreenSearchModal> {
+class _SearchModalState extends State<SearchModal> {
   final TextEditingController _controller = TextEditingController();
   String _lastSearchedText = '';
   bool _loading = false;
@@ -133,6 +67,7 @@ class _FullScreenSearchModalState extends State<_FullScreenSearchModal> {
                   displayName: stop.name,
                   lat: stop.lat,
                   lon: stop.lon,
+                  stop: stop,
                 ),
               )
               .toList();
@@ -250,71 +185,74 @@ class _FullScreenSearchModalState extends State<_FullScreenSearchModal> {
                     onSubmitted: (_) => _searchAddress(),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  child: ListTile(
-                    leading: Icon(Icons.my_location, color: Colors.blue),
-                    title: Text("Current Location"),
-                    onTap: () async {
-                      setState(() {
-                        _loading = true;
-                        _error = null;
-                      });
-                      try {
-                        final loc = await getCurrentLocation();
-                        if (!mounted) return;
-                        if (loc != null) {
-                          Navigator.of(context).pop(loc);
-                        } else {
+                if (widget.showCurrentLocation)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    child: ListTile(
+                      leading: Icon(Icons.my_location, color: Colors.blue),
+                      title: Text("Current Location"),
+                      onTap: () async {
+                        setState(() {
+                          _loading = true;
+                          _error = null;
+                        });
+                        try {
+                          final loc = await getCurrentLocation();
+                          if (!mounted) return;
+                          if (loc != null) {
+                            Navigator.of(context).pop(loc);
+                          } else {
+                            setState(() {
+                              _error = "Location unavailable.";
+                              _loading = false;
+                            });
+                          }
+                        } catch (e) {
                           setState(() {
-                            _error = "Location unavailable.";
+                            _error = "Location error: ${e.toString()}";
                             _loading = false;
                           });
                         }
-                      } catch (e) {
-                        setState(() {
-                          _error = "Location error: ${e.toString()}";
-                          _loading = false;
-                        });
-                      }
-                    },
+                      },
+                    ),
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 4,
-                  ),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      "Favourite",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[700],
+                if (widget.showFavourites)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 4,
+                    ),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        "Favourite",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[700],
+                        ),
                       ),
                     ),
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 4,
-                  ),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      "Transit Stop",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[700],
+                if (widget.showTransitStops)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 4,
+                    ),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        "Transit Stop",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[700],
+                        ),
                       ),
                     ),
                   ),
-                ),
                 Expanded(
                   child:
                       _loading

@@ -31,6 +31,14 @@ enum RouteMode {
         return subway;
       case 'tram':
         return tram;
+      case 'walk':
+        return walk;
+      case 'bicycle':
+        return bicycle;
+      case 'car':
+        return car;
+      case 'ferry':
+        return ferry;
       default:
         return unknown;
     }

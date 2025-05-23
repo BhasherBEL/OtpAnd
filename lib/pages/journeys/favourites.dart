@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:otpand/db/crud/favourites.dart';
 import 'package:otpand/objects/favourite.dart';
 import 'package:otpand/objs.dart';
+import 'package:otpand/pages/journeys/favourite.dart';
+import 'package:otpand/utils/colors.dart';
 import 'package:otpand/widgets/search/searchmodal.dart';
 
 class FavouritesWidget extends StatefulWidget {
@@ -50,28 +52,28 @@ class _FavouritesWidgetState extends State<FavouritesWidget> {
             items.add(null);
 
             return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              padding: const EdgeInsets.symmetric(horizontal: 10),
               child: GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: items.length,
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  childAspectRatio: 2.5,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  mainAxisExtent: 50,
                 ),
                 itemBuilder: (context, index) {
                   final fav = items[index];
                   if (fav == null) {
                     return DottedBorder(
                       borderType: BorderType.RRect,
-                      radius: const Radius.circular(16),
+                      radius: const Radius.circular(8),
                       dashPattern: const [6, 3],
-                      color: Colors.grey.shade400,
-                      strokeWidth: 1.5,
+                      color: primary500,
+                      strokeWidth: 1,
                       child: InkWell(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(8),
                         onTap: () async {
                           final Location? location = await SearchModal.show(
                             context,
@@ -88,16 +90,9 @@ class _FavouritesWidgetState extends State<FavouritesWidget> {
                         ),
                       ),
                     );
+                  } else {
+                    return FavouriteWidget(favourite: fav, onChanged: _reload);
                   }
-                  return Card(
-                    child: Center(
-                      child: Text(
-                        fav.name,
-                        style: const TextStyle(fontSize: 16),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  );
                 },
               ),
             );

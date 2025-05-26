@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:otpand/db/crud/profiles.dart';
 import 'package:otpand/objects/history.dart';
 import 'package:otpand/objs.dart';
+import 'package:otpand/pages/journeys/events.dart';
 import 'package:otpand/pages/journeys/favourites.dart';
 import 'package:otpand/pages/routes.dart';
 import 'package:otpand/widgets/datetime_picker.dart';
@@ -37,7 +38,7 @@ class _JourneysState extends State<Journeys> {
           mode: DateTimePickerMode.now,
           dateTime: DateTime.now(),
         );
-    profile = History.current.value.profile;
+    profile = History.current.value.profile ?? profiles.firstOrNull;
   }
 
   @override
@@ -421,6 +422,7 @@ class _JourneysState extends State<Journeys> {
                     }
                   },
                 ),
+                EventsWidget(),
               ],
             ),
           ),

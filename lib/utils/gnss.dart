@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+import 'package:geocoding/geocoding.dart' as geocoding;
 import 'package:geolocator/geolocator.dart';
 import 'package:otpand/objs.dart';
 
@@ -54,4 +56,35 @@ Future<List<double?>> distancesToCurrentLocation(
       loc.lon,
     );
   }).toList();
+}
+
+Future<(double, double)?> resolveAddress(
+  String address, {
+  BuildContext? context,
+}) async {
+  if (address.isEmpty) return null;
+  try {
+    final locations = await geocoding.locationFromAddress(address);
+
+    if (locations.isEmpty) {
+      if (context != null && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to find a location for this address.'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+      return null;
+    }
+
+    return (locations.first.latitude, locations.first.longitude);
+  } catch (e) {
+    if (context != null && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), duration: Duration(seconds: 3)),
+      );
+    }
+  }
+  return null;
 }

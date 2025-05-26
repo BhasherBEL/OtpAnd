@@ -7,6 +7,8 @@ import 'package:otpand/db/crud/favourites.dart';
 import 'package:otpand/objects/favourite.dart';
 import 'package:otpand/widgets/search/favouriteItem.dart';
 import 'package:otpand/widgets/search/transitItem.dart';
+import 'package:otpand/widgets/search/contactItem.dart';
+import 'package:flutter_contacts/flutter_contacts.dart';
 
 class SearchModal extends StatefulWidget {
   final bool showCurrentLocation;
@@ -53,13 +55,34 @@ class _SearchModalState extends State<SearchModal> {
   List<Location> _allStops = [];
   List<Favourite> _favourites = [];
   List<Favourite> _filteredFavourites = [];
+  List<Contact> _contacts = [];
+  List<Contact> _filteredContacts = [];
 
   @override
   void initState() {
     super.initState();
     _loadStops();
     _loadFavourites();
+    _loadContacts();
     _controller.addListener(_onTextChanged);
+  }
+
+  Future<void> _loadContacts() async {
+    try {
+      final contacts = await FlutterContacts.getContacts(
+        withProperties: true,
+        withThumbnail: true,
+      );
+      final filtered = contacts.where((c) => c.addresses.isNotEmpty).toList();
+      if (mounted) {
+        setState(() {
+          _contacts = filtered;
+          _filteredContacts = filtered;
+        });
+      }
+    } catch (e) {
+      // ignore error, just don't show contacts
+    }
   }
 
   Future<void> _loadStops() async {
@@ -99,6 +122,7 @@ class _SearchModalState extends State<SearchModal> {
       setState(() {
         _suggestions = _allStops;
         _filteredFavourites = _favourites;
+        _filteredContacts = _contacts;
       });
       return;
     }
@@ -109,6 +133,12 @@ class _SearchModalState extends State<SearchModal> {
     final filteredFavourites =
         _favourites
             .where((fav) => fav.name.toLowerCase().contains(text))
+            .toList();
+    final filteredContacts =
+        _contacts
+            .where(
+              (contact) => contact.displayName.toLowerCase().contains(text),
+            )
             .toList();
     setState(() {
       _suggestions =
@@ -132,6 +162,7 @@ class _SearchModalState extends State<SearchModal> {
             return a.compareTo(b);
           });
       _filteredFavourites = filteredFavourites;
+      _filteredContacts = filteredContacts;
     });
   }
 
@@ -299,6 +330,33 @@ class _SearchModalState extends State<SearchModal> {
                                     ),
                                   ),
                                 ),
+                              if (_filteredContacts.isNotEmpty) ...[
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 4,
+                                  ),
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      "Contacts",
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.grey[700],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                ..._filteredContacts.map(
+                                  (contact) => ContactItem(
+                                    contact: contact,
+                                    onTap:
+                                        (location) =>
+                                            Navigator.of(context).pop(location),
+                                    rootContext: context,
+                                  ),
+                                ),
+                              ],
                               if (widget.showTransitStops &&
                                   _suggestions.isNotEmpty) ...[
                                 Padding(

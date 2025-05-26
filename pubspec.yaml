@@ -47,6 +47,9 @@ dependencies:
   geolocator_android: 4.6.1
   maps_launcher: ^2.2.0
   dotted_border: ^2.1.0
+  flutter_contacts: ^1.1.9+2
+  geocoding: ^3.0.0
+  device_calendar: ^4.3.3
 
 dev_dependencies:
   flutter_test:

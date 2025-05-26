@@ -155,10 +155,11 @@ class _RoutesPageState extends State<RoutesPage> {
         hasNextPage = pageInfo?["hasNextPage"] ?? false;
         hasPreviousPage = pageInfo?["hasPreviousPage"] ?? false;
       });
-    } catch (e) {
+    } catch (e, stack) {
       setState(() {
         errorMsg = e.toString();
         print(errorMsg);
+        print(stack);
         isLoading = false;
         isPaginatingForward = false;
         isPaginatingBackward = false;

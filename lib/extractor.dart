@@ -25,18 +25,34 @@ Future<Leg> parseLeg(Map<String, dynamic> legJson) async {
           ? await RouteDao().get(legJson['route']['gtfsId'] as String)
           : null;
 
-  List<TimedStop>? intermediateStops;
+  List<TimedStop>? intermediate;
 
-  if (legJson['intermediatePlaces'] != null) {
-    intermediateStops = [];
-    for (final s in legJson['intermediatePlaces'] as List) {
+  if (legJson['serviceDate'] != null && legJson['trip'] != null) {
+    intermediate = [];
+    for (final s in legJson['trip']['stoptimes'] as List) {
       final stop = await StopDao().get(s['stop']['gtfsId'] as String);
       if (stop != null) {
-        intermediateStops.add(
+        intermediate.add(
           TimedStop(
             stop: stop,
-            arrival: DepartureArrival.parse(s['arrival']),
-            departure: DepartureArrival.parse(s['departure']),
+            arrival: DepartureArrival.parseFromStoptime(
+              legJson['serviceDate'],
+              s['scheduledArrival'],
+              s['realtime'],
+              s['realtimeArrival'],
+            ),
+            departure: DepartureArrival.parseFromStoptime(
+              legJson['serviceDate'],
+              s['scheduledDeparture'],
+              s['realtime'],
+              s['realtimeDeparture'],
+            ),
+            dropoffType: PickupDropoffType.fromString(
+              s['dropoffType'] as String?,
+            ),
+            pickupType: PickupDropoffType.fromString(
+              s['dropoffType'] as String?,
+            ),
           ),
         );
       }
@@ -74,7 +90,7 @@ Future<Leg> parseLeg(Map<String, dynamic> legJson) async {
             : null,
     duration: legJson['duration'] as num,
     distance: legJson['distance'] as num,
-    intermediateStops: intermediateStops,
+    tripStops: intermediate,
     interlineWithPreviousLeg: legJson['interlineWithPreviousLeg'] as bool,
     otherDepartures: otherDepartures,
     serviceDate: legJson['serviceDate'] as String?,

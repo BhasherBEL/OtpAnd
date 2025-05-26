@@ -650,7 +650,7 @@ class _RoutePageState extends State<RoutePage>
                                       ),
                                     if (leg.transitLeg)
                                       IntermediateStopsWidget(
-                                        stops: leg.intermediateStops!,
+                                        stops: leg.intermediateStops,
                                         leg: leg,
                                       ),
                                   ],

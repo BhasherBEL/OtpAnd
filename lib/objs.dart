@@ -24,7 +24,7 @@ class Leg {
   final RouteInfo? route;
   final num duration;
   final num distance;
-  final List<TimedStop>? intermediateStops;
+  final List<TimedStop>? tripStops;
   final bool interlineWithPreviousLeg;
   final List<DepartureArrival> otherDepartures;
   final Trip? trip;
@@ -41,7 +41,7 @@ class Leg {
     this.route,
     required this.duration,
     required this.distance,
-    this.intermediateStops,
+    this.tripStops,
     required this.interlineWithPreviousLeg,
     required this.otherDepartures,
     this.trip,
@@ -67,6 +67,26 @@ class Leg {
         return formatTime(e.realTime);
       }).join(", ")} and ${formatTime(otherDepartures.last.realTime)}";
     }
+  }
+
+  List<TimedStop> get intermediateStops {
+    if (tripStops == null || from.stop == null || to.stop == null) {
+      return [];
+    }
+
+    bool inBetween = false;
+    List<TimedStop> intermediateStops = [];
+
+    for (final timedStop in tripStops!) {
+      if (timedStop.stop == from.stop) {
+        inBetween = true;
+      } else if (timedStop.stop == to.stop) {
+        return intermediateStops;
+      } else if (inBetween) {
+        intermediateStops.add(timedStop);
+      }
+    }
+    return [];
   }
 }
 
@@ -102,6 +122,30 @@ class DepartureArrival {
               ? EstimatedTime.parse(json['estimated'] as Map<String, dynamic>)
               : null,
     );
+  }
+
+  static DepartureArrival parseFromStoptime(
+    String serviceDate,
+    int scheduledTime,
+    bool realtime,
+    int realtimeTime,
+  ) {
+    final year = int.parse(serviceDate.substring(0, 4));
+    final month = int.parse(serviceDate.substring(5, 7));
+    final day = int.parse(serviceDate.substring(8, 10));
+    final midnight = DateTime(year, month, day);
+
+    final scheduledDateTime = midnight.add(Duration(seconds: scheduledTime));
+    final scheduledIso = scheduledDateTime.toIso8601String();
+
+    EstimatedTime? estimated;
+    if (realtime) {
+      final realtimeDateTime = midnight.add(Duration(seconds: realtimeTime));
+      final realtimeIso = realtimeDateTime.toIso8601String();
+      estimated = EstimatedTime(time: realtimeIso);
+    }
+
+    return DepartureArrival(scheduledTime: scheduledIso, estimated: estimated);
   }
 
   get realTime {

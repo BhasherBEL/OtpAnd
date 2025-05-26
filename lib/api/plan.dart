@@ -132,28 +132,21 @@ Future<Map<String, dynamic>> submitQuery({
 								gtfsId
 								tripHeadsign
 								tripShortName
+								stoptimes {
+									stop {
+										gtfsId
+									}
+									scheduledArrival
+									realtimeArrival
+									scheduledDeparture
+									realtimeDeparture
+									realtime
+									dropoffType
+									pickupType
+								}
 							}
               duration
               distance
-							intermediatePlaces {
-								stop {
-									gtfsId
-								}
-								arrival {
-									scheduledTime
-									estimated {
-										time
-										delay
-									}
-								}
-								departure {
-									scheduledTime
-									estimated {
-										time
-										delay
-									}
-								}
-							}
               interlineWithPreviousLeg
 							previousLegs(numberOfLegs: 1) {
 								from {
@@ -192,8 +185,6 @@ Future<Map<String, dynamic>> submitQuery({
     }
 
   ''';
-
-  print(variables);
 
   final resp = await http.post(
     Uri.parse('https://maps.bhasher.com/otp/gtfs/v1'),
@@ -265,25 +256,23 @@ Future<Leg?> fetchLegById(String legId) async {
         }
         duration
         distance
-        intermediatePlaces {
-          stop {
-            gtfsId
-          }
-          arrival {
-            scheduledTime
-            estimated {
-              time
-              delay
-            }
-          }
-          departure {
-            scheduledTime
-            estimated {
-              time
-              delay
-            }
-          }
-        }
+				trip {
+					gtfsId
+					tripHeadsign
+					tripShortName
+					stoptimes {
+						stop {
+							gtfsId
+						}
+						scheduledArrival
+						realtimeArrival
+						scheduledDeparture
+						realtimeDeparture
+						realtime
+						dropoffType
+						pickupType
+					}
+				}
         interlineWithPreviousLeg
 				previousLegs(numberOfLegs: 1) {
 					from {

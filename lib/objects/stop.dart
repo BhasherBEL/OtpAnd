@@ -15,6 +15,16 @@ class Stop {
     this.mode,
   });
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Stop &&
+          runtimeType == other.runtimeType &&
+          gtfsId == other.gtfsId;
+
+  @override
+  int get hashCode => gtfsId.hashCode;
+
   static Stop parse(Map<String, dynamic> json) {
     return Stop(
       gtfsId: json['gtfsId'] as String,

@@ -3,6 +3,29 @@ import 'package:otpand/objects/stop.dart';
 import 'package:otpand/objects/trip.dart';
 import 'package:otpand/objs.dart';
 
+enum PickupDropoffType {
+  SCHEDULED(),
+  NONE(),
+  COORDINATE_WITH_DRIVER(),
+  CALL_AGENCY();
+
+  static PickupDropoffType? fromString(String? type) {
+    if (type == null) return null;
+    switch (type) {
+      case 'SCHEDULED':
+        return PickupDropoffType.SCHEDULED;
+      case 'NONE':
+        return PickupDropoffType.NONE;
+      case 'COORDINATE_WITH_DRIVER':
+        return PickupDropoffType.COORDINATE_WITH_DRIVER;
+      case 'CALL_AGENCY':
+        return PickupDropoffType.CALL_AGENCY;
+      default:
+        return null;
+    }
+  }
+}
+
 class TimedStop {
   final Stop stop;
   final DepartureArrival arrival;
@@ -10,6 +33,8 @@ class TimedStop {
   final String? headSign;
   final Trip? trip;
   final String? serviceDate;
+  final PickupDropoffType? dropoffType;
+  final PickupDropoffType? pickupType;
 
   TimedStop({
     required this.stop,
@@ -18,6 +43,8 @@ class TimedStop {
     this.headSign,
     this.trip,
     this.serviceDate,
+    this.dropoffType,
+    this.pickupType,
   });
 
   static Future<TimedStop> parseFromStoptime(

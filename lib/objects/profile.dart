@@ -122,18 +122,18 @@ class Profile {
       "transitOnly": (avoidDirectWalking && !bike && !car),
       "transit": {
         "access": [
-          "WALK",
+          if (!bikeFriendly) "WALK",
           if (bikeParkRide) "BICYCLE_PARKING",
           if (carParkRide) "CAR_PARKING",
           if (bikeFriendly) "BICYCLE",
           if (carKissRide) "CAR_DROP_OFF",
         ],
         "egress": [
-          "WALK",
+          if (!bikeFriendly) "WALK",
           if (bikeFriendly) "BICYCLE",
           if (carPickup) "CAR_PICKUP",
         ],
-        "transfer": ["WALK", if (bikeFriendly) "BICYCLE"],
+        "transfer": [if (!bikeFriendly) "WALK", if (bikeFriendly) "BICYCLE"],
       },
     };
   }

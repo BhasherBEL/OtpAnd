@@ -9,7 +9,6 @@ class ProfileDao {
   static Future<Profile> newProfile() async {
     final db = await DatabaseHelper().database;
     final id = await db.insert(table, {
-      'id': 0,
       'name': 'New profile',
       'color': Colors.blue.value,
       'avoidDirectWalking': 0,
@@ -78,7 +77,6 @@ class ProfileDao {
     return await db.delete(table, where: 'id = ?', whereArgs: [id]);
   }
 
-  // Ensure at least one profile exists (create new on first startup)
   static Future<void> ensureBlankProfile() async {
     final db = await DatabaseHelper().database;
     final count = Sqflite.firstIntValue(

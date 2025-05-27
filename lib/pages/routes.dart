@@ -158,8 +158,8 @@ class _RoutesPageState extends State<RoutesPage> {
     } catch (e, stack) {
       setState(() {
         errorMsg = e.toString();
-        print(errorMsg);
-        print(stack);
+        debugPrint(errorMsg);
+        debugPrintStack(stackTrace: stack, label: "Error fetching plans");
         isLoading = false;
         isPaginatingForward = false;
         isPaginatingBackward = false;
@@ -450,87 +450,6 @@ class _RoutesPageState extends State<RoutesPage> {
           },
         );
       },
-    );
-  }
-
-  Widget _buildProfilePicker() {
-    return Row(
-      children: [
-        Expanded(
-          child: DropdownButtonFormField<Profile>(
-            value:
-                profiles.isNotEmpty
-                    ? profiles.firstWhere(
-                      (p) => p.id == profile.id,
-                      orElse: () => profile,
-                    )
-                    : profile,
-            items:
-                profiles.map((p) {
-                  return DropdownMenuItem(
-                    value: p,
-                    child: Row(
-                      children: [
-                        CircleAvatar(backgroundColor: p.color, radius: 10),
-                        const SizedBox(width: 8),
-                        Text(p.name.isNotEmpty ? p.name : "Profile ${p.id}"),
-                      ],
-                    ),
-                  );
-                }).toList(),
-            onChanged: (selected) {
-              if (selected == null) return;
-              setState(() {
-                profile = selected;
-              });
-              if (fromLocation != null && toLocation != null) {
-                _fetchPlans();
-              }
-            },
-            decoration: const InputDecoration(
-              labelText: "Profile",
-              border: InputBorder.none,
-              isDense: true,
-              contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Container(
-          decoration: BoxDecoration(
-            color: primary500.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: TextButton.icon(
-            onPressed: () async {
-              final updated = await Navigator.of(context).push<Profile>(
-                MaterialPageRoute(
-                  builder: (context) => ProfilePage(profile: profile),
-                ),
-              );
-              if (updated != null) {
-                setState(() {
-                  profile = updated;
-                  profiles =
-                      profiles
-                          .map((p) => p.id == updated.id ? updated : p)
-                          .toList();
-                });
-                if (fromLocation != null && toLocation != null) {
-                  _fetchPlans();
-                }
-              }
-            },
-            icon: const Icon(Icons.settings, size: 18, color: primary500),
-            label: const Text("Options", style: TextStyle(color: primary500)),
-            style: TextButton.styleFrom(
-              padding: EdgeInsets.symmetric(horizontal: 6),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-          ),
-        ),
-      ],
     );
   }
 

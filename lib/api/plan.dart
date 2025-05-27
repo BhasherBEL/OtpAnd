@@ -186,6 +186,9 @@ Future<Map<String, dynamic>> submitQuery({
 
   ''';
 
+  // print(gql.replaceAll('\n', ' ').replaceAll(RegExp(r'\s+'), ' ').trim());
+  // print(variables);
+
   final resp = await http.post(
     Uri.parse('https://maps.bhasher.com/otp/gtfs/v1'),
     headers: {'Content-Type': 'application/json'},

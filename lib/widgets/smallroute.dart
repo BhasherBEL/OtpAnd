@@ -14,7 +14,8 @@ class SmallRoute extends StatelessWidget {
       final leg = plan.legs[i];
       if (i > 0 &&
           leg.mode == "WALK" &&
-          plan.legs[i - 1].mode == "BICYCLE" &&
+          (plan.legs[i - 1].mode == "BICYCLE" ||
+              plan.legs[i - 1].mode == "CAR") &&
           leg.distance < 100) {
         continue;
       }

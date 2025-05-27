@@ -6,6 +6,7 @@ import 'package:otpand/objects/history.dart';
 import 'package:otpand/objs.dart';
 import 'package:otpand/pages/journeys/favourite.dart';
 import 'package:otpand/utils/colors.dart';
+import 'package:otpand/utils/gnss.dart';
 import 'package:otpand/widgets/search/searchmodal.dart';
 
 class FavouritesWidget extends StatefulWidget {
@@ -22,10 +23,18 @@ class _FavouritesWidgetState extends State<FavouritesWidget> {
 
   Favourite? _dragSource;
   Favourite? _dragTarget;
-  Offset? _dragStartOffset; // global
-  Offset? _dragCurrentOffset; // global
+  Offset? _dragStartOffset;
+  Offset? _dragCurrentOffset;
 
   final GlobalKey _stackKey = GlobalKey();
+
+  final Favourite currentLocation = Favourite(
+    id: -1,
+    name: 'Current Location',
+    lat: 0,
+    lon: 0,
+    stop: null,
+  );
 
   @override
   void initState() {
@@ -48,6 +57,20 @@ class _FavouritesWidgetState extends State<FavouritesWidget> {
     return globalOffset;
   }
 
+  bool _isOnKey(GlobalKey key, Offset position) {
+    final context = key.currentContext;
+    if (context != null) {
+      final box = context.findRenderObject() as RenderBox?;
+      if (box != null && box.hasSize) {
+        final pos = box.localToGlobal(Offset.zero);
+        final size = box.size;
+        final rect = pos & size;
+        return rect.contains(position);
+      }
+    }
+    return false;
+  }
+
   void _onDragStarted(Favourite fav, Offset globalPosition) {
     setState(() {
       _dragSource = fav;
@@ -60,18 +83,6 @@ class _FavouritesWidgetState extends State<FavouritesWidget> {
   void _onDragUpdate(Offset globalPosition) {
     setState(() {
       _dragCurrentOffset = globalPosition;
-    });
-  }
-
-  void _onDragEntered(Favourite fav) {
-    setState(() {
-      _dragTarget = fav;
-    });
-  }
-
-  void _onDragExited(Favourite fav) {
-    setState(() {
-      if (_dragTarget == fav) _dragTarget = null;
     });
   }
 
@@ -88,59 +99,152 @@ class _FavouritesWidgetState extends State<FavouritesWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final pinKey = GlobalKey<State>();
     return Padding(
       padding: const EdgeInsets.all(8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Favourites', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          FutureBuilder<List<Favourite>>(
-            future: _favouritesFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              final favourites = snapshot.data ?? [];
-              final items = List<Favourite?>.from(favourites);
-              items.add(null);
+      child: FutureBuilder<List<Favourite>>(
+        future: _favouritesFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final favourites = snapshot.data ?? [];
+          final items = List<Favourite?>.from(favourites);
+          items.add(null);
 
-              while (_cardKeys.length < items.length) {
-                _cardKeys.add(GlobalKey());
-              }
-              while (_cardKeys.length > items.length) {
-                _cardKeys.removeLast();
-              }
+          while (_cardKeys.length < items.length) {
+            _cardKeys.add(GlobalKey());
+          }
+          while (_cardKeys.length > items.length) {
+            _cardKeys.removeLast();
+          }
 
-              void updateDragTarget(Offset globalPosition) {
-                for (int i = 0; i < items.length; i++) {
-                  final fav = items[i];
-                  if (fav == null) continue;
-                  final key = _cardKeys[i];
-                  final context = key.currentContext;
-                  if (context == null) continue;
-                  final box = context.findRenderObject() as RenderBox?;
-                  if (box == null || !box.hasSize) continue;
-                  final pos = box.localToGlobal(Offset.zero);
-                  final size = box.size;
-                  final rect = pos & size;
-                  if (rect.contains(globalPosition)) {
-                    if (_dragTarget != fav) {
-                      setState(() {
-                        _dragTarget = fav;
-                      });
-                    }
-                    return;
-                  }
-                }
-                if (_dragTarget != null) {
+          void updateDragTarget(Offset globalPosition) {
+            if (_isOnKey(pinKey, globalPosition)) {
+              if (_dragTarget != currentLocation) {
+                setState(() {
+                  _dragTarget = currentLocation;
+                });
+              }
+              return;
+            }
+
+            for (int i = 0; i < items.length; i++) {
+              final fav = items[i];
+              if (fav == null) continue;
+              final key = _cardKeys[i];
+              if (_isOnKey(key, globalPosition)) {
+                if (_dragTarget != fav) {
                   setState(() {
-                    _dragTarget = null;
+                    _dragTarget = fav;
                   });
                 }
+                return;
               }
+            }
+            if (_dragTarget != null) {
+              setState(() {
+                _dragTarget = null;
+              });
+            }
+          }
 
-              return Stack(
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Listener(
+                onPointerDown: (event) {
+                  _onDragStarted(currentLocation, event.position);
+                },
+                onPointerMove: (event) {
+                  if (_dragSource == currentLocation) {
+                    _onDragUpdate(event.position);
+                  }
+                  if (_dragSource != null) {
+                    updateDragTarget(event.position);
+                  }
+                },
+                onPointerUp: (event) async {
+                  if (_dragSource != null &&
+                      _dragTarget != null &&
+                      _dragSource != _dragTarget) {
+                    Location fromLocation;
+                    Location toLocation;
+
+                    if (_dragSource == currentLocation) {
+                      final loc = await getCurrentLocation();
+                      if (loc == null) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Failed to get current location.'),
+                            ),
+                          );
+                        }
+                        return;
+                      }
+                      fromLocation = loc;
+                    } else {
+                      fromLocation = _dragSource!.toLocation();
+                    }
+                    if (_dragTarget == currentLocation) {
+                      final loc = await getCurrentLocation();
+                      if (loc == null) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Failed to get current location.'),
+                            ),
+                          );
+                        }
+                        return;
+                      }
+                      toLocation = loc;
+                    } else {
+                      toLocation = _dragTarget!.toLocation();
+                    }
+
+                    History.update(
+                      fromLocation: fromLocation,
+                      toLocation: toLocation,
+                    );
+                    if (widget.onDragComplete != null) {
+                      widget.onDragComplete!();
+                    }
+                  }
+                  _onDragEnd();
+                },
+                child: Container(
+                  key: pinKey,
+                  width: double.infinity,
+                  alignment: Alignment.centerLeft,
+                  decoration: BoxDecoration(
+                    color:
+                        _dragTarget == currentLocation
+                            ? Colors.green
+                            : _dragSource == currentLocation
+                            ? Colors.blue
+                            : null,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  child: Row(
+                    children: [
+                      Text(
+                        'Favourites',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(Icons.pin_drop),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Stack(
                 key: _stackKey,
                 children: [
                   GridView.builder(
@@ -244,10 +348,10 @@ class _FavouritesWidgetState extends State<FavouritesWidget> {
                       ),
                     ),
                 ],
-              );
-            },
-          ),
-        ],
+              ),
+            ],
+          );
+        },
       ),
     );
   }

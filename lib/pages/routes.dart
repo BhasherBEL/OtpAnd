@@ -123,20 +123,22 @@ class _RoutesPageState extends State<RoutesPage> {
         first: (after != null || before == null) ? 5 : null,
         last: (before != null) ? 5 : null,
       );
+
+      final newPlans = resp['plans'] as List<Plan>;
+
+      newPlans.sort((a, b) {
+        if (a.end == null && b.end == null) return 0;
+        if (a.end == null) return 1;
+        if (b.end == null) return -1;
+        if (a.end == b.end) return 0;
+
+        final aTime = DateTime.tryParse(a.end!) ?? DateTime.now();
+        final bTime = DateTime.tryParse(b.end!) ?? DateTime.now();
+        return aTime.compareTo(bTime);
+      });
+
+      if (!mounted) return;
       setState(() {
-        final newPlans = resp['plans'] as List<Plan>;
-
-        newPlans.sort((a, b) {
-          if (a.end == null && b.end == null) return 0;
-          if (a.end == null) return 1;
-          if (b.end == null) return -1;
-          if (a.end == b.end) return 0;
-
-          final aTime = DateTime.tryParse(a.end!) ?? DateTime.now();
-          final bTime = DateTime.tryParse(b.end!) ?? DateTime.now();
-          return aTime.compareTo(bTime);
-        });
-
         if (after != null) {
           results.addAll(newPlans.where((plan) => !results.contains(plan)));
         } else if (before != null) {

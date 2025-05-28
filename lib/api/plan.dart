@@ -199,8 +199,8 @@ Future<Map<String, dynamic>> submitQuery({
     if (data['data'] != null &&
         data['data']['planConnection'] != null &&
         data['data']['planConnection']['edges'] != null) {
-      final List<Map<String, dynamic>> edges =
-          data['data']['planConnection']['edges'] as List<Map<String, dynamic>>;
+      final List<dynamic> edges =
+          data['data']['planConnection']['edges'] as List<dynamic>;
       final pageInfo = data['data']['planConnection']['pageInfo'];
       final List<Map<String, dynamic>> plans =
           edges

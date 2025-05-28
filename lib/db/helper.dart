@@ -27,7 +27,7 @@ class DatabaseHelper {
     );
   }
 
-  Future _onCreate(Database db, int version) async {
+  Future<void> _onCreate(Database db, int version) async {
     await db.execute('''
       CREATE TABLE profiles (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -127,7 +127,7 @@ class DatabaseHelper {
     ''');
   }
 
-  Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       await db.execute(
         'ALTER TABLE favourites ADD COLUMN isContact INTEGER NOT NULL DEFAULT 0',

@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'objs.dart';
+import 'package:otpand/objects/leg.dart';
 
 num round(num n, int demicals) {
   if (demicals < 0) {
@@ -86,20 +86,20 @@ Color? getColorFromCode(dynamic code) {
 
 IconData iconForMode(String mode) {
   switch (mode) {
-    case "WALK":
+    case 'WALK':
       return Icons.directions_walk;
-    case "BICYCLE":
+    case 'BICYCLE':
       return Icons.directions_bike;
-    case "CAR":
+    case 'CAR':
       return Icons.directions_car;
-    case "BUS":
+    case 'BUS':
       return Icons.directions_bus;
-    case "RAIL":
-    case "SUBWAY":
+    case 'RAIL':
+    case 'SUBWAY':
       return Icons.subway;
-    case "TRAM":
+    case 'TRAM':
       return Icons.tram;
-    case "FERRY":
+    case 'FERRY':
       return Icons.directions_boat;
     default:
       return Icons.trip_origin;
@@ -108,15 +108,15 @@ IconData iconForMode(String mode) {
 
 Color colorForMode(String mode) {
   switch (mode) {
-    case "WALK":
+    case 'WALK':
       return Colors.green;
-    case "BUS":
+    case 'BUS':
       return Colors.blue;
-    case "SUBWAY":
+    case 'SUBWAY':
       return Colors.deepOrange;
-    case "TRAM":
+    case 'TRAM':
       return Colors.purple;
-    case "RAIL":
+    case 'RAIL':
       return Colors.teal;
     default:
       return Colors.grey.shade400;
@@ -125,42 +125,32 @@ Color colorForMode(String mode) {
 
 DateTime? parseTime(String? iso) {
   if (iso == null) return null;
-  try {
-    return DateTime.parse(iso).toLocal();
-  } catch (_) {
-    return null;
-  }
+  return DateTime.tryParse(iso)?.toLocal();
 }
 
 String? formatTime(String? iso) {
   if (iso == null) return null;
-  try {
-    final dt = DateTime.parse(iso).toLocal();
-    return DateFormat('HH:mm').format(dt);
-  } catch (_) {
-    return iso;
-  }
+  final dt = DateTime.tryParse(iso)?.toLocal();
+  return dt != null ? DateFormat('HH:mm').format(dt) : null;
 }
 
 String legDescription(Leg leg) {
-  if (leg.mode == "WALK") {
-    return "Walk";
-  } else if (leg.mode == "BICYCLE") {
-    return "Bike";
-  } else if (leg.mode == "CAR") {
-    return "Car";
-  } else if (leg.mode == "BUS" ||
-      leg.mode == "RAIL" ||
-      leg.mode == "SUBWAY" ||
-      leg.mode == "TRAM" ||
-      leg.mode == "FERRY") {
+  if (leg.mode == 'WALK') {
+    return 'Walk';
+  } else if (leg.mode == 'BICYCLE') {
+    return 'Bike';
+  } else if (leg.mode == 'CAR') {
+    return 'Car';
+  } else if (leg.mode == 'BUS' ||
+      leg.mode == 'RAIL' ||
+      leg.mode == 'SUBWAY' ||
+      leg.mode == 'TRAM' ||
+      leg.mode == 'FERRY') {
     String route =
-        leg.route?.shortName != null ? " ${leg.route!.shortName}" : "";
-    return "${capitalize(leg.mode)}$route";
+        leg.route?.shortName != null ? ' ${leg.route!.shortName}' : '';
+    return '${capitalize(leg.mode)} $route';
   } else if (leg.route != null) {
-    String route =
-        leg.route!.shortName != null ? " ${leg.route!.shortName}" : "";
-    return "${capitalize(leg.mode)}$route";
+    return '${capitalize(leg.mode)} ${leg.route!.shortName}';
   }
   return capitalize(leg.mode);
 }
@@ -181,11 +171,8 @@ String calculateDuration(DateTime start, DateTime end) {
 
 num calculateDurationFromString(String? start, String? end) {
   if (start == null || end == null) return 0;
-  try {
-    final startTime = DateTime.parse(start).toLocal();
-    final endTime = DateTime.parse(end).toLocal();
-    return endTime.difference(startTime).inSeconds;
-  } catch (e) {
-    return 0;
-  }
+  final startTime = DateTime.tryParse(start)?.toLocal();
+  final endTime = DateTime.tryParse(end)?.toLocal();
+  if (startTime == null || endTime == null) return 0;
+  return endTime.difference(startTime).inSeconds;
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:otpand/objs.dart';
+import 'package:otpand/objects/leg.dart';
+import 'package:otpand/objects/plan.dart';
 import 'package:otpand/utils.dart';
 
 class SmallRoute extends StatelessWidget {
@@ -13,9 +14,9 @@ class SmallRoute extends StatelessWidget {
     for (int i = 0; i < plan.legs.length; i++) {
       final leg = plan.legs[i];
       if (i > 0 &&
-          leg.mode == "WALK" &&
-          (plan.legs[i - 1].mode == "BICYCLE" ||
-              plan.legs[i - 1].mode == "CAR") &&
+          leg.mode == 'WALK' &&
+          (plan.legs[i - 1].mode == 'BICYCLE' ||
+              plan.legs[i - 1].mode == 'CAR') &&
           leg.distance < 100) {
         continue;
       }
@@ -70,7 +71,7 @@ class SmallRoute extends StatelessWidget {
                 builder: (context, constraints) {
                   final minWidths =
                       filteredLegs.map((leg) {
-                        if (leg.mode == "WALK" || leg.mode == "BICYCLE") {
+                        if (leg.mode == 'WALK' || leg.mode == 'BICYCLE') {
                           return 25.0 +
                               (leg.distance.round().toString().length * 10);
                         } else {
@@ -145,7 +146,7 @@ class _LegTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = leg.color;
+    final bgColor = leg.color ?? leg.route?.color ?? Colors.grey.shade300;
     final textColor =
         leg.route?.textColor ??
         (ThemeData.estimateBrightnessForColor(bgColor) == Brightness.dark
@@ -165,7 +166,7 @@ class _LegTile extends StatelessWidget {
           Icon(iconForMode(leg.mode), size: 18, color: textColor),
           const SizedBox(width: 4),
           Text(
-            (leg.mode == "WALK" || leg.mode == "BICYCLE")
+            (leg.mode == 'WALK' || leg.mode == 'BICYCLE')
                 ? displayTimeShort(leg.duration)
                 : leg.route?.shortName ?? '',
             style: TextStyle(fontWeight: FontWeight.w600, color: textColor),

@@ -1,7 +1,7 @@
 import 'package:otpand/objects/favourite.dart';
-import 'package:otpand/objs.dart';
+import 'package:otpand/objects/location.dart';
 import 'package:sqflite/sqflite.dart';
-import '../helper.dart';
+import 'package:otpand/db/helper.dart';
 
 class FavouriteDao {
   final dbHelper = DatabaseHelper();

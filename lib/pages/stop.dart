@@ -1,10 +1,9 @@
-// ignore_for_file: use_build_context_synchronously
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:maps_launcher/maps_launcher.dart';
 import 'package:otpand/objects/stop.dart';
 
-import 'package:otpand/objects/timedStop.dart';
+import 'package:otpand/objects/timed_stop.dart';
 import 'package:otpand/api/stop.dart' as stop_api;
 import 'package:otpand/utils.dart';
 import 'package:otpand/utils/colors.dart';
@@ -85,7 +84,7 @@ class _StopPageState extends State<StopPage>
     setState(() {
       _loading = true;
     });
-    _rotationController.repeat();
+    unawaited(_rotationController.repeat());
     try {
       final departures = await stop_api.fetchNextDepartures(widget.stop);
       setState(() {
@@ -93,7 +92,7 @@ class _StopPageState extends State<StopPage>
         _lastUpdate = DateTime.now();
         _loading = false;
       });
-    } catch (e, s) {
+    } on Exception catch (e, s) {
       debugPrintStack(stackTrace: s, label: 'Error fetching departures: $e');
       setState(() {
         _departures = [];
@@ -105,11 +104,11 @@ class _StopPageState extends State<StopPage>
   }
 
   String _lastUpdateText() {
-    if (_lastUpdate == null) return "Never updated";
+    if (_lastUpdate == null) return 'Never updated';
     final now = DateTime.now();
     final diff = now.difference(_lastUpdate!);
-    if (diff.inSeconds < 10) return "Just now";
-    return "${displayTime(diff.inSeconds)} ago";
+    if (diff.inSeconds < 10) return 'Just now';
+    return '${displayTime(diff.inSeconds)} ago';
   }
 
   @override
@@ -125,7 +124,7 @@ class _StopPageState extends State<StopPage>
 
   @override
   Widget build(BuildContext context) {
-    final mode = widget.stop.mode ?? "BUS";
+    final mode = widget.stop.mode ?? 'BUS';
     return Scaffold(
       backgroundColor: primary50,
       body: SafeArea(
@@ -192,9 +191,9 @@ class _StopPageState extends State<StopPage>
                           tooltip:
                               _autoUpdateEnabled
                                   ? (_loading
-                                      ? "Updating..."
-                                      : "Disable automatic update")
-                                  : "Enable automatic update",
+                                      ? 'Updating...'
+                                      : 'Disable automatic update')
+                                  : 'Enable automatic update',
                           onPressed: _loading ? null : _toggleAutoUpdate,
                         ),
                       );
@@ -221,7 +220,7 @@ class _StopPageState extends State<StopPage>
                     TextButton(
                       onPressed: _loading ? null : _toggleAutoUpdate,
                       child: Text(
-                        "No live update",
+                        'No live update',
                         style: TextStyle(color: Colors.grey.shade500),
                       ),
                     ),

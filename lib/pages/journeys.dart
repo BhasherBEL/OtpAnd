@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:otpand/db/crud/profiles.dart';
 import 'package:otpand/objects/config.dart';
 import 'package:otpand/objects/history.dart';
-import 'package:otpand/objs.dart';
+import 'package:otpand/objects/location.dart';
 import 'package:otpand/pages/journeys/events.dart';
 import 'package:otpand/pages/journeys/favourites.dart';
 import 'package:otpand/pages/routes.dart';
@@ -101,7 +101,7 @@ class _JourneysState extends State<Journeys> {
                           Align(
                             alignment: Alignment.centerLeft,
                             child: Text(
-                              "Where do we go ?",
+                              'Where do we go ?',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 24,
@@ -149,7 +149,7 @@ class _JourneysState extends State<Journeys> {
                                                 initialValue:
                                                     fromLocation?.displayName,
                                                 selectedLocation: fromLocation,
-                                                hintText: "From",
+                                                hintText: 'From',
                                                 onLocationSelected: (location) {
                                                   History.update(
                                                     fromLocation: location,
@@ -164,7 +164,7 @@ class _JourneysState extends State<Journeys> {
                                                 initialValue:
                                                     toLocation?.displayName,
                                                 selectedLocation: toLocation,
-                                                hintText: "To",
+                                                hintText: 'To',
                                                 onLocationSelected: (location) {
                                                   History.update(
                                                     toLocation: location,
@@ -226,7 +226,7 @@ class _JourneysState extends State<Journeys> {
                                                             Text(
                                                               p.name.isNotEmpty
                                                                   ? p.name
-                                                                  : "Profile ${p.id}",
+                                                                  : 'Profile ${p.id}',
                                                             ),
                                                           ],
                                                         ),
@@ -240,7 +240,7 @@ class _JourneysState extends State<Journeys> {
                                                 },
                                                 decoration:
                                                     const InputDecoration(
-                                                      labelText: "Profile",
+                                                      labelText: 'Profile',
                                                       border: InputBorder.none,
                                                       isDense: true,
                                                       contentPadding:
@@ -301,7 +301,7 @@ class _JourneysState extends State<Journeys> {
                                                   color: primary500,
                                                 ),
                                                 label: const Text(
-                                                  "Options",
+                                                  'Options',
                                                   style: TextStyle(
                                                     color: primary500,
                                                   ),
@@ -356,7 +356,7 @@ class _JourneysState extends State<Journeys> {
                                             toLocation != null &&
                                             profile != null) {
                                           Navigator.of(context).push(
-                                            MaterialPageRoute(
+                                            MaterialPageRoute<void>(
                                               builder:
                                                   (context) => RoutesPage(
                                                     fromLocation: fromLocation!,
@@ -366,12 +366,12 @@ class _JourneysState extends State<Journeys> {
                                                         dateTime.mode ==
                                                                 DateTimePickerMode
                                                                     .now
-                                                            ? "now"
+                                                            ? 'now'
                                                             : (dateTime.mode ==
                                                                     DateTimePickerMode
                                                                         .departure
-                                                                ? "depart"
-                                                                : "arrive"),
+                                                                ? 'depart'
+                                                                : 'arrive'),
                                                     selectedDateTime:
                                                         dateTime.dateTime,
                                                   ),
@@ -383,13 +383,13 @@ class _JourneysState extends State<Journeys> {
                                           ).showSnackBar(
                                             SnackBar(
                                               content: Text(
-                                                "Please select both origin and destination.",
+                                                'Please select both origin and destination.',
                                               ),
                                             ),
                                           );
                                         }
                                       },
-                                      child: const Text("Plan my journey"),
+                                      child: const Text('Plan my journey'),
                                     ),
                                   ),
                                 ],
@@ -407,7 +407,7 @@ class _JourneysState extends State<Journeys> {
                         toLocation != null &&
                         profile != null) {
                       Navigator.of(context).push(
-                        MaterialPageRoute(
+                        MaterialPageRoute<void>(
                           builder:
                               (context) => RoutesPage(
                                 fromLocation: fromLocation!,
@@ -415,11 +415,11 @@ class _JourneysState extends State<Journeys> {
                                 profile: profile!,
                                 timeType:
                                     dateTime.mode == DateTimePickerMode.now
-                                        ? "now"
+                                        ? 'now'
                                         : (dateTime.mode ==
                                                 DateTimePickerMode.departure
-                                            ? "depart"
-                                            : "arrive"),
+                                            ? 'depart'
+                                            : 'arrive'),
                                 selectedDateTime: dateTime.dateTime,
                               ),
                         ),

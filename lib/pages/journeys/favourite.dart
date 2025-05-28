@@ -25,7 +25,7 @@ class FavouriteWidget extends StatelessWidget {
       onTap: () {
         if (favourite.stop != null) {
           Navigator.of(context).push(
-            MaterialPageRoute(
+            MaterialPageRoute<void>(
               builder: (context) => StopPage(stop: favourite.stop!),
             ),
           );

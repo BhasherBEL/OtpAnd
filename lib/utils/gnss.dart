@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart' as geocoding;
 import 'package:geolocator/geolocator.dart';
-import 'package:otpand/objs.dart';
+import 'package:otpand/objects/location.dart';
 
 Future<bool> requestLocationPermission() async {
   LocationPermission permission = await Geolocator.checkPermission();
@@ -23,8 +23,8 @@ Future<Location?> getCurrentLocation() async {
 
   final pos = await Geolocator.getCurrentPosition();
   return Location(
-    name: "Current Location",
-    displayName: "Current Location",
+    name: 'Current Location',
+    displayName: 'Current Location',
     lat: pos.latitude,
     lon: pos.longitude,
   );
@@ -63,28 +63,20 @@ Future<(double, double)?> resolveAddress(
   BuildContext? context,
 }) async {
   if (address.isEmpty) return null;
-  try {
-    final locations = await geocoding.locationFromAddress(address);
 
-    if (locations.isEmpty) {
-      if (context != null && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to find a location for this address.'),
-            duration: Duration(seconds: 3),
-          ),
-        );
-      }
-      return null;
-    }
+  final locations = await geocoding.locationFromAddress(address);
 
-    return (locations.first.latitude, locations.first.longitude);
-  } catch (e) {
+  if (locations.isEmpty) {
     if (context != null && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), duration: Duration(seconds: 3)),
+        SnackBar(
+          content: Text('Failed to find a location for this address.'),
+          duration: Duration(seconds: 3),
+        ),
       );
     }
+    return null;
   }
-  return null;
+
+  return (locations.first.latitude, locations.first.longitude);
 }

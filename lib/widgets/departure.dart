@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:otpand/objects/timedStop.dart';
+import 'package:otpand/objects/timed_stop.dart';
 import 'package:otpand/pages/trip.dart';
-import 'package:otpand/widgets/routeIcon.dart';
 import 'package:otpand/utils.dart';
+import 'package:otpand/widgets/route_icon.dart';
 
 class DepartureWidget extends StatelessWidget {
   final TimedStop timedStop;
@@ -16,7 +16,6 @@ class DepartureWidget extends StatelessWidget {
     final dep = timedStop.departure;
     final scheduledTime = dep.scheduledTime;
     final estimatedTime = dep.estimated?.time;
-    final hasRealtime = estimatedTime != null && estimatedTime != scheduledTime;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -34,7 +33,6 @@ class DepartureWidget extends StatelessWidget {
                   builder: (context) {
                     if (estimatedTime != null) {
                       if (estimatedTime != scheduledTime) {
-                        // Delayed: show realtime in red, scheduled in green with strikethrough
                         return Row(
                           children: [
                             Padding(
@@ -60,7 +58,6 @@ class DepartureWidget extends StatelessWidget {
                           ],
                         );
                       } else {
-                        // On time: show scheduled in green, no strikethrough
                         return Text(
                           formatTime(scheduledTime) ?? '',
                           style: const TextStyle(
@@ -71,7 +68,6 @@ class DepartureWidget extends StatelessWidget {
                         );
                       }
                     } else {
-                      // No realtime: show scheduled in grey
                       return Text(
                         formatTime(scheduledTime) ?? '',
                         style: TextStyle(
@@ -99,7 +95,7 @@ class DepartureWidget extends StatelessWidget {
                   trip != null && timedStop.serviceDate != null
                       ? () {
                         Navigator.of(context).push(
-                          MaterialPageRoute(
+                          MaterialPageRoute<void>(
                             builder:
                                 (context) => TripPage(
                                   trip: trip,

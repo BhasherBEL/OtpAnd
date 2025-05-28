@@ -1,6 +1,6 @@
 import 'package:otpand/db/crud/stops.dart';
+import 'package:otpand/objects/location.dart';
 import 'package:otpand/objects/stop.dart';
-import 'package:otpand/objs.dart';
 
 class Favourite {
   final int id;
@@ -27,7 +27,7 @@ class Favourite {
       lon: (json['lon'] as num).toDouble(),
       stop:
           json['stopGtfsId'] != null
-              ? await StopDao().get(json['stopGtfsId'])
+              ? await StopDao().get(json['stopGtfsId'] as String)
               : null,
       isContact: json['isContact'] == 1 || json['isContact'] == true,
     );

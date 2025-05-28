@@ -1,10 +1,12 @@
+import 'dart:async';
+
 import 'package:device_calendar/device_calendar.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator_android/geolocator_android.dart';
 import 'package:otpand/objects/config.dart';
 import 'package:otpand/pages/otpconfig.dart';
 import 'package:otpand/pages/profiles.dart';
 
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:otpand/utils/gnss.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 
@@ -26,8 +28,35 @@ class _SettingsPageState extends State<SettingsPage> {
       try {
         final loc = await getCurrentLocation();
         gpsAvailable = loc != null;
-      } catch (_) {
+      } on TimeoutException catch (_) {
         gpsAvailable = false;
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('GPS access timed out. Please try again.'),
+            ),
+          );
+        }
+      } on LocationServiceDisabledException catch (_) {
+        gpsAvailable = false;
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('GPS is disabled. Please enable it in settings.'),
+            ),
+          );
+        }
+      } on PermissionDeniedException catch (_) {
+        gpsAvailable = false;
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'GPS permission denied. Please allow it in settings.',
+              ),
+            ),
+          );
+        }
       }
       if (!gpsAvailable && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -47,12 +76,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _setUseContactsLocation(bool value) async {
     if (value) {
-      bool granted = false;
-      try {
-        granted = await FlutterContacts.requestPermission(readonly: true);
-      } catch (_) {
-        granted = false;
-      }
+      bool granted = await FlutterContacts.requestPermission(readonly: true);
       if (!granted && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -86,7 +110,13 @@ class _SettingsPageState extends State<SettingsPage> {
             granted = true;
           }
         }
-      } catch (_) {}
+      } on Exception catch (e, s) {
+        debugPrintStack(
+          stackTrace: s,
+          label: 'Error requesting calendar permissions: $e',
+        );
+      }
+      if (!granted) return;
     }
     if (await Config().setValue(ConfigKey.useCalendarsLocation, value)) {
       setState(() {
@@ -132,7 +162,9 @@ class _SettingsPageState extends State<SettingsPage> {
             subtitle: const Text('Manage your travel profiles'),
             onTap: () {
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => const ProfilesPage()),
+                MaterialPageRoute<void>(
+                  builder: (context) => const ProfilesPage(),
+                ),
               );
             },
           ),
@@ -142,7 +174,9 @@ class _SettingsPageState extends State<SettingsPage> {
             subtitle: const Text('Configure your OpenTripPlanner instance'),
             onTap: () {
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => const OtpConfigPage()),
+                MaterialPageRoute<void>(
+                  builder: (context) => const OtpConfigPage(),
+                ),
               );
             },
           ),

@@ -37,7 +37,7 @@ class _ProfilesPageState extends State<ProfilesPage> {
   Future<void> _addProfile() async {
     final newProfile = await ProfileDao.newProfile();
     _loadProfiles();
-    _openProfile(newProfile);
+    await _openProfile(newProfile);
   }
 
   @override

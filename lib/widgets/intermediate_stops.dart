@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:otpand/objects/timedStop.dart';
-import 'package:otpand/objs.dart';
+import 'package:otpand/objects/leg.dart';
+import 'package:otpand/objects/timed_stop.dart';
 import 'package:otpand/utils.dart';
 import 'package:otpand/pages/stop.dart';
 
@@ -25,9 +25,9 @@ class _IntermediateStopsWidgetState extends State<IntermediateStopsWidget> {
             .where(
               (s) =>
                   s.dropoffType != null &&
-                      s.dropoffType != PickupDropoffType.NONE ||
+                      s.dropoffType != PickupDropoffType.none ||
                   s.pickupType != null &&
-                      s.pickupType != PickupDropoffType.NONE,
+                      s.pickupType != PickupDropoffType.none,
             )
             .toList();
 
@@ -71,31 +71,31 @@ class _IntermediateStopsWidgetState extends State<IntermediateStopsWidget> {
                       departureTimeRt != null &&
                       departureTimeRt != departureTimeTheory;
 
-                  final pickupDropoffWarns = [];
+                  final List<String> pickupDropoffWarns = [];
 
                   if (stop.pickupType != null) {
                     switch (stop.pickupType!) {
-                      case PickupDropoffType.NONE:
+                      case PickupDropoffType.none:
                         pickupDropoffWarns.add('no pickup');
                         break;
-                      case PickupDropoffType.COORDINATE_WITH_DRIVER:
-                      case PickupDropoffType.CALL_AGENCY:
+                      case PickupDropoffType.coordinateWithDriver:
+                      case PickupDropoffType.callAgency:
                         pickupDropoffWarns.add('pickup on request');
                         break;
-                      case PickupDropoffType.SCHEDULED:
+                      case PickupDropoffType.scheduled:
                         break;
                     }
                   }
                   if (stop.dropoffType != null) {
                     switch (stop.dropoffType!) {
-                      case PickupDropoffType.NONE:
+                      case PickupDropoffType.none:
                         pickupDropoffWarns.add('no dropoff');
                         break;
-                      case PickupDropoffType.COORDINATE_WITH_DRIVER:
-                      case PickupDropoffType.CALL_AGENCY:
+                      case PickupDropoffType.coordinateWithDriver:
+                      case PickupDropoffType.callAgency:
                         pickupDropoffWarns.add('dropoff on request');
                         break;
-                      case PickupDropoffType.SCHEDULED:
+                      case PickupDropoffType.scheduled:
                         break;
                     }
                   }
@@ -120,7 +120,7 @@ class _IntermediateStopsWidgetState extends State<IntermediateStopsWidget> {
                           child: GestureDetector(
                             onTap: () {
                               Navigator.of(context).push(
-                                MaterialPageRoute(
+                                MaterialPageRoute<void>(
                                   builder:
                                       (context) => StopPage(stop: stop.stop),
                                 ),

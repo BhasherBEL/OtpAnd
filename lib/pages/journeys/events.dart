@@ -1,6 +1,5 @@
 import 'package:device_calendar/device_calendar.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:otpand/pages/journeys/event.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -113,7 +112,7 @@ class _EventsWidgetState extends State<EventsWidget> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Upcoming events",
+            'Upcoming events',
             style: Theme.of(context).textTheme.titleMedium,
           ),
           ListView.separated(

@@ -78,33 +78,33 @@ class Profile {
     num bikeTimeRatio = 1 - bikeFlatnessRatio - bikeSafetyRatio;
 
     return {
-      "accessibility": {
-        "wheelchair": {"enabled": wheelchairAccessible},
+      'accessibility': {
+        'wheelchair': {'enabled': wheelchairAccessible},
       },
-      "street": {
-        "bicycle": {
-          "optimization": {
-            "triangle": {
-              "flatness": round(bikeFlatnessRatio, 5),
-              "safety": round(bikeSafetyRatio, 5),
-              "time": round(bikeTimeRatio, 5),
+      'street': {
+        'bicycle': {
+          'optimization': {
+            'triangle': {
+              'flatness': round(bikeFlatnessRatio, 5),
+              'safety': round(bikeSafetyRatio, 5),
+              'time': round(bikeTimeRatio, 5),
             },
           },
-          "reluctance": round(transitPreference / bikePreference, 5),
-          "speed": round(bikeSpeed / 3.6, 5),
+          'reluctance': round(transitPreference / bikePreference, 5),
+          'speed': round(bikeSpeed / 3.6, 5),
         },
-        "car": {"reluctance": round(transitPreference / carPreference, 5)},
-        "walk": {
-          "reluctance": round(transitPreference / walkPreference, 5),
-          "safetyFactor": round(walkSafetyPreference, 5),
-          "speed": round(walkSpeed / 3.6, 5),
+        'car': {'reluctance': round(transitPreference / carPreference, 5)},
+        'walk': {
+          'reluctance': round(transitPreference / walkPreference, 5),
+          'safetyFactor': round(walkSafetyPreference, 5),
+          'speed': round(walkSpeed / 3.6, 5),
         },
       },
-      "transit": {
-        "board": {"waitReluctance": round(transitWaitReluctance, 5)},
-        "transfer": {
-          "cost": round(transitTransferWorth * 60, 0),
-          "slack": "${transitMinimalTransferTime}m",
+      'transit': {
+        'board': {'waitReluctance': round(transitWaitReluctance, 5)},
+        'transfer': {
+          'cost': round(transitTransferWorth * 60, 0),
+          'slack': '${transitMinimalTransferTime}m',
         },
       },
     };
@@ -117,23 +117,23 @@ class Profile {
     if (!bike && !car && !avoidDirectWalking) direct.add('WALK');
 
     return {
-      "direct": direct,
-      "directOnly": !transit,
-      "transitOnly": (avoidDirectWalking && !bike && !car),
-      "transit": {
-        "access": [
-          if (!bikeFriendly) "WALK",
-          if (bikeParkRide) "BICYCLE_PARKING",
-          if (carParkRide) "CAR_PARKING",
-          if (bikeFriendly) "BICYCLE",
-          if (carKissRide) "CAR_DROP_OFF",
+      'direct': direct,
+      'directOnly': !transit,
+      'transitOnly': (avoidDirectWalking && !bike && !car),
+      'transit': {
+        'access': [
+          if (!bikeFriendly) 'WALK',
+          if (bikeParkRide) 'BICYCLE_PARKING',
+          if (carParkRide) 'CAR_PARKING',
+          if (bikeFriendly) 'BICYCLE',
+          if (carKissRide) 'CAR_DROP_OFF',
         ],
-        "egress": [
-          if (!bikeFriendly) "WALK",
-          if (bikeFriendly) "BICYCLE",
-          if (carPickup) "CAR_PICKUP",
+        'egress': [
+          if (!bikeFriendly) 'WALK',
+          if (bikeFriendly) 'BICYCLE',
+          if (carPickup) 'CAR_PICKUP',
         ],
-        "transfer": [if (!bikeFriendly) "WALK", if (bikeFriendly) "BICYCLE"],
+        'transfer': [if (!bikeFriendly) 'WALK', if (bikeFriendly) 'BICYCLE'],
       },
     };
   }
@@ -174,28 +174,28 @@ class Profile {
 
   static Profile parse(Map<String, dynamic> map) {
     return Profile(
-      id: map['id'],
-      name: map['name'],
-      color: Color(map['color']),
+      id: map['id'] as int,
+      name: map['name'] as String,
+      color: Color(map['color'] as int),
       avoidDirectWalking: map['avoidDirectWalking'] == 1,
-      walkPreference: map['walkPreference'],
-      walkSafetyPreference: map['walkSafetyPreference'],
-      walkSpeed: map['walkSpeed'],
+      walkPreference: map['walkPreference'] as double,
+      walkSafetyPreference: map['walkSafetyPreference'] as double,
+      walkSpeed: map['walkSpeed'] as double,
       transit: map['transit'] == 1,
-      transitPreference: map['transitPreference'],
-      transitWaitReluctance: map['transitWaitReluctance'],
-      transitTransferWorth: map['transitTransferWorth'],
-      transitMinimalTransferTime: map['transitMinimalTransferTime'],
+      transitPreference: map['transitPreference'] as double,
+      transitWaitReluctance: map['transitWaitReluctance'] as double,
+      transitTransferWorth: map['transitTransferWorth'] as double,
+      transitMinimalTransferTime: map['transitMinimalTransferTime'] as int,
       wheelchairAccessible: map['wheelchairAccessible'] == 1,
       bike: map['bike'] == 1,
-      bikePreference: map['bikePreference'],
-      bikeFlatnessPreference: map['bikeFlatnessPreference'],
-      bikeSafetyPreference: map['bikeSafetyPreference'],
-      bikeSpeed: map['bikeSpeed'],
+      bikePreference: map['bikePreference'] as double,
+      bikeFlatnessPreference: map['bikeFlatnessPreference'] as double,
+      bikeSafetyPreference: map['bikeSafetyPreference'] as double,
+      bikeSpeed: map['bikeSpeed'] as double,
       bikeFriendly: map['bikeFriendly'] == 1,
       bikeParkRide: map['bikeParkRide'] == 1,
       car: map['car'] == 1,
-      carPreference: map['carPreference'],
+      carPreference: map['carPreference'] as double,
       carParkRide: map['carParkRide'] == 1,
       carKissRide: map['carKissRide'] == 1,
       carPickup: map['carPickup'] == 1,

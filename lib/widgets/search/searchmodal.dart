@@ -1,14 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:otpand/api.dart';
 import 'package:otpand/db/crud/stops.dart';
-import 'package:otpand/objs.dart';
+import 'package:otpand/objects/location.dart';
 import 'package:otpand/utils/gnss.dart';
 import 'package:otpand/db/crud/favourites.dart';
 import 'package:otpand/objects/favourite.dart';
-import 'package:otpand/widgets/search/favouriteItem.dart';
-import 'package:otpand/widgets/search/transitItem.dart';
-import 'package:otpand/widgets/search/contactItem.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
+import 'package:otpand/widgets/search/contact_item.dart';
+import 'package:otpand/widgets/search/favourite_item.dart';
+import 'package:otpand/widgets/search/transit_item.dart';
 
 class SearchModal extends StatefulWidget {
   final bool showCurrentLocation;
@@ -80,8 +83,12 @@ class _SearchModalState extends State<SearchModal> {
           _filteredContacts = filtered;
         });
       }
-    } catch (e) {
-      // ignore error, just don't show contacts
+    } on Exception catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = 'Failed to load contacts: ${e.toString()}';
+        });
+      }
     }
   }
 
@@ -182,7 +189,7 @@ class _SearchModalState extends State<SearchModal> {
       Navigator.of(context).pop(location);
     } else {
       setState(() {
-        _error = "No location found.";
+        _error = 'No location found.';
         _loading = false;
       });
     }
@@ -211,7 +218,7 @@ class _SearchModalState extends State<SearchModal> {
                     controller: _controller,
                     autofocus: true,
                     decoration: InputDecoration(
-                      hintText: "Search for a location...",
+                      hintText: 'Search for a location...',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -259,7 +266,7 @@ class _SearchModalState extends State<SearchModal> {
                                       Icons.my_location,
                                       color: Colors.blue,
                                     ),
-                                    title: Text("Current Location"),
+                                    title: Text('Current Location'),
                                     onTap: () async {
                                       setState(() {
                                         _loading = true;
@@ -272,14 +279,22 @@ class _SearchModalState extends State<SearchModal> {
                                           Navigator.of(context).pop(loc);
                                         } else {
                                           setState(() {
-                                            _error = "Location unavailable.";
+                                            _error = 'Location unavailable.';
                                             _loading = false;
                                           });
                                         }
-                                      } catch (e) {
+                                      } on TimeoutException catch (_) {
                                         setState(() {
                                           _error =
-                                              "Location error: ${e.toString()}";
+                                              'Location request timed out.';
+                                          _loading = false;
+                                        });
+                                      } on LocationServiceDisabledException catch (
+                                        _
+                                      ) {
+                                        setState(() {
+                                          _error =
+                                              'Location services are disabled.';
                                           _loading = false;
                                         });
                                       }
@@ -296,7 +311,7 @@ class _SearchModalState extends State<SearchModal> {
                                   child: Align(
                                     alignment: Alignment.centerLeft,
                                     child: Text(
-                                      "Favourite",
+                                      'Favourite',
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         color: Colors.grey[700],
@@ -323,7 +338,7 @@ class _SearchModalState extends State<SearchModal> {
                                     vertical: 4,
                                   ),
                                   child: Text(
-                                    "No favourites yet.",
+                                    'No favourites yet.',
                                     style: TextStyle(
                                       color: Colors.grey[500],
                                       fontStyle: FontStyle.italic,
@@ -339,7 +354,7 @@ class _SearchModalState extends State<SearchModal> {
                                   child: Align(
                                     alignment: Alignment.centerLeft,
                                     child: Text(
-                                      "Contacts",
+                                      'Contacts',
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         color: Colors.grey[700],
@@ -367,7 +382,7 @@ class _SearchModalState extends State<SearchModal> {
                                   child: Align(
                                     alignment: Alignment.centerLeft,
                                     child: Text(
-                                      "Transit Stop",
+                                      'Transit Stop',
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         color: Colors.grey[700],
@@ -397,7 +412,7 @@ class _SearchModalState extends State<SearchModal> {
                     width: double.infinity,
                     child: TextButton(
                       onPressed: _searchAddress,
-                      child: const Text("Search address"),
+                      child: const Text('Search address'),
                     ),
                   ),
                 ),

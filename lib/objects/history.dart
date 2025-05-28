@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:otpand/objects/config.dart';
-import 'package:otpand/objs.dart';
 import 'package:otpand/objects/profile.dart';
 import 'package:otpand/widgets/datetime_picker.dart';
+import 'package:otpand/objects/location.dart';
 
 class History {
   Location? fromLocation;

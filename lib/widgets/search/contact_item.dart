@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
-import 'package:otpand/objs.dart';
-import 'package:geocoding/geocoding.dart' as geocoding;
 import 'package:otpand/utils/gnss.dart';
+import 'package:otpand/objects/location.dart';
 
 class ContactItem extends StatelessWidget {
   final Contact contact;
@@ -20,30 +19,33 @@ class ContactItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final address =
         contact.addresses.isNotEmpty ? contact.addresses.first : null;
-    final addressString = address != null
-        ? [
-            address.street,
-            address.city,
-            address.postalCode,
-            address.country,
-          ].where((s) => s.isNotEmpty).join(', ')
-        : '';
+    final addressString =
+        address != null
+            ? [
+              address.street,
+              address.city,
+              address.postalCode,
+              address.country,
+            ].where((s) => s.isNotEmpty).join(', ')
+            : '';
 
     return ListTile(
-      leading: contact.thumbnail != null && contact.thumbnail!.isNotEmpty
-          ? CircleAvatar(
-              backgroundImage: MemoryImage(contact.thumbnail!),
-              radius: 20,
-            )
-          : CircleAvatar(radius: 20, child: Icon(Icons.person)),
+      leading:
+          contact.thumbnail != null && contact.thumbnail!.isNotEmpty
+              ? CircleAvatar(
+                backgroundImage: MemoryImage(contact.thumbnail!),
+                radius: 20,
+              )
+              : CircleAvatar(radius: 20, child: Icon(Icons.person)),
       title: Text(contact.displayName),
-      subtitle: addressString.isNotEmpty
-          ? Text(
-              addressString,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            )
-          : null,
+      subtitle:
+          addressString.isNotEmpty
+              ? Text(
+                addressString,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              )
+              : null,
       onTap: () async {
         final v = await resolveAddress(addressString);
         if (v == null) return;

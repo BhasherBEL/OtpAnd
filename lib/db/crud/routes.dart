@@ -1,6 +1,6 @@
 import 'package:otpand/objects/route.dart';
 import 'package:sqflite/sqflite.dart';
-import '../helper.dart';
+import 'package:otpand/db/helper.dart';
 
 class RouteDao {
   final dbHelper = DatabaseHelper();

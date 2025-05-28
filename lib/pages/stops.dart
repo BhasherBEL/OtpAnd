@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:geolocator_android/geolocator_android.dart';
 import 'package:otpand/db/crud/stops.dart';
+import 'package:otpand/objects/location.dart';
 import 'package:otpand/objects/stop.dart';
-import 'package:otpand/objs.dart';
 import 'package:otpand/pages/stop.dart';
 import 'package:otpand/utils.dart';
 import 'package:otpand/utils/gnss.dart';
@@ -80,11 +83,26 @@ class _StopsPageState extends State<StopsPage> {
         _stopDistances = distances;
         _loadingDistances = false;
       });
-    } catch (_) {
+    } on TimeoutException catch (_) {
       setState(() {
         _stopDistances = null;
         _loadingDistances = false;
       });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Location request timed out.')),
+        );
+      }
+    } on LocationServiceDisabledException catch (_) {
+      setState(() {
+        _stopDistances = null;
+        _loadingDistances = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Location request timed out.')),
+        );
+      }
     }
   }
 
@@ -189,8 +207,7 @@ class _StopsPageState extends State<StopsPage> {
                           itemCount: sortedStops.length,
                           itemBuilder: (context, index) {
                             final stop = sortedStops[index];
-                            // Use stop.mode if available, otherwise default to "BUS"
-                            final mode = (stop as dynamic).mode ?? "BUS";
+                            final mode = stop.mode ?? 'BUS';
                             final distance =
                                 _sortByDistance && _stopDistances != null
                                     ? _stopDistances![stop.gtfsId]
@@ -213,7 +230,7 @@ class _StopsPageState extends State<StopsPage> {
                               onTap: () {
                                 Navigator.push(
                                   context,
-                                  MaterialPageRoute(
+                                  MaterialPageRoute<void>(
                                     builder: (context) => StopPage(stop: stop),
                                   ),
                                 );

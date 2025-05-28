@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:otpand/objects/config.dart';
+import 'package:otpand/objects/leg.dart';
+import 'package:otpand/objects/location.dart';
+import 'package:otpand/objects/plan.dart';
 import 'package:otpand/objects/profile.dart';
-import 'package:otpand/objs.dart';
-import 'package:otpand/extractor.dart';
 
 Future<Map<String, dynamic>> submitQuery({
   required Location fromLocation,
@@ -27,36 +29,36 @@ Future<Map<String, dynamic>> submitQuery({
           ? '-${DateTime.now().timeZoneOffset.inHours.abs().toString().padLeft(2, '0')}:00'
           : '+${DateTime.now().timeZoneOffset.inHours.toString().padLeft(2, '0')}:00';
 
-  if (timeType == "now" || selectedDateTime == null) {
-    dtIso = DateFormat("yyyy-MM-ddTHH:mm").format(DateTime.now()) + localTZ;
+  if (timeType == 'now' || selectedDateTime == null) {
+    dtIso = DateFormat('yyyy-MM-ddTHH:mm').format(DateTime.now()) + localTZ;
   } else {
-    dtIso = DateFormat("yyyy-MM-ddTHH:mm").format(selectedDateTime) + localTZ;
+    dtIso = DateFormat('yyyy-MM-ddTHH:mm').format(selectedDateTime) + localTZ;
   }
 
   String directionType =
-      (timeType == "arrive") ? "latestArrival" : "earliestDeparture";
+      (timeType == 'arrive') ? 'latestArrival' : 'earliestDeparture';
 
   Map<String, dynamic> variables = {
-    "origin": {
-      "location": {
-        "coordinate": {"latitude": fromLat, "longitude": fromLon},
+    'origin': {
+      'location': {
+        'coordinate': {'latitude': fromLat, 'longitude': fromLon},
       },
-      "label": fromLocation.name,
+      'label': fromLocation.name,
     },
-    "destination": {
-      "location": {
-        "coordinate": {"latitude": toLat, "longitude": toLon},
+    'destination': {
+      'location': {
+        'coordinate': {'latitude': toLat, 'longitude': toLon},
       },
-      "label": toLocation.name,
+      'label': toLocation.name,
     },
-    "dateTime": {directionType: dtIso},
-    "modes": profile.getPlanModes(),
-    "preferences": profile.getPlanPreferences(),
+    'dateTime': {directionType: dtIso},
+    'modes': profile.getPlanModes(),
+    'preferences': profile.getPlanPreferences(),
   };
-  if (after != null) variables["after"] = after;
-  if (before != null) variables["before"] = before;
-  if (first != null) variables["first"] = first;
-  if (last != null) variables["last"] = last;
+  if (after != null) variables['after'] = after;
+  if (before != null) variables['before'] = before;
+  if (first != null) variables['first'] = first;
+  if (last != null) variables['last'] = last;
 
   String gql = '''
     query PlanConnection(
@@ -188,7 +190,7 @@ Future<Map<String, dynamic>> submitQuery({
   ''';
 
   final resp = await http.post(
-    Uri.parse('https://maps.bhasher.com/otp/gtfs/v1'),
+    Uri.parse('${Config().otpUrl}/otp/gtfs/v1'),
     headers: {'Content-Type': 'application/json'},
     body: jsonEncode({'query': gql, 'variables': variables}),
   );
@@ -197,9 +199,10 @@ Future<Map<String, dynamic>> submitQuery({
     if (data['data'] != null &&
         data['data']['planConnection'] != null &&
         data['data']['planConnection']['edges'] != null) {
-      final List edges = data['data']['planConnection']['edges'];
+      final List<Map<String, dynamic>> edges =
+          data['data']['planConnection']['edges'] as List<Map<String, dynamic>>;
       final pageInfo = data['data']['planConnection']['pageInfo'];
-      final List plans =
+      final List<Map<String, dynamic>> plans =
           edges
               .map(
                 (e) => {
@@ -209,12 +212,12 @@ Future<Map<String, dynamic>> submitQuery({
                 },
               )
               .toList();
-      return {"plans": await parsePlans(plans), "pageInfo": pageInfo};
+      return {'plans': await Plan.parseAll(plans), 'pageInfo': pageInfo};
     } else {
-      throw Exception("No plan found. Check your input.");
+      throw Exception('No plan found. Check your input.');
     }
   } else {
-    throw Exception("Error from backend: ${resp.statusCode}");
+    throw Exception('Error from backend: ${resp.statusCode}');
   }
 }
 
@@ -313,8 +316,7 @@ Future<Leg?> fetchLegById(String legId) async {
   if (resp.statusCode == 200) {
     final data = jsonDecode(resp.body);
     if (data['data'] != null && data['data']['leg'] != null) {
-      // Use your existing Leg parsing logic from extractor.dart
-      return parseLeg(data['data']['leg']);
+      return Leg.parse(data['data']['leg'] as Map<String, dynamic>);
     } else {
       return null;
     }

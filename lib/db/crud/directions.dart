@@ -1,6 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:otpand/objects/direction.dart';
-import '../helper.dart';
+import 'package:otpand/db/helper.dart';
 
 class DirectionDao {
   final dbHelper = DatabaseHelper();

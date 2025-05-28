@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:otpand/db/crud/profiles.dart';
+import 'package:otpand/objects/location.dart';
+import 'package:otpand/objects/plan.dart';
 import 'package:otpand/objects/profile.dart';
-import 'package:otpand/objs.dart';
 import 'package:otpand/pages/profile.dart';
 import 'package:otpand/pages/route.dart';
 import 'package:otpand/api/plan.dart';
@@ -74,7 +77,7 @@ class _RoutesPageState extends State<RoutesPage> {
         profiles.insert(0, profile);
       }
     });
-    _fetchPlans();
+    unawaited(_fetchPlans());
   }
 
   @override
@@ -121,11 +124,16 @@ class _RoutesPageState extends State<RoutesPage> {
         last: (before != null) ? 5 : null,
       );
       setState(() {
-        final newPlans = resp["plans"] as List<Plan>;
+        final newPlans = resp['plans'] as List<Plan>;
 
         newPlans.sort((a, b) {
-          final aTime = DateTime.tryParse(a.end) ?? DateTime.now();
-          final bTime = DateTime.tryParse(b.end) ?? DateTime.now();
+          if (a.end == null && b.end == null) return 0;
+          if (a.end == null) return 1;
+          if (b.end == null) return -1;
+          if (a.end == b.end) return 0;
+
+          final aTime = DateTime.tryParse(a.end!) ?? DateTime.now();
+          final bTime = DateTime.tryParse(b.end!) ?? DateTime.now();
           return aTime.compareTo(bTime);
         });
 
@@ -141,23 +149,28 @@ class _RoutesPageState extends State<RoutesPage> {
         }
 
         results.sort((a, b) {
-          final aTime = DateTime.tryParse(a.end) ?? DateTime.now();
-          final bTime = DateTime.tryParse(b.end) ?? DateTime.now();
+          if (a.end == null && b.end == null) return 0;
+          if (a.end == null) return 1;
+          if (b.end == null) return -1;
+          if (a.end == b.end) return 0;
+
+          final aTime = DateTime.tryParse(a.end!) ?? DateTime.now();
+          final bTime = DateTime.tryParse(b.end!) ?? DateTime.now();
           return aTime.compareTo(bTime);
         });
 
         isLoading = false;
         isPaginatingForward = false;
         isPaginatingBackward = false;
-        final pageInfo = resp["pageInfo"];
-        startCursor = pageInfo?["startCursor"];
-        endCursor = pageInfo?["endCursor"];
-        hasNextPage = pageInfo?["hasNextPage"] ?? false;
-        hasPreviousPage = pageInfo?["hasPreviousPage"] ?? false;
+        final pageInfo = resp['pageInfo'];
+        startCursor = pageInfo?['startCursor'] as String?;
+        endCursor = pageInfo?['endCursor'] as String?;
+        hasNextPage = pageInfo?['hasNextPage'] as bool;
+        hasPreviousPage = pageInfo?['hasPreviousPage'] as bool;
       });
-    } catch (e, stack) {
+    } on Exception catch (e, stack) {
       setState(() {
-        debugPrintStack(stackTrace: stack, label: "Error fetching plans: $e");
+        debugPrintStack(stackTrace: stack, label: 'Error fetching plans: $e');
         isLoading = false;
         isPaginatingForward = false;
         isPaginatingBackward = false;
@@ -198,10 +211,10 @@ class _RoutesPageState extends State<RoutesPage> {
     setState(() {
       timeType =
           value.mode == DateTimePickerMode.now
-              ? "now"
+              ? 'now'
               : (value.mode == DateTimePickerMode.departure
-                  ? "start"
-                  : "arrive");
+                  ? 'start'
+                  : 'arrive');
       selectedDateTime = value.dateTime;
     });
     if (fromLocation != null && toLocation != null) {
@@ -274,7 +287,7 @@ class _RoutesPageState extends State<RoutesPage> {
                         SearchBarWidget(
                           initialValue: fromLocation?.displayName,
                           selectedLocation: fromLocation,
-                          hintText: "From",
+                          hintText: 'From',
                           onLocationSelected: _onFromLocationChanged,
                         ),
                         DottedLine(
@@ -284,7 +297,7 @@ class _RoutesPageState extends State<RoutesPage> {
                         SearchBarWidget(
                           initialValue: toLocation?.displayName,
                           selectedLocation: toLocation,
-                          hintText: "To",
+                          hintText: 'To',
                           onLocationSelected: _onToLocationChanged,
                         ),
                       ],
@@ -324,7 +337,7 @@ class _RoutesPageState extends State<RoutesPage> {
                                   Text(
                                     p.name.isNotEmpty
                                         ? p.name
-                                        : "Profile ${p.id}",
+                                        : 'Profile ${p.id}',
                                   ),
                                 ],
                               ),
@@ -340,7 +353,7 @@ class _RoutesPageState extends State<RoutesPage> {
                         }
                       },
                       decoration: const InputDecoration(
-                        labelText: "Profile",
+                        labelText: 'Profile',
                         border: InputBorder.none,
                         isDense: true,
                         contentPadding: EdgeInsets.symmetric(
@@ -376,7 +389,7 @@ class _RoutesPageState extends State<RoutesPage> {
                                     .toList();
                           });
                           if (fromLocation != null && toLocation != null) {
-                            _fetchPlans();
+                            unawaited(_fetchPlans());
                           }
                         }
                       },
@@ -386,7 +399,7 @@ class _RoutesPageState extends State<RoutesPage> {
                         color: primary500,
                       ),
                       label: const Text(
-                        "Options",
+                        'Options',
                         style: TextStyle(color: primary500),
                       ),
                       style: TextButton.styleFrom(
@@ -418,7 +431,7 @@ class _RoutesPageState extends State<RoutesPage> {
 
         if (hasPreviousPage && idx == 0) {
           return _buildPaginationButton(
-            text: "Show earlier trips",
+            text: 'Show earlier trips',
             isLoading: isPaginatingBackward,
             onPressed:
                 (isPaginatingBackward || startCursor == null)
@@ -429,7 +442,7 @@ class _RoutesPageState extends State<RoutesPage> {
 
         if (hasNextPage && idx == results.length + offset) {
           return _buildPaginationButton(
-            text: "Show later trips",
+            text: 'Show later trips',
             isLoading: isPaginatingForward,
             onPressed:
                 (isPaginatingForward || endCursor == null)
@@ -442,9 +455,9 @@ class _RoutesPageState extends State<RoutesPage> {
         return SmallRoute(
           plan: plan,
           onTap: () {
-            Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (_) => RoutePage(plan: plan)));
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => RoutePage(plan: plan)),
+            );
           },
         );
       },
@@ -488,7 +501,7 @@ class _RoutesPageState extends State<RoutesPage> {
                           Align(
                             alignment: Alignment.centerLeft,
                             child: Text(
-                              "How do we get there?",
+                              'How do we get there?',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 24,
@@ -511,9 +524,9 @@ class _RoutesPageState extends State<RoutesPage> {
                   child: DateTimePicker(
                     value: DateTimePickerValue(
                       mode:
-                          timeType == "now"
+                          timeType == 'now'
                               ? DateTimePickerMode.now
-                              : (timeType == "start"
+                              : (timeType == 'start'
                                   ? DateTimePickerMode.departure
                                   : DateTimePickerMode.arrival),
                       dateTime: selectedDateTime ?? DateTime.now(),
@@ -543,7 +556,7 @@ class _RoutesPageState extends State<RoutesPage> {
                             children: [
                               if (hasPreviousPage)
                                 _buildPaginationButton(
-                                  text: "Show earlier trips",
+                                  text: 'Show earlier trips',
                                   isLoading: isPaginatingBackward,
                                   onPressed:
                                       (isPaginatingBackward ||
@@ -556,11 +569,11 @@ class _RoutesPageState extends State<RoutesPage> {
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 16.0,
                                 ),
-                                child: Text("No plans found."),
+                                child: Text('No plans found.'),
                               ),
                               if (hasNextPage)
                                 _buildPaginationButton(
-                                  text: "Show later trips",
+                                  text: 'Show later trips',
                                   isLoading: isPaginatingForward,
                                   onPressed:
                                       (isPaginatingForward || endCursor == null)

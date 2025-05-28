@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:otpand/objects/history.dart';
 import 'package:otpand/utils/gnss.dart';
-import 'package:otpand/objs.dart' as objs;
 import 'package:otpand/widgets/datetime_picker.dart';
+import 'package:otpand/objects/location.dart' as loc_obj;
 
 class EventWidget extends StatelessWidget {
   const EventWidget({super.key, required this.event});
@@ -17,7 +17,7 @@ class EventWidget extends StatelessWidget {
         event.start != null
             ? DateFormat('EEE, MMM d • HH:mm').format(event.start!)
             : '';
-    final title = event.title ?? "Untitled event";
+    final title = event.title ?? 'Untitled event';
     return ListTile(
       leading: const Icon(Icons.event, color: Colors.deepOrange),
       title: Text(title, style: Theme.of(context).textTheme.titleSmall),
@@ -32,7 +32,7 @@ class EventWidget extends StatelessWidget {
         if (loc == null) return;
 
         History.update(
-          toLocation: objs.Location(
+          toLocation: loc_obj.Location(
             name: title,
             displayName: title,
             lat: loc.$1,

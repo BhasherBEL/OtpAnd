@@ -1,7 +1,6 @@
 import 'dart:convert';
-import 'package:otpand/extractor.dart';
-import 'package:otpand/objs.dart';
 import 'package:http/http.dart' as http;
+import 'package:otpand/objects/location.dart';
 
 Future<Location?> geoCodeNominatimApi(String query) async {
   final resp = await http.get(
@@ -17,6 +16,7 @@ Future<Location?> geoCodeNominatimApi(String query) async {
     throw Exception('Failed to load geocode data');
   }
 
-  final List<dynamic> data = jsonDecode(resp.body);
-  return data.map((e) => parseLocation(e)).firstOrNull;
+  final List<Map<String, dynamic>> data =
+      jsonDecode(resp.body) as List<Map<String, dynamic>>;
+  return data.map((e) => Location.parse(e)).firstOrNull;
 }

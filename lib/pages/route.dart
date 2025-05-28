@@ -1,12 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:otpand/objs.dart';
+import 'package:otpand/objects/leg.dart';
+import 'package:otpand/objects/plan.dart';
 import 'package:otpand/utils.dart';
 import 'package:otpand/utils/colors.dart';
-import 'package:otpand/widgets/routeIcon.dart';
+import 'package:otpand/widgets/intermediate_stops.dart';
+import 'package:otpand/widgets/route_icon.dart';
 import 'package:otpand/widgets/route_map.dart';
 import 'package:timelines_plus/timelines_plus.dart';
-import 'package:otpand/widgets/intermediateStops.dart';
 import 'package:otpand/pages/trip.dart';
 import 'package:otpand/pages/stop.dart';
 import 'package:otpand/api/plan.dart';
@@ -52,11 +53,11 @@ class _LastUpdateWidgetState extends State<LastUpdateWidget> {
   }
 
   String _lastUpdateText() {
-    if (widget.lastUpdate == null) return "Never updated";
+    if (widget.lastUpdate == null) return 'Never updated';
     final now = DateTime.now();
     final diff = now.difference(widget.lastUpdate!);
-    if (diff.inSeconds < 10) return "Just now";
-    return "${displayTime(diff.inSeconds)} ago";
+    if (diff.inSeconds < 10) return 'Just now';
+    return '${displayTime(diff.inSeconds)} ago';
   }
 
   @override
@@ -124,7 +125,7 @@ class _RoutePageState extends State<RoutePage>
     setState(() {
       _updating = true;
     });
-    _rotationController.repeat();
+    unawaited(_rotationController.repeat());
 
     var updatedLegs = _legs;
 
@@ -138,10 +139,15 @@ class _RoutePageState extends State<RoutePage>
           return leg;
         }),
       );
-    } catch (e) {
+    } on Exception catch (e) {
       setState(() {
         _updating = false;
       });
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error updating legs: $e')));
+      }
       _rotationController.stop();
       _rotationController.reset();
       return;
@@ -240,7 +246,7 @@ class _RoutePageState extends State<RoutePage>
                                   Align(
                                     alignment: Alignment.centerLeft,
                                     child: Text(
-                                      "Journey Details",
+                                      'Journey Details',
                                       style: TextStyle(
                                         color: Colors.white,
                                         fontSize: 24,
@@ -417,9 +423,9 @@ class _RoutePageState extends State<RoutePage>
                                         tooltip:
                                             _autoUpdateEnabled
                                                 ? (_updating
-                                                    ? "Updating..."
-                                                    : "Disable automatic update")
-                                                : "Enable automatic update",
+                                                    ? 'Updating...'
+                                                    : 'Disable automatic update')
+                                                : 'Enable automatic update',
                                         onPressed:
                                             _updating
                                                 ? null
@@ -441,7 +447,7 @@ class _RoutePageState extends State<RoutePage>
                                     onPressed:
                                         _updating ? null : _toggleAutoUpdate,
                                     child: Text(
-                                      "No live update",
+                                      'No live update',
                                       style: TextStyle(
                                         color: Colors.grey.shade500,
                                       ),
@@ -525,15 +531,14 @@ class _RoutePageState extends State<RoutePage>
                                                                 true))
                                                     ? GestureDetector(
                                                       onTap: () {
-                                                        final stop =
-                                                            leg?.from ??
-                                                            previousLeg?.to;
                                                         if (place.stop !=
                                                             null) {
                                                           Navigator.of(
                                                             context,
                                                           ).push(
-                                                            MaterialPageRoute(
+                                                            MaterialPageRoute<
+                                                              void
+                                                            >(
                                                               builder:
                                                                   (
                                                                     context,
@@ -707,7 +712,9 @@ class _RoutePageState extends State<RoutePage>
                                                           Navigator.of(
                                                             context,
                                                           ).push(
-                                                            MaterialPageRoute(
+                                                            MaterialPageRoute<
+                                                              void
+                                                            >(
                                                               builder:
                                                                   (
                                                                     context,

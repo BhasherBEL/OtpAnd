@@ -38,19 +38,19 @@ class DateTimePicker extends StatelessWidget {
     final today = DateTime(now.year, now.month, now.day);
     String friendlyDateLabel(DateTime date) {
       final d = DateTime(date.year, date.month, date.day);
-      if (d == today) return "";
-      if (d == today.subtract(const Duration(days: 1))) return "Yesterday";
-      if (d == today.add(const Duration(days: 1))) return "Tomorrow";
+      if (d == today) return '';
+      if (d == today.subtract(const Duration(days: 1))) return 'Yesterday';
+      if (d == today.add(const Duration(days: 1))) return 'Tomorrow';
       return dateFormat.format(date);
     }
 
-    switch (value!.mode) {
+    switch (value.mode) {
       case DateTimePickerMode.now:
         return 'Now: ${timeFormat.format(DateTime.now())}';
       case DateTimePickerMode.departure:
-        if (value!.dateTime != null) {
-          final label = friendlyDateLabel(value!.dateTime!);
-          final time = timeFormat.format(value!.dateTime!);
+        if (value.dateTime != null) {
+          final label = friendlyDateLabel(value.dateTime!);
+          final time = timeFormat.format(value.dateTime!);
           if (label.isEmpty) {
             return 'Departure: $time';
           } else {
@@ -59,9 +59,9 @@ class DateTimePicker extends StatelessWidget {
         }
         return 'Departure';
       case DateTimePickerMode.arrival:
-        if (value!.dateTime != null) {
-          final label = friendlyDateLabel(value!.dateTime!);
-          final time = timeFormat.format(value!.dateTime!);
+        if (value.dateTime != null) {
+          final label = friendlyDateLabel(value.dateTime!);
+          final time = timeFormat.format(value.dateTime!);
           if (label.isEmpty) {
             return 'Arrival: $time';
           } else {
@@ -119,9 +119,9 @@ class _DateTimePickerModalState extends State<_DateTimePickerModal>
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final d = DateTime(date.year, date.month, date.day);
-    if (d == today) return "Today";
-    if (d == today.subtract(const Duration(days: 1))) return "Yesterday";
-    if (d == today.add(const Duration(days: 1))) return "Tomorrow";
+    if (d == today) return 'Today';
+    if (d == today.subtract(const Duration(days: 1))) return 'Yesterday';
+    if (d == today.add(const Duration(days: 1))) return 'Tomorrow';
     return DateFormat('d MMM yyyy').format(date);
   }
 
@@ -205,8 +205,6 @@ class _DateTimePickerModalState extends State<_DateTimePickerModal>
 
   @override
   Widget build(BuildContext context) {
-    final dateFormat = DateFormat('d MMM yyyy');
-
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -261,7 +259,7 @@ class _DateTimePickerModalState extends State<_DateTimePickerModal>
                             ),
                           ),
                         ),
-                        const Text(":", style: TextStyle(fontSize: 18)),
+                        const Text(':', style: TextStyle(fontSize: 18)),
                         // Minute wheel
                         SizedBox(
                           width: 50,

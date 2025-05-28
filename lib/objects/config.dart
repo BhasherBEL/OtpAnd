@@ -1,7 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum ConfigKey {
-  otpUrl('otp_url', String, 'https://otp.bhasher.com'),
+  otpUrl('otp_url', String, 'https://maps.bhasher.com'),
   otpUsername('otp_username', String, ''),
   otpPassword('otp_password', String, ''),
   otpCountry('otp_country', String, 'be'),
@@ -39,25 +40,29 @@ class Config {
 
   Future<bool> setValue<T>(ConfigKey key, T value) async {
     if (value.runtimeType != key.type) {
-      throw ArgumentError(
-        'Value type ${value.runtimeType} does not match expected type ${key.type}',
+      debugPrint(
+        'Type mismatch for config key: ${key.key}. Expected ${key.type}, got ${value.runtimeType}',
       );
+      return false;
     }
     final prefs = await SharedPreferences.getInstance();
 
+    Type type = T == Object ? key.type : T;
+
     bool result;
-    if (T == String) {
+    if (type == String) {
       result = await prefs.setString(key.key, value as String);
-    } else if (T == int) {
+    } else if (type == int) {
       result = await prefs.setInt(key.key, value as int);
-    } else if (T == bool) {
+    } else if (type == bool) {
       result = await prefs.setBool(key.key, value as bool);
-    } else if (T == double) {
+    } else if (type == double) {
       result = await prefs.setDouble(key.key, value as double);
-    } else if (T == List<String>) {
+    } else if (type == List<String>) {
       result = await prefs.setStringList(key.key, value as List<String>);
     } else {
-      throw Exception('Unsupported type');
+      debugPrint('Unsupported type for config key: ${key.key} with type $T');
+      return false;
     }
     if (result) _values[key] = value as Object;
     return result;

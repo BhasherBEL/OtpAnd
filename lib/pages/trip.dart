@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:otpand/objects/trip.dart';
 import 'package:otpand/api/trip.dart';
-import 'package:otpand/objects/timedStop.dart';
+import 'package:otpand/objects/timed_stop.dart';
 import 'package:otpand/utils.dart';
 import 'package:timelines_plus/timelines_plus.dart';
 

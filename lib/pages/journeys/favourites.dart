@@ -3,14 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:otpand/db/crud/favourites.dart';
 import 'package:otpand/objects/favourite.dart';
 import 'package:otpand/objects/history.dart';
-import 'package:otpand/objs.dart';
+import 'package:otpand/objects/location.dart';
 import 'package:otpand/pages/journeys/favourite.dart';
 import 'package:otpand/utils/colors.dart';
 import 'package:otpand/utils/gnss.dart';
 import 'package:otpand/widgets/search/searchmodal.dart';
 
 class FavouritesWidget extends StatefulWidget {
-  final Function()? onDragComplete;
+  final void Function()? onDragComplete;
 
   const FavouritesWidget({super.key, this.onDragComplete});
 

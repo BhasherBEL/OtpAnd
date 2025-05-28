@@ -1,15 +1,15 @@
 class Agency {
   final String gtfsId;
-  final String name;
-  final String url;
+  final String? name;
+  final String? url;
 
   Agency({required this.gtfsId, required this.name, required this.url});
 
   static Agency parse(Map<String, dynamic> json) {
     return Agency(
-      gtfsId: json['gtfsId'] ?? '',
-      name: json['name'] ?? '',
-      url: json['url'] ?? '',
+      gtfsId: json['gtfsId'] as String,
+      name: json['name'] as String?,
+      url: json['url'] as String?,
     );
   }
 

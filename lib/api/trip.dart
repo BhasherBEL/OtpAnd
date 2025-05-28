@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:otpand/objects/trip.dart';
-import 'package:otpand/objects/timedStop.dart';
+import 'package:otpand/objects/timed_stop.dart';
 
 Future<List<TimedStop>> fetchTrip(Trip trip, String serviceDate) async {
   final String gql = '''
@@ -38,12 +38,15 @@ Future<List<TimedStop>> fetchTrip(Trip trip, String serviceDate) async {
         data['data']['trip']['stoptimesForDate'] != null) {
       final stoptimes = data['data']['trip']['stoptimesForDate'] as List;
       return Future.wait(
-        stoptimes.map((json) => TimedStop.parseFromStoptime(null, json)),
+        stoptimes.map(
+          (json) =>
+              TimedStop.parseFromStoptime(null, json as Map<String, dynamic>),
+        ),
       );
     } else {
-      throw Exception("No stoptimes found for this trip.");
+      throw Exception('No stoptimes found for this trip.');
     }
   } else {
-    throw Exception("Error from backend: ${resp.statusCode}");
+    throw Exception('Error from backend: ${resp.statusCode}');
   }
 }

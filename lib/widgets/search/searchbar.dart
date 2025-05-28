@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:otpand/api.dart';
 import 'package:otpand/db/crud/stops.dart';
+import 'package:otpand/objects/location.dart';
 
-import 'package:otpand/objs.dart';
 import 'package:otpand/utils/gnss.dart';
 import 'package:otpand/widgets/search/searchmodal.dart';
 
@@ -17,7 +20,7 @@ class SearchBarWidget extends StatefulWidget {
     this.initialValue,
     this.selectedLocation,
     required this.onLocationSelected,
-    this.hintText = "Search for a location...",
+    this.hintText = 'Search for a location...',
   });
 
   @override
@@ -43,7 +46,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
     }
   }
 
-  void _openSearchModal() async {
+  Future<void> _openSearchModal() async {
     final result = await SearchModal.show(context);
     if (result != null) {
       setState(() {
@@ -86,7 +89,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
           Padding(
             padding: const EdgeInsets.only(top: 4.0),
             child: Text(
-              "Selected: ${widget.selectedLocation!.displayName}",
+              'Selected: ${widget.selectedLocation!.displayName}',
               style: TextStyle(color: Colors.green.shade700, fontSize: 12),
             ),
           ),
@@ -187,7 +190,7 @@ class _FullScreenSearchModalState extends State<_FullScreenSearchModal> {
       Navigator.of(context).pop(location);
     } else {
       setState(() {
-        _error = "No location found.";
+        _error = 'No location found.';
         _loading = false;
       });
     }
@@ -216,7 +219,7 @@ class _FullScreenSearchModalState extends State<_FullScreenSearchModal> {
                     controller: _controller,
                     autofocus: true,
                     decoration: InputDecoration(
-                      hintText: "Search for a location...",
+                      hintText: 'Search for a location...',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -253,7 +256,7 @@ class _FullScreenSearchModalState extends State<_FullScreenSearchModal> {
                   ),
                   child: ListTile(
                     leading: Icon(Icons.my_location, color: Colors.blue),
-                    title: Text("Current Location"),
+                    title: Text('Current Location'),
                     onTap: () async {
                       setState(() {
                         _loading = true;
@@ -263,16 +266,21 @@ class _FullScreenSearchModalState extends State<_FullScreenSearchModal> {
                         final loc = await getCurrentLocation();
                         if (!mounted) return;
                         if (loc != null) {
-                          Navigator.of(context).pop(loc);
+                          if (context.mounted) Navigator.of(context).pop(loc);
                         } else {
                           setState(() {
-                            _error = "Location unavailable.";
+                            _error = 'Location unavailable.';
                             _loading = false;
                           });
                         }
-                      } catch (e) {
+                      } on TimeoutException catch (_) {
                         setState(() {
-                          _error = "Location error: ${e.toString()}";
+                          _error = 'Location request timed out.';
+                          _loading = false;
+                        });
+                      } on LocationServiceDisabledException catch (_) {
+                        setState(() {
+                          _error = 'Location services are disabled.';
                           _loading = false;
                         });
                       }
@@ -287,7 +295,7 @@ class _FullScreenSearchModalState extends State<_FullScreenSearchModal> {
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      "Favourite",
+                      'Favourite',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Colors.grey[700],
@@ -303,7 +311,7 @@ class _FullScreenSearchModalState extends State<_FullScreenSearchModal> {
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      "Transit Stop",
+                      'Transit Stop',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Colors.grey[700],
@@ -337,7 +345,7 @@ class _FullScreenSearchModalState extends State<_FullScreenSearchModal> {
                     width: double.infinity,
                     child: TextButton(
                       onPressed: _searchAddress,
-                      child: const Text("Search address"),
+                      child: const Text('Search address'),
                     ),
                   ),
                 ),

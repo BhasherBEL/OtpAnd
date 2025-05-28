@@ -157,9 +157,7 @@ class _RoutesPageState extends State<RoutesPage> {
       });
     } catch (e, stack) {
       setState(() {
-        errorMsg = e.toString();
-        debugPrint(errorMsg);
-        debugPrintStack(stackTrace: stack, label: "Error fetching plans");
+        debugPrintStack(stackTrace: stack, label: "Error fetching plans: $e");
         isLoading = false;
         isPaginatingForward = false;
         isPaginatingBackward = false;

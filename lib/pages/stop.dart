@@ -33,7 +33,6 @@ class _StopPageState extends State<StopPage>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    print(widget.stop.gtfsId);
     _rotationController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 1),
@@ -94,8 +93,8 @@ class _StopPageState extends State<StopPage>
         _lastUpdate = DateTime.now();
         _loading = false;
       });
-    } catch (e) {
-      print(e);
+    } catch (e, s) {
+      debugPrintStack(stackTrace: s, label: 'Error fetching departures: $e');
       setState(() {
         _departures = [];
         _loading = false;

@@ -63,9 +63,6 @@ class RouteInfo {
   });
 
   static RouteInfo parse(Map<String, dynamic> json) {
-    if (json['shortName'] == '95') {
-      print(json['color']);
-    }
     return RouteInfo(
       gtfsId: json['gtfsId'] as String,
       longName: json['longName'] as String,

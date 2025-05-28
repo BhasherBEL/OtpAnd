@@ -3,8 +3,6 @@ import 'package:otpand/extractor.dart';
 import 'package:otpand/objs.dart';
 import 'package:http/http.dart' as http;
 
-const OTP_INSTANCE = 'https://maps.bhasher.com';
-
 Future<Location?> geoCodeNominatimApi(String query) async {
   final resp = await http.get(
     Uri.parse(

@@ -13,7 +13,6 @@ class TripPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print(trip.gtfsId);
     return Scaffold(
       appBar: AppBar(title: Text(trip.headsign ?? 'Trip')),
       body: FutureBuilder<List<TimedStop>>(

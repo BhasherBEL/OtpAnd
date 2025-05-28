@@ -33,7 +33,6 @@ Future<List<TimedStop>> fetchTrip(Trip trip, String serviceDate) async {
 
   if (resp.statusCode == 200) {
     final data = jsonDecode(resp.body);
-    print(data);
     if (data['data'] != null &&
         data['data']['trip'] != null &&
         data['data']['trip']['stoptimesForDate'] != null) {

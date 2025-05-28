@@ -2,11 +2,13 @@ import 'package:dotted_line/dotted_line.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:otpand/db/crud/profiles.dart';
+import 'package:otpand/objects/config.dart';
 import 'package:otpand/objects/history.dart';
 import 'package:otpand/objs.dart';
 import 'package:otpand/pages/journeys/events.dart';
 import 'package:otpand/pages/journeys/favourites.dart';
 import 'package:otpand/pages/routes.dart';
+import 'package:otpand/utils/extensions.dart';
 import 'package:otpand/widgets/datetime_picker.dart';
 import 'package:otpand/widgets/search/searchbar.dart';
 import 'package:otpand/utils/colors.dart';
@@ -38,7 +40,7 @@ class _JourneysState extends State<Journeys> {
           mode: DateTimePickerMode.now,
           dateTime: DateTime.now(),
         );
-    profile = History.current.value.profile ?? profiles.firstOrNull;
+    profile = History.current.value.profile;
   }
 
   @override
@@ -63,8 +65,11 @@ class _JourneysState extends State<Journeys> {
     }
     setState(() {
       profiles = loadedProfiles;
-      if (profiles.isNotEmpty) {
-        profile ??= profiles.first;
+      if (profile == null && profiles.isNotEmpty) {
+        int defaultProfile = Config().defaultProfileId;
+        profile = loadedProfiles.firstWhereOrNull(
+          (p) => p.id == defaultProfile,
+        );
       }
     });
   }

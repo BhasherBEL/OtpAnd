@@ -17,17 +17,13 @@ Future<void> checkAndSyncGtfsData() async {
   if (lastSyncMillis != null) {
     final lastSync = DateTime.fromMillisecondsSinceEpoch(lastSyncMillis);
     final diff = now.difference(lastSync);
-    print('Last GTFS sync was ${diff.inHours} hours ago');
     if (diff.inHours < 23) {
-      print('No need to fetch newer GTFS data');
       return;
     }
   }
 
-  print('Fetching GTFS data...');
   await fetchAndStoreGtfsData();
   await prefs.setInt(_lastGtfsSyncKey, now.millisecondsSinceEpoch);
-  print('GTFS data fetched and stored successfully');
 }
 
 Future<void> fetchAndStoreGtfsData() async {
@@ -69,8 +65,6 @@ Future<void> fetchAndStoreGtfsData() async {
   if (resp.statusCode != 200) {
     throw Exception('Failed to fetch GTFS agencies: ${resp.statusCode}');
   }
-
-  print(resp.body.length);
 
   final data = jsonDecode(resp.body);
   if (data['data'] == null || data['data']['agencies'] == null) {
@@ -145,25 +139,13 @@ Future<void> fetchAndStoreGtfsData() async {
   }
 
   await agencyDao.batchInsert(agencyMaps);
-  print('Agencies inserted: ${agencyMaps.length}');
-
   await routeDao.batchInsert(routeMaps);
-  print('Routes inserted: ${routeMaps.length}');
-
   final directionsId = await DirectionDao().batchInsert(directionMaps);
-  print('Directions inserted: ${directionMaps.length}');
-
   await stopDao.batchInsert(stopMaps.values.toList());
-  print('Stops inserted: ${stopMaps.length}');
-
   await routeDao.batchInsertAgencies(agencyRouteLinks);
-  print('Agency-Route links inserted: ${agencyRouteLinks.length}');
-
   for (final directionStopLink in directionStopLinks) {
     directionStopLink['direction_id'] =
         directionsId[directionStopLink.remove('direction_origin')];
   }
-
   await stopDao.batchInsertDirection(directionStopLinks);
-  print('Direction-Stop links inserted: ${directionStopLinks.length}');
 }

@@ -21,8 +21,6 @@ Future<Map<String, dynamic>> submitQuery({
   double toLat = toLocation.lat;
   double toLon = toLocation.lon;
 
-  print('($fromLat, $fromLon), ($toLat, $toLon)');
-
   String dtIso;
   String localTZ =
       DateTime.now().timeZoneOffset.isNegative
@@ -189,15 +187,11 @@ Future<Map<String, dynamic>> submitQuery({
 
   ''';
 
-  // print(gql.replaceAll('\n', ' ').replaceAll(RegExp(r'\s+'), ' ').trim());
-  // print(variables);
-
   final resp = await http.post(
     Uri.parse('https://maps.bhasher.com/otp/gtfs/v1'),
     headers: {'Content-Type': 'application/json'},
     body: jsonEncode({'query': gql, 'variables': variables}),
   );
-  print(resp.body);
   if (resp.statusCode == 200) {
     final data = jsonDecode(resp.body);
     if (data['data'] != null &&

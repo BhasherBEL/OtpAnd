@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:otpand/objects/config.dart';
 import 'package:otpand/objs.dart';
 import 'package:otpand/objects/profile.dart';
 import 'package:otpand/widgets/datetime_picker.dart';
@@ -42,5 +43,8 @@ class History {
       dateTime: dateTime,
       profile: profile,
     );
+    if (profile != null) {
+      Config().setValue(ConfigKey.defaultProfileId, profile.id);
+    }
   }
 }

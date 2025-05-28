@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:otpand/objects/history.dart';
 import 'package:otpand/utils/gnss.dart';
 import 'package:otpand/objs.dart' as objs;
+import 'package:otpand/widgets/datetime_picker.dart';
 
 class EventWidget extends StatelessWidget {
   const EventWidget({super.key, required this.event});
@@ -21,7 +22,9 @@ class EventWidget extends StatelessWidget {
       leading: const Icon(Icons.event, color: Colors.deepOrange),
       title: Text(title, style: Theme.of(context).textTheme.titleSmall),
       titleAlignment: ListTileTitleAlignment.center,
-      subtitle: Text("$dateStr\n${event.location ?? ''}"),
+      subtitle: Text(
+        "$dateStr\n${event.location?.replaceAll('\n', ' ') ?? ''}",
+      ),
       isThreeLine: true,
       onTap: () async {
         if (event.location == null) return;
@@ -34,6 +37,10 @@ class EventWidget extends StatelessWidget {
             displayName: title,
             lat: loc.$1,
             lon: loc.$2,
+          ),
+          dateTime: DateTimePickerValue(
+            mode: DateTimePickerMode.arrival,
+            dateTime: event.start,
           ),
         );
       },

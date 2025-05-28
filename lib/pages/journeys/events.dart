@@ -51,13 +51,8 @@ class _EventsWidgetState extends State<EventsWidget> {
       }
     }
 
-    try {} on PlatformException catch (e, s) {
-      debugPrint('RETRIEVE_CALENDARS: $e, $s');
-      return;
-    }
-
     final now = DateTime.now();
-    final tomorrow = now.add(const Duration(days: 1));
+    final tomorrow = now.add(const Duration(days: 7));
     final endOfTomorrow = DateTime(
       tomorrow.year,
       tomorrow.month,

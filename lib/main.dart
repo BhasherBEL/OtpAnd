@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:otpand/api/gtfs.dart';
+import 'package:otpand/objects/config.dart';
 import 'package:otpand/pages/homepage.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Config().init();
   runApp(OTPApp());
 }
 

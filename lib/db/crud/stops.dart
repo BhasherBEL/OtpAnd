@@ -88,8 +88,6 @@ class StopDao {
       ''',
       [directionId],
     );
-    print('DirectionId: $directionId');
-    print('StopsBefore: ${maps.length}');
     return Stop.parseAll(maps);
   }
 }

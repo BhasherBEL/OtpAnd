@@ -22,6 +22,7 @@ class FavouriteDao {
       'lat': location.lat,
       'lon': location.lon,
       'stopGtfsId': location.stop?.gtfsId,
+      'isContact': 0,
     };
     final id = await db.insert(
       'favourites',
@@ -35,6 +36,7 @@ class FavouriteDao {
       lat: location.lat,
       lon: location.lon,
       stop: location.stop,
+      isContact: false,
     );
   }
 

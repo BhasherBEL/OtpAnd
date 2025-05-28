@@ -44,8 +44,7 @@ class FavouriteWidget extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  if (favourite.stop != null &&
-                      favourite.stop!.mode != null) ...[
+                  if (favourite.stop != null && favourite.stop!.mode != null)
                     Container(
                       decoration: BoxDecoration(
                         color: Theme.of(context).cardColor,
@@ -55,7 +54,16 @@ class FavouriteWidget extends StatelessWidget {
                       margin: const EdgeInsets.only(right: 8),
                       child: Icon(mode.icon, color: mode.color, size: 20),
                     ),
-                  ],
+                  if (favourite.isContact)
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardColor,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      padding: const EdgeInsets.all(4),
+                      margin: const EdgeInsets.only(right: 8),
+                      child: Icon(Icons.contacts, size: 20),
+                    ),
                   Expanded(
                     child: Align(
                       alignment: Alignment.centerLeft,

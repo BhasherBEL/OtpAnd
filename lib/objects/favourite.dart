@@ -8,6 +8,7 @@ class Favourite {
   final double lat;
   final double lon;
   final Stop? stop;
+  final bool isContact;
 
   Favourite({
     required this.id,
@@ -15,6 +16,7 @@ class Favourite {
     required this.lat,
     required this.lon,
     this.stop,
+    this.isContact = false,
   });
 
   static Future<Favourite> parse(Map<String, dynamic> json) async {
@@ -27,6 +29,7 @@ class Favourite {
           json['stopGtfsId'] != null
               ? await StopDao().get(json['stopGtfsId'])
               : null,
+      isContact: json['isContact'] == 1 || json['isContact'] == true,
     );
   }
 

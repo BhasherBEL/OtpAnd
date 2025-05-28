@@ -95,6 +95,9 @@ Future<Map<String, dynamic>> submitQuery({
               transitLeg
 							realTime
 							serviceDate
+							legGeometry {
+								points
+							}
               from {
                 name
                 lat

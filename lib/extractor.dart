@@ -94,6 +94,7 @@ Future<Leg> parseLeg(Map<String, dynamic> legJson) async {
     interlineWithPreviousLeg: legJson['interlineWithPreviousLeg'] as bool,
     otherDepartures: otherDepartures,
     serviceDate: legJson['serviceDate'] as String?,
+    geometry: legJson['legGeometry']['points'] as String?,
   );
 }
 

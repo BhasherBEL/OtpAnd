@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:otpand/objects/route.dart';
 import 'package:otpand/objects/stop.dart';
 import 'package:otpand/objects/timedStop.dart';
 import 'package:otpand/objects/trip.dart';
 import 'package:otpand/utils.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:otpand/utils/gnss.dart';
+import 'package:otpand/utils/maps.dart';
 
 class Plan {
   final String start;
@@ -11,6 +15,26 @@ class Plan {
   final List<Leg> legs;
 
   Plan({required this.start, required this.end, required this.legs});
+
+  LatLngBounds getBounds() {
+    double minLat = double.infinity;
+    double maxLat = double.negativeInfinity;
+    double minLon = double.infinity;
+    double maxLon = double.negativeInfinity;
+
+    for (final leg in legs) {
+      if (leg.from.lat < minLat) minLat = leg.from.lat;
+      if (leg.from.lat > maxLat) maxLat = leg.from.lat;
+      if (leg.from.lon < minLon) minLon = leg.from.lon;
+      if (leg.from.lon > maxLon) maxLon = leg.from.lon;
+      if (leg.to.lat < minLat) minLat = leg.to.lat;
+      if (leg.to.lat > maxLat) maxLat = leg.to.lat;
+      if (leg.to.lon < minLon) minLon = leg.to.lon;
+      if (leg.to.lon > maxLon) maxLon = leg.to.lon;
+    }
+
+    return LatLngBounds(LatLng(minLat, minLon), LatLng(maxLat, maxLon));
+  }
 }
 
 class Leg {
@@ -29,6 +53,7 @@ class Leg {
   final List<DepartureArrival> otherDepartures;
   final Trip? trip;
   final String? serviceDate;
+  final String? geometry;
 
   Leg({
     required this.id,
@@ -46,6 +71,7 @@ class Leg {
     required this.otherDepartures,
     this.trip,
     this.serviceDate,
+    this.geometry,
   });
 
   get color {
@@ -87,6 +113,61 @@ class Leg {
       }
     }
     return [];
+  }
+
+  Polyline get polyline {
+    if (geometry == null) {
+      return Polyline(
+        points: [LatLng(from.lat, from.lon), LatLng(to.lat, to.lon)],
+        color: color,
+        strokeWidth: 8.0,
+      );
+    }
+
+    final points = decodePolyline(geometry!).unpackPolyline();
+
+    return Polyline(
+      points: points,
+      color: route?.color ?? route?.mode.color ?? color,
+      strokeWidth: 4.0,
+    );
+  }
+
+  LatLng get midPoint {
+    final distance = Distance();
+
+    if (geometry == null) {
+      return LatLng((from.lat + to.lat) / 2, (from.lon + to.lon) / 2);
+    }
+
+    final points = decodePolyline(geometry!).unpackPolyline();
+    double totalDistance = 0.0;
+
+    for (int i = 0; i < points.length - 1; i++) {
+      totalDistance += distance(points[i], points[i + 1]);
+    }
+
+    double middleDistance = totalDistance / 2;
+    double currentDistance = 0.0;
+
+    for (int i = 0; i < points.length - 1; i++) {
+      final newDist = distance(points[i], points[i + 1]);
+      if (currentDistance + newDist < middleDistance) {
+        currentDistance += newDist;
+        continue;
+      }
+
+      final ratio = (middleDistance - currentDistance) / newDist;
+
+      return LatLng(
+        points[i].latitude +
+            ratio * (points[i + 1].latitude - points[i].latitude),
+        points[i].longitude +
+            ratio * (points[i + 1].longitude - points[i].longitude),
+      );
+    }
+
+    return LatLng((from.lat + to.lat) / 2, (from.lon + to.lon) / 2);
   }
 }
 

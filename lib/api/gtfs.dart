@@ -75,7 +75,8 @@ Future<void> fetchAndStoreGtfsData() async {
   final routeDao = RouteDao();
   final stopDao = StopDao();
 
-  final agencies = data['data']['agencies'] as List<Map<String, dynamic>>;
+  final agencies =
+      (data['data']['agencies'] as List<dynamic>).cast<Map<String, dynamic>>();
 
   final List<Map<String, dynamic>> agencyMaps = [];
   final List<Map<String, dynamic>> routeMaps = [];
@@ -91,7 +92,9 @@ Future<void> fetchAndStoreGtfsData() async {
       'url': agency['url'],
     });
 
-    final routes = agency['routes'] as List<Map<String, dynamic>>? ?? [];
+    final routes =
+        (agency['routes'] as List<dynamic>?)?.cast<Map<String, dynamic>>() ??
+        [];
 
     for (final route in routes) {
       routeMaps.add({
@@ -107,12 +110,16 @@ Future<void> fetchAndStoreGtfsData() async {
         'route_gtfsId': route['gtfsId'] as String,
       });
 
-      final patterns = route['patterns'] as List<Map<String, dynamic>>? ?? [];
+      final patterns =
+          (route['patterns'] as List<dynamic>?)?.cast<Map<String, dynamic>>() ??
+          [];
 
       for (int i = 0; i < patterns.length; i++) {
         final pattern = patterns[i];
-        final stops = pattern['stops'] as List<Map<String, dynamic>>? ?? [];
-
+        final stops =
+            (pattern['stops'] as List<dynamic>?)
+                ?.cast<Map<String, dynamic>>() ??
+            [];
         directionMaps.add({
           'route_gtfsId': route['gtfsId'],
           'headsign': pattern['headsign'] ?? stops.last['name'],

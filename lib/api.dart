@@ -16,7 +16,7 @@ Future<Location?> geoCodeNominatimApi(String query) async {
     throw Exception('Failed to load geocode data');
   }
 
-  final List<Map<String, dynamic>> data =
-      jsonDecode(resp.body) as List<Map<String, dynamic>>;
+  final data =
+      (jsonDecode(resp.body) as List<dynamic>).cast<Map<String, dynamic>>();
   return data.map((e) => Location.parse(e)).firstOrNull;
 }

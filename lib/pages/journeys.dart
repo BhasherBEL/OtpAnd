@@ -34,8 +34,7 @@ class _JourneysState extends State<Journeys> {
   void updateFromHistory() {
     fromLocation = History.current.value.fromLocation;
     toLocation = History.current.value.toLocation;
-    dateTime =
-        History.current.value.dateTime ??
+    dateTime = History.current.value.dateTime ??
         DateTimePickerValue(
           mode: DateTimePickerMode.now,
           dateTime: DateTime.now(),
@@ -70,6 +69,9 @@ class _JourneysState extends State<Journeys> {
         profile = loadedProfiles.firstWhereOrNull(
           (p) => p.id == defaultProfile,
         );
+        if (profile != null) {
+          History.update(profile: profile);
+        }
       }
     });
   }
@@ -206,32 +208,30 @@ class _JourneysState extends State<Journeys> {
                                           children: [
                                             Expanded(
                                               child: DropdownButtonFormField<
-                                                Profile
-                                              >(
+                                                  Profile>(
                                                 value: profile,
-                                                items:
-                                                    profiles.map((p) {
-                                                      return DropdownMenuItem(
-                                                        value: p,
-                                                        child: Row(
-                                                          children: [
-                                                            CircleAvatar(
-                                                              backgroundColor:
-                                                                  p.color,
-                                                              radius: 10,
-                                                            ),
-                                                            const SizedBox(
-                                                              width: 8,
-                                                            ),
-                                                            Text(
-                                                              p.name.isNotEmpty
-                                                                  ? p.name
-                                                                  : 'Profile ${p.id}',
-                                                            ),
-                                                          ],
+                                                items: profiles.map((p) {
+                                                  return DropdownMenuItem(
+                                                    value: p,
+                                                    child: Row(
+                                                      children: [
+                                                        CircleAvatar(
+                                                          backgroundColor:
+                                                              p.color,
+                                                          radius: 10,
                                                         ),
-                                                      );
-                                                    }).toList(),
+                                                        const SizedBox(
+                                                          width: 8,
+                                                        ),
+                                                        Text(
+                                                          p.name.isNotEmpty
+                                                              ? p.name
+                                                              : 'Profile ${p.id}',
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  );
+                                                }).toList(),
                                                 onChanged: (selected) {
                                                   if (selected == null) return;
                                                   History.update(
@@ -240,15 +240,15 @@ class _JourneysState extends State<Journeys> {
                                                 },
                                                 decoration:
                                                     const InputDecoration(
-                                                      labelText: 'Profile',
-                                                      border: InputBorder.none,
-                                                      isDense: true,
-                                                      contentPadding:
-                                                          EdgeInsets.symmetric(
-                                                            vertical: 8,
-                                                            horizontal: 12,
-                                                          ),
-                                                    ),
+                                                  labelText: 'Profile',
+                                                  border: InputBorder.none,
+                                                  isDense: true,
+                                                  contentPadding:
+                                                      EdgeInsets.symmetric(
+                                                    vertical: 8,
+                                                    horizontal: 12,
+                                                  ),
+                                                ),
                                               ),
                                             ),
                                             const SizedBox(width: 8),
@@ -265,30 +265,27 @@ class _JourneysState extends State<Journeys> {
                                                   if (profile == null) return;
                                                   final updated =
                                                       await Navigator.of(
+                                                    context,
+                                                  ).push<Profile>(
+                                                    MaterialPageRoute(
+                                                      builder: (
                                                         context,
-                                                      ).push<Profile>(
-                                                        MaterialPageRoute(
-                                                          builder:
-                                                              (
-                                                                context,
-                                                              ) => ProfilePage(
-                                                                profile:
-                                                                    profile!,
-                                                              ),
-                                                        ),
-                                                      );
+                                                      ) =>
+                                                          ProfilePage(
+                                                        profile: profile!,
+                                                      ),
+                                                    ),
+                                                  );
                                                   if (updated != null) {
                                                     setState(() {
-                                                      profiles =
-                                                          profiles
-                                                              .map(
-                                                                (p) =>
-                                                                    p.id ==
-                                                                            updated.id
-                                                                        ? updated
-                                                                        : p,
-                                                              )
-                                                              .toList();
+                                                      profiles = profiles
+                                                          .map(
+                                                            (p) => p.id ==
+                                                                    updated.id
+                                                                ? updated
+                                                                : p,
+                                                          )
+                                                          .toList();
                                                     });
                                                     History.update(
                                                       profile: updated,
@@ -357,24 +354,21 @@ class _JourneysState extends State<Journeys> {
                                             profile != null) {
                                           Navigator.of(context).push(
                                             MaterialPageRoute<void>(
-                                              builder:
-                                                  (context) => RoutesPage(
-                                                    fromLocation: fromLocation!,
-                                                    toLocation: toLocation!,
-                                                    profile: profile!,
-                                                    timeType:
-                                                        dateTime.mode ==
-                                                                DateTimePickerMode
-                                                                    .now
-                                                            ? 'now'
-                                                            : (dateTime.mode ==
-                                                                    DateTimePickerMode
-                                                                        .departure
-                                                                ? 'depart'
-                                                                : 'arrive'),
-                                                    selectedDateTime:
-                                                        dateTime.dateTime,
-                                                  ),
+                                              builder: (context) => RoutesPage(
+                                                fromLocation: fromLocation!,
+                                                toLocation: toLocation!,
+                                                profile: profile!,
+                                                timeType: dateTime.mode ==
+                                                        DateTimePickerMode.now
+                                                    ? 'now'
+                                                    : (dateTime.mode ==
+                                                            DateTimePickerMode
+                                                                .departure
+                                                        ? 'depart'
+                                                        : 'arrive'),
+                                                selectedDateTime:
+                                                    dateTime.dateTime,
+                                              ),
                                             ),
                                           );
                                         } else {
@@ -408,20 +402,17 @@ class _JourneysState extends State<Journeys> {
                         profile != null) {
                       Navigator.of(context).push(
                         MaterialPageRoute<void>(
-                          builder:
-                              (context) => RoutesPage(
-                                fromLocation: fromLocation!,
-                                toLocation: toLocation!,
-                                profile: profile!,
-                                timeType:
-                                    dateTime.mode == DateTimePickerMode.now
-                                        ? 'now'
-                                        : (dateTime.mode ==
-                                                DateTimePickerMode.departure
-                                            ? 'depart'
-                                            : 'arrive'),
-                                selectedDateTime: dateTime.dateTime,
-                              ),
+                          builder: (context) => RoutesPage(
+                            fromLocation: fromLocation!,
+                            toLocation: toLocation!,
+                            profile: profile!,
+                            timeType: dateTime.mode == DateTimePickerMode.now
+                                ? 'now'
+                                : (dateTime.mode == DateTimePickerMode.departure
+                                    ? 'depart'
+                                    : 'arrive'),
+                            selectedDateTime: dateTime.dateTime,
+                          ),
                         ),
                       );
                     }

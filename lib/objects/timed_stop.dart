@@ -100,6 +100,18 @@ class TimedStop {
     );
   }
 
+  static Future<List<TimedStop>> parseAllFromStoptimes(
+    Stop? stop,
+    List<dynamic> json,
+  ) async {
+    return Future.wait(
+      json.map(
+        (item) =>
+            TimedStop.parseFromStoptime(stop, item as Map<String, dynamic>),
+      ),
+    );
+  }
+
   Map<String, dynamic> toMap() {
     return {
       'stop': stop.toMap(),

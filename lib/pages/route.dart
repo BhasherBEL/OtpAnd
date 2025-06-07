@@ -295,6 +295,7 @@ class _RoutePageState extends State<RoutePage>
                                                 children: [
                                                   Text(
                                                     legs.first.from.name,
+                                                    overflow: TextOverflow.clip,
                                                     style:
                                                         Theme.of(
                                                           context,
@@ -308,16 +309,23 @@ class _RoutePageState extends State<RoutePage>
                                                         size: 16,
                                                       ),
                                                       const SizedBox(width: 4),
-                                                      Text(
-                                                        legs.last.to.name,
-                                                        style: Theme.of(context)
-                                                            .textTheme
-                                                            .titleMedium
-                                                            ?.copyWith(
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold,
-                                                            ),
+                                                      Expanded(
+                                                        child: Text(
+                                                          legs.last.to.name,
+                                                          overflow:
+                                                              TextOverflow
+                                                                  .ellipsis,
+                                                          style: Theme.of(
+                                                                context,
+                                                              )
+                                                              .textTheme
+                                                              .titleMedium
+                                                              ?.copyWith(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                              ),
+                                                        ),
                                                       ),
                                                     ],
                                                   ),

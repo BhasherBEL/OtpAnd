@@ -1,11 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:otpand/api/gtfs.dart';
+import 'package:otpand/db/crud/favourites.dart';
+import 'package:otpand/db/crud/stops.dart';
 import 'package:otpand/objects/config.dart';
 import 'package:otpand/pages/homepage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Config().init();
+  unawaited(StopDao().loadAll());
+  unawaited(FavouriteDao().loadAll());
   runApp(OTPApp());
 }
 

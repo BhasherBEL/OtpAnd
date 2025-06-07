@@ -80,3 +80,33 @@ Future<(double, double)?> resolveAddress(
 
   return (locations.first.latitude, locations.first.longitude);
 }
+
+Future<String?> resolveGeocode(
+  double lat,
+  double lon, {
+  BuildContext? context,
+}) async {
+  final placemarks = await geocoding.placemarkFromCoordinates(lat, lon);
+
+  for (final placemark in placemarks) {
+    if (placemark.street != null && placemark.street!.isNotEmpty) {
+      if (placemark.locality != null && placemark.locality!.isNotEmpty) {
+        return '${placemark.street}, ${placemark.locality}';
+      }
+      return placemark.street;
+    }
+    if (placemark.name != null && placemark.name!.isNotEmpty) {
+      return placemark.name;
+    }
+  }
+
+  if (context != null && context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Failed to find an address for this location.'),
+        duration: Duration(seconds: 3),
+      ),
+    );
+  }
+  return null;
+}

@@ -71,6 +71,11 @@ class StopDao {
     return Stop.parseAll(maps);
   }
 
+  Future<void> loadAll() async {
+    final stops = await getAll();
+    Stop.currentStops.value = stops;
+  }
+
   Future<int> delete(String gtfsId) async {
     final db = await dbHelper.database;
     return await db.delete('stops', where: 'gtfsId = ?', whereArgs: [gtfsId]);

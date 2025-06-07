@@ -3,11 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:otpand/api.dart';
-import 'package:otpand/db/crud/stops.dart';
+import 'package:otpand/objects/contact.dart';
 import 'package:otpand/objects/location.dart';
+import 'package:otpand/objects/stop.dart';
 import 'package:otpand/utils/gnss.dart';
-import 'package:otpand/db/crud/favourites.dart';
 import 'package:otpand/objects/favourite.dart';
+import 'package:otpand/widgets/map_picker.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:otpand/widgets/search/contact_item.dart';
 import 'package:otpand/widgets/search/favourite_item.dart';
@@ -65,22 +66,24 @@ class _SearchModalState extends State<SearchModal> {
   void initState() {
     super.initState();
     _loadStops();
+    Stop.currentStops.addListener(_loadStops);
     _loadFavourites();
+    Favourite.currentFavourites.addListener(_loadFavourites);
     _loadContacts();
+    ContactInfo.currentContacts.addListener(_loadContacts);
+    unawaited(ContactInfo.loadAll());
     _controller.addListener(_onTextChanged);
   }
 
-  Future<void> _loadContacts() async {
+  void _loadContacts() {
     try {
-      final contacts = await FlutterContacts.getContacts(
-        withProperties: true,
-        withThumbnail: true,
-      );
-      final filtered = contacts.where((c) => c.addresses.isNotEmpty).toList();
+      final filtered =
+          ContactInfo.currentContacts.value
+              .where((c) => c.addresses.isNotEmpty)
+              .toList();
       if (mounted) {
         setState(() {
           _contacts = filtered;
-          _filteredContacts = filtered;
         });
       }
     } on Exception catch (e) {
@@ -92,33 +95,26 @@ class _SearchModalState extends State<SearchModal> {
     }
   }
 
-  Future<void> _loadStops() async {
-    setState(() => _loading = true);
-    final stops = await StopDao().getAll();
-    setState(() {
-      _allStops =
-          stops
-              .map(
-                (stop) => Location(
-                  name: stop.name,
-                  displayName: stop.name,
-                  lat: stop.lat,
-                  lon: stop.lon,
-                  stop: stop,
-                ),
-              )
-              .toList();
-      _suggestions = _allStops;
-      _loading = false;
-    });
+  void _loadStops() {
+    _allStops =
+        Stop.currentStops.value
+            .map(
+              (stop) => Location(
+                name: stop.name,
+                displayName: stop.name,
+                lat: stop.lat,
+                lon: stop.lon,
+                stop: stop,
+              ),
+            )
+            .toList();
   }
 
-  Future<void> _loadFavourites() async {
-    final favs = await FavouriteDao().getAll();
+  void _loadFavourites() {
+    _favourites = Favourite.currentFavourites.value;
     if (mounted) {
       setState(() {
-        _favourites = favs;
-        _filteredFavourites = favs;
+        _filteredFavourites = _favourites;
       });
     }
   }
@@ -127,9 +123,9 @@ class _SearchModalState extends State<SearchModal> {
     final text = _controller.text.trim().toLowerCase();
     if (text.isEmpty) {
       setState(() {
-        _suggestions = _allStops;
+        _suggestions = [];
         _filteredFavourites = _favourites;
-        _filteredContacts = _contacts;
+        _filteredContacts = [];
       });
       return;
     }
@@ -266,6 +262,10 @@ class _SearchModalState extends State<SearchModal> {
                                       Icons.my_location,
                                       color: Colors.blue,
                                     ),
+                                    trailing: Icon(
+                                      Icons.arrow_forward_ios,
+                                      size: 16,
+                                    ),
                                     title: Text('Current Location'),
                                     onTap: () async {
                                       setState(() {
@@ -301,6 +301,32 @@ class _SearchModalState extends State<SearchModal> {
                                     },
                                   ),
                                 ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                child: ListTile(
+                                  leading: Icon(Icons.map, color: Colors.green),
+                                  trailing: Icon(
+                                    Icons.arrow_forward_ios,
+                                    size: 16,
+                                  ),
+                                  title: Text('Choose from the map'),
+                                  onTap: () async {
+                                    final loc = await Navigator.of(
+                                      context,
+                                    ).push<Location>(
+                                      MaterialPageRoute<Location>(
+                                        builder: (context) => MapPicker(),
+                                      ),
+                                    );
+                                    if (loc != null) {
+                                      Navigator.of(context).pop(loc);
+                                    }
+                                  },
+                                ),
+                              ),
                               if (widget.showFavourites &&
                                   _filteredFavourites.isNotEmpty) ...[
                                 Padding(

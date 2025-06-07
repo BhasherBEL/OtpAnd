@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:otpand/db/crud/favourites.dart';
@@ -19,12 +21,11 @@ class FavouritesWidget extends StatefulWidget {
 }
 
 class _FavouritesWidgetState extends State<FavouritesWidget> {
-  late Future<List<Favourite>> _favouritesFuture;
-
   Favourite? _dragSource;
   Favourite? _dragTarget;
   Offset? _dragStartOffset;
   Offset? _dragCurrentOffset;
+  List<Favourite> favourites = Favourite.currentFavourites.value;
 
   final GlobalKey _stackKey = GlobalKey();
 
@@ -39,12 +40,18 @@ class _FavouritesWidgetState extends State<FavouritesWidget> {
   @override
   void initState() {
     super.initState();
-    _favouritesFuture = FavouriteDao().getAll();
+    Favourite.currentFavourites.addListener(_loadFavourites);
   }
 
-  void _reload() {
+  @override
+  void dispose() {
+    Favourite.currentFavourites.removeListener(_loadFavourites);
+    super.dispose();
+  }
+
+  void _loadFavourites() {
     setState(() {
-      _favouritesFuture = FavouriteDao().getAll();
+      favourites = Favourite.currentFavourites.value;
     });
   }
 
@@ -102,15 +109,9 @@ class _FavouritesWidgetState extends State<FavouritesWidget> {
     final pinKey = GlobalKey<State>();
     return Padding(
       padding: const EdgeInsets.all(8.0),
-      child: FutureBuilder<List<Favourite>>(
-        future: _favouritesFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final favourites = snapshot.data ?? [];
-          final items = List<Favourite?>.from(favourites);
-          items.add(null);
+      child: Builder(
+        builder: (context) {
+          final List<Favourite?> items = [...favourites, null];
 
           while (_cardKeys.length < items.length) {
             _cardKeys.add(GlobalKey());
@@ -131,7 +132,9 @@ class _FavouritesWidgetState extends State<FavouritesWidget> {
 
             for (int i = 0; i < items.length; i++) {
               final fav = items[i];
-              if (fav == null) continue;
+              if (fav == null) {
+                continue;
+              }
               final key = _cardKeys[i];
               if (_isOnKey(key, globalPosition)) {
                 if (_dragTarget != fav) {
@@ -279,7 +282,7 @@ class _FavouritesWidgetState extends State<FavouritesWidget> {
                                 await FavouriteDao().insertFromLocation(
                                   location,
                                 );
-                                _reload();
+                                unawaited(FavouriteDao().loadAll());
                               }
                             },
                             child: Center(
@@ -322,7 +325,7 @@ class _FavouritesWidgetState extends State<FavouritesWidget> {
                             key: _cardKeys[index],
                             child: FavouriteWidget(
                               favourite: fav,
-                              onChanged: _reload,
+                              onChanged: FavouriteDao().loadAll,
                               color:
                                   _dragSource == fav
                                       ? Colors.blue

@@ -155,4 +155,6 @@ Future<void> fetchAndStoreGtfsData() async {
         directionsId[directionStopLink.remove('direction_origin') as int];
   }
   await stopDao.batchInsertDirection(directionStopLinks);
+
+  await StopDao().loadAll();
 }

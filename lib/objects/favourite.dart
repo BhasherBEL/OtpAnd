@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:otpand/db/crud/stops.dart';
 import 'package:otpand/objects/location.dart';
 import 'package:otpand/objects/stop.dart';
@@ -25,10 +26,9 @@ class Favourite {
       name: json['name'] as String,
       lat: (json['lat'] as num).toDouble(),
       lon: (json['lon'] as num).toDouble(),
-      stop:
-          json['stopGtfsId'] != null
-              ? await StopDao().get(json['stopGtfsId'] as String)
-              : null,
+      stop: json['stopGtfsId'] != null
+          ? await StopDao().get(json['stopGtfsId'] as String)
+          : null,
       isContact: json['isContact'] == 1 || json['isContact'] == true,
     );
   }
@@ -42,4 +42,6 @@ class Favourite {
       displayName: name,
     );
   }
+
+  static final currentFavourites = ValueNotifier<List<Favourite>>([]);
 }

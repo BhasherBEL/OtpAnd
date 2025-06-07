@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class Stop {
   final String gtfsId;
   final String name;
@@ -50,4 +52,6 @@ class Stop {
       'mode': mode,
     };
   }
+
+  static final currentStops = ValueNotifier<List<Stop>>([]);
 }

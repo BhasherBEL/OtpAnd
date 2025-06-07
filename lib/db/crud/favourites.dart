@@ -46,6 +46,10 @@ class FavouriteDao {
     return Future.wait(maps.map((e) => Favourite.parse(e)));
   }
 
+  Future<void> loadAll() async {
+    Favourite.currentFavourites.value = await getAll();
+  }
+
   Future<int> delete(String id) async {
     final db = await dbHelper.database;
     return await db.delete('favourites', where: 'id = ?', whereArgs: [id]);

@@ -71,7 +71,11 @@ class SmallRoute extends StatelessWidget {
                 builder: (context, constraints) {
                   final minWidths =
                       filteredLegs.map((leg) {
-                        if (leg.mode == 'WALK' || leg.mode == 'BICYCLE') {
+                        if ((leg.mode == 'WALK' || leg.mode == 'BICYCLE') &&
+                            leg.distance < 100) {
+                          return 8.0;
+                        } else if (leg.mode == 'WALK' ||
+                            leg.mode == 'BICYCLE') {
                           return 25.0 +
                               (leg.distance.round().toString().length * 10);
                         } else {
@@ -147,6 +151,18 @@ class _LegTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bgColor = leg.color ?? leg.route?.color ?? Colors.grey.shade300;
+
+    if ((leg.mode == 'WALK' || leg.mode == 'BICYCLE') && leg.distance < 100) {
+      return Container(
+        width: 8,
+        height: 25,
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(4),
+        ),
+      );
+    }
+
     final textColor =
         leg.route?.textColor ??
         (ThemeData.estimateBrightnessForColor(bgColor) == Brightness.dark

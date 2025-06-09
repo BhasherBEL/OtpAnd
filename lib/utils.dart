@@ -71,7 +71,7 @@ String displayDistanceInTime(num distance) {
 Color? getColorFromCode(dynamic code) {
   if (code == null) return null;
   if (code is int) {
-    String hex = code.toRadixString(16).padLeft(6, '0');
+    String hex = code.toString().padLeft(6, '0');
     return Color(int.parse('FF$hex', radix: 16));
   }
   if (code is String) {

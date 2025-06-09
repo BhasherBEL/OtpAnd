@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:otpand/objects/timed_stop.dart';
 import 'package:otpand/pages/trip.dart';
 import 'package:otpand/utils.dart';
+import 'package:otpand/utils/route_colors.dart';
 import 'package:otpand/widgets/route_icon.dart';
 
 class DepartureWidget extends StatelessWidget {
@@ -16,9 +17,16 @@ class DepartureWidget extends StatelessWidget {
     final dep = timedStop.departure;
     final scheduledTime = dep.scheduledTime;
     final estimatedTime = dep.estimated?.time;
+    
+    // Get route name for background color
+    final routeName = timedStop.pattern?.route.shortName ?? 
+                     timedStop.trip?.route?.shortName ?? 
+                     'Unknown';
+    final backgroundColor = getRouteBackgroundColor(routeName);
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      color: backgroundColor,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
         child: Column(

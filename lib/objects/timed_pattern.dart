@@ -4,7 +4,7 @@ import 'package:otpand/objects/stop.dart';
 import 'package:otpand/objects/timed_stop.dart';
 
 class TimedPattern {
-  final List<TimedStop> timedStops;
+  List<TimedStop> timedStops;
   final String? headSign;
   final RouteInfo route;
 
@@ -25,13 +25,18 @@ class TimedPattern {
     );
     if (route == null) return null;
 
-    return TimedPattern(
+    final pattern = TimedPattern(
       route: route,
       headSign: json['pattern']['headsign'] as String?,
-      timedStops: await TimedStop.parseAllFromStoptimes(
-        stop,
-        json['stoptimes'] as List<dynamic>,
-      ),
+      timedStops: [],
     );
+
+    pattern.timedStops = await TimedStop.parseAllFromStoptimes(
+      stop,
+      json['stoptimes'] as List<dynamic>,
+      pattern: pattern,
+    );
+
+    return pattern;
   }
 }

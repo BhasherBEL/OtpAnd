@@ -34,6 +34,18 @@ class TripPage extends StatelessWidget {
             return const Center(child: Text('No stops found for this trip.'));
           }
 
+          final List<TimedStop> stopsWithStop =
+              stops
+                  .where(
+                    (s) =>
+                        s.dropoffType != null &&
+                            s.dropoffType != PickupDropoffType.none ||
+                        s.pickupType != null &&
+                            s.pickupType != PickupDropoffType.none ||
+                        s.pickupType == null && s.dropoffType == null,
+                  )
+                  .toList();
+
           return SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.only(
@@ -54,9 +66,9 @@ class TripPage extends StatelessWidget {
                 ),
                 builder: TimelineTileBuilder.connected(
                   connectionDirection: ConnectionDirection.before,
-                  itemCount: stops.length,
+                  itemCount: stopsWithStop.length,
                   contentsBuilder: (context, index) {
-                    final timedStop = stops[index];
+                    final timedStop = stopsWithStop[index];
                     final stop = timedStop.stop;
 
                     final arrivalTimeRt = timedStop.arrival.estimated?.time;

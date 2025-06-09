@@ -1,6 +1,7 @@
 import 'package:otpand/db/crud/stops.dart';
 import 'package:otpand/objects/place.dart';
 import 'package:otpand/objects/stop.dart';
+import 'package:otpand/objects/timed_pattern.dart';
 import 'package:otpand/objects/trip.dart';
 
 enum PickupDropoffType {
@@ -35,6 +36,7 @@ class TimedStop {
   final String? serviceDate;
   final PickupDropoffType? dropoffType;
   final PickupDropoffType? pickupType;
+  final TimedPattern? pattern;
 
   TimedStop({
     required this.stop,
@@ -45,12 +47,12 @@ class TimedStop {
     this.serviceDate,
     this.dropoffType,
     this.pickupType,
+    this.pattern,
   });
 
   static Future<TimedStop> parseFromStoptime(
-    Stop? stop,
-    Map<String, dynamic> json,
-  ) async {
+      Stop? stop, Map<String, dynamic> json,
+      {TimedPattern? pattern}) async {
     final realtime = json['realtime'] == true;
     final serviceDay = json['serviceDay'] as int?;
 
@@ -78,36 +80,35 @@ class TimedStop {
     }
 
     return TimedStop(
-      stop: stop!,
-      arrival: DepartureArrival(
-        scheduledTime: scheduledArrival,
-        estimated:
-            realtime ? EstimatedTime(time: realtimeArrival, delay: null) : null,
-      ),
-      departure: DepartureArrival(
-        scheduledTime: scheduledDeparture,
-        estimated:
-            realtime
-                ? EstimatedTime(time: realtimeDeparture, delay: null)
-                : null,
-      ),
-      headSign: json['headsign'] as String?,
-      trip:
-          json['trip'] != null
-              ? await Trip.parse(json['trip'] as Map<String, dynamic>)
+        stop: stop!,
+        arrival: DepartureArrival(
+          scheduledTime: scheduledArrival,
+          estimated: realtime
+              ? EstimatedTime(time: realtimeArrival, delay: null)
               : null,
-      serviceDate: serviceDate,
-    );
+        ),
+        departure: DepartureArrival(
+          scheduledTime: scheduledDeparture,
+          estimated: realtime
+              ? EstimatedTime(time: realtimeDeparture, delay: null)
+              : null,
+        ),
+        headSign: json['headsign'] as String?,
+        trip: json['trip'] != null
+            ? await Trip.parse(json['trip'] as Map<String, dynamic>)
+            : null,
+        serviceDate: serviceDate,
+        pattern: pattern);
   }
 
   static Future<List<TimedStop>> parseAllFromStoptimes(
-    Stop? stop,
-    List<dynamic> json,
-  ) async {
+      Stop? stop, List<dynamic> json,
+      {TimedPattern? pattern}) async {
     return Future.wait(
       json.map(
-        (item) =>
-            TimedStop.parseFromStoptime(stop, item as Map<String, dynamic>),
+        (item) => TimedStop.parseFromStoptime(
+            stop, item as Map<String, dynamic>,
+            pattern: pattern),
       ),
     );
   }

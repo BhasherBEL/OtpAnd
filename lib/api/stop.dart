@@ -77,6 +77,11 @@ Future<List<TimedPattern>> fetchTimetable(Stop stop, DateTime date) async {
 						serviceDay
 						scheduledArrival
 						scheduledDeparture
+					  trip {
+              gtfsId
+              tripHeadsign
+              tripShortName
+            }
 					}
 				}
 			}

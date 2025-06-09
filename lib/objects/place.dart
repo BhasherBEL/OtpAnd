@@ -23,22 +23,19 @@ class Place {
       name: placeJson['name'] as String? ?? 'Unknown',
       lat: (placeJson['lat'] as num?)?.toDouble() ?? 0.0,
       lon: (placeJson['lon'] as num?)?.toDouble() ?? 0.0,
-      departure:
-          placeJson['departure'] != null
-              ? DepartureArrival.parse(
-                placeJson['departure'] as Map<String, dynamic>,
-              )
-              : null,
-      arrival:
-          placeJson['arrival'] != null
-              ? DepartureArrival.parse(
-                placeJson['arrival'] as Map<String, dynamic>,
-              )
-              : null,
-      stop:
-          placeJson['stop'] != null
-              ? await StopDao().get(placeJson['stop']['gtfsId'] as String)
-              : null,
+      departure: placeJson['departure'] != null
+          ? DepartureArrival.parse(
+              placeJson['departure'] as Map<String, dynamic>,
+            )
+          : null,
+      arrival: placeJson['arrival'] != null
+          ? DepartureArrival.parse(
+              placeJson['arrival'] as Map<String, dynamic>,
+            )
+          : null,
+      stop: placeJson['stop'] != null
+          ? await StopDao().get(placeJson['stop']['gtfsId'] as String)
+          : null,
     );
   }
 }
@@ -52,10 +49,9 @@ class DepartureArrival {
   static DepartureArrival parse(Map<String, dynamic> json) {
     return DepartureArrival(
       scheduledTime: json['scheduledTime'] as String?,
-      estimated:
-          json['estimated'] != null
-              ? EstimatedTime.parse(json['estimated'] as Map<String, dynamic>)
-              : null,
+      estimated: json['estimated'] != null
+          ? EstimatedTime.parse(json['estimated'] as Map<String, dynamic>)
+          : null,
     );
   }
 
@@ -89,6 +85,11 @@ class DepartureArrival {
     } else {
       return scheduledTime;
     }
+  }
+
+  DateTime? get scheduledDateTime {
+    if (scheduledTime == null) return null;
+    return DateTime.tryParse(scheduledTime!);
   }
 }
 

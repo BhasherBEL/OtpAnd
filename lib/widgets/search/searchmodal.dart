@@ -321,7 +321,7 @@ class _SearchModalState extends State<SearchModal> {
                                         builder: (context) => MapPicker(),
                                       ),
                                     );
-                                    if (loc != null) {
+                                    if (loc != null && context.mounted) {
                                       Navigator.of(context).pop(loc);
                                     }
                                   },

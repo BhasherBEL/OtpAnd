@@ -19,7 +19,10 @@ class Trip {
       gtfsId: json['gtfsId'] as String,
       headsign: json['tripHeadsign'] as String?,
       shortName: json['tripShortName'] as String?,
-      route: await RouteDao().get(json['route']['gtfsId'] as String),
+      route:
+          json['route'] != null
+              ? await RouteDao().get(json['route']['gtfsId'] as String)
+              : null,
     );
   }
 

@@ -7,8 +7,10 @@ import 'package:intl/intl.dart';
 import 'package:otpand/objects/timed_stop.dart';
 import 'package:otpand/objects/timed_pattern.dart';
 import 'package:otpand/api/stop.dart' as stop_api;
+import 'package:otpand/pages/stop/hour_departures.dart';
 import 'package:otpand/utils.dart';
 import 'package:otpand/utils/colors.dart';
+import 'package:otpand/utils/route_colors.dart';
 import 'package:otpand/widgets/departure.dart';
 
 class StopPage extends StatefulWidget {
@@ -24,7 +26,6 @@ class _StopPageState extends State<StopPage>
     with TickerProviderStateMixin, WidgetsBindingObserver {
   late TabController _tabController;
 
-  // Right now tab
   List<TimedStop> _departures = [];
   bool _loading = false;
   bool _autoUpdateEnabled = false;
@@ -36,6 +37,9 @@ class _StopPageState extends State<StopPage>
   bool _timetableLoading = false;
   DateTime _selectedDate = DateTime.now();
   List<TimedPattern> _timedPatterns = [];
+
+  final Set<String> _selectedRoutes = {};
+  List<String> _availableRoutes = [];
 
   @override
   void initState() {
@@ -124,50 +128,62 @@ class _StopPageState extends State<StopPage>
         _selectedDate,
       );
 
-      // Group patterns by route and headsign
-      final Map<String, TimedPattern> mergedPatterns = {};
-
-      for (final pattern in timedPatterns) {
-        // Create a unique key based on route gtfsId and headsign
-        final key = '${pattern.route.gtfsId}_${pattern.headSign ?? ''}';
-
-        if (mergedPatterns.containsKey(key)) {
-          // Merge with existing pattern by combining timedStops
-          final existing = mergedPatterns[key]!;
-          final allTimedStops = [...existing.timedStops, ...pattern.timedStops];
-
-          // Sort by departure time
-          allTimedStops.sort((a, b) {
-            final aTime = a.departure.scheduledTime;
-            final bTime = b.departure.scheduledTime;
-            if (aTime == null && bTime == null) return 0;
-            if (aTime == null) return 1;
-            if (bTime == null) return -1;
-            return aTime.compareTo(bTime);
-          });
-
-          mergedPatterns[key] = TimedPattern(
-            timedStops: allTimedStops,
-            headSign: existing.headSign,
-            route: existing.route,
-          );
-        } else {
-          // Add new pattern
-          mergedPatterns[key] = pattern;
-        }
-      }
-
       setState(() {
-        _timedPatterns = mergedPatterns.values.toList();
+        _timedPatterns = timedPatterns;
         _timetableLoading = false;
+        _updateAvailableRoutes();
       });
     } on Exception catch (e, s) {
       debugPrintStack(stackTrace: s, label: 'Error fetching timetable: $e');
       setState(() {
         _timedPatterns = [];
         _timetableLoading = false;
+        _availableRoutes.clear();
       });
     }
+  }
+
+  void _updateAvailableRoutes() {
+    final routeFrequency = <String, int>{};
+    for (final pattern in _timedPatterns) {
+      final routeName = pattern.route.shortName;
+      routeFrequency[routeName] =
+          (routeFrequency[routeName] ?? 0) + pattern.timedStops.length;
+    }
+
+    _availableRoutes =
+        routeFrequency.keys.toList()..sort((a, b) {
+          final aSelected = _selectedRoutes.contains(a);
+          final bSelected = _selectedRoutes.contains(b);
+
+          if (aSelected && !bSelected) return -1;
+          if (!aSelected && bSelected) return 1;
+
+          return routeFrequency[b]!.compareTo(routeFrequency[a]!);
+        });
+  }
+
+  void _toggleRouteFilter(String routeName) {
+    setState(() {
+      if (_selectedRoutes.contains(routeName)) {
+        _selectedRoutes.remove(routeName);
+      } else {
+        _selectedRoutes.add(routeName);
+      }
+      _updateAvailableRoutes();
+    });
+  }
+
+  List<TimedStop> _getFilteredDepartures(List<TimedStop> departures) {
+    if (_selectedRoutes.isEmpty) return departures;
+
+    return departures.where((stop) {
+      final routeName =
+          stop.pattern?.route.shortName ??
+          stop.trip?.route?.shortName ??
+          'Unknown';
+      return _selectedRoutes.contains(routeName);
+    }).toList();
   }
 
   String _lastUpdateText() {
@@ -178,12 +194,30 @@ class _StopPageState extends State<StopPage>
     return '${displayTime(diff.inSeconds)} ago';
   }
 
+  String _getDateDisplayText(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final selectedDay = DateTime(date.year, date.month, date.day);
+
+    final difference = selectedDay.difference(today).inDays;
+
+    switch (difference) {
+      case -1:
+        return 'Yesterday';
+      case 0:
+        return 'Today';
+      case 1:
+        return 'Tomorrow';
+      default:
+        return DateFormat('EEEE, MMMM d, y').format(date);
+    }
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     setState(() {
       _isInForeground = state == AppLifecycleState.resumed;
     });
-    // Optionally, fetch departures when returning to foreground
     if (_isInForeground && _autoUpdateEnabled && _tabController.index == 0) {
       _fetchDepartures();
     }
@@ -266,152 +300,221 @@ class _StopPageState extends State<StopPage>
   }
 
   Widget _buildTimetableTab() {
-    return Column(
-      children: [
-        // Day selector
-        Container(
-          padding: const EdgeInsets.all(12),
-          child: Row(
+    final allDepartures = _timedPatterns.expand(
+      (pattern) => pattern.timedStops,
+    );
+
+    final filteredDepartures = _getFilteredDepartures(allDepartures.toList());
+
+    final Map<int, List<TimedStop>> groupedDepartures = filteredDepartures
+        .fold<Map<int, List<TimedStop>>>({}, (
+          Map<int, List<TimedStop>> groups,
+          TimedStop stop,
+        ) {
+          final scheduledDeparture = stop.departure.scheduledDateTime;
+          if (scheduledDeparture == null) return groups;
+          groups
+              .putIfAbsent(
+                stop.departure.scheduledDateTime!.hour,
+                () => <TimedStop>[],
+              )
+              .add(stop);
+          return groups;
+        });
+
+    final sortedHours = groupedDepartures.keys.toList();
+    sortedHours.sort();
+
+    return _timetableLoading
+        ? const Center(child: CircularProgressIndicator())
+        : groupedDepartures.isEmpty && _timedPatterns.isNotEmpty
+        ? Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Expanded(
-                child: Text(
-                  DateFormat('EEEE, MMMM d, y').format(_selectedDate),
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              TextButton(
-                onPressed: () async {
-                  final date = await showDatePicker(
-                    context: context,
-                    initialDate: _selectedDate,
-                    firstDate: DateTime.now().subtract(const Duration(days: 1)),
-                    lastDate: DateTime.now().add(const Duration(days: 30)),
-                  );
-                  if (date != null && date != _selectedDate) {
-                    setState(() {
-                      _selectedDate = date;
-                      _timedPatterns = [];
-                    });
-                    unawaited(_fetchTimetable());
-                  }
-                },
-                child: const Text('Change Date'),
+              const Text('No timetable data available.'),
+              const SizedBox(height: 8),
+              ElevatedButton(
+                onPressed: _fetchTimetable,
+                child: const Text('Load Timetable'),
               ),
             ],
           ),
-        ),
-        Expanded(
-          child:
-              _timetableLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _timedPatterns.isEmpty
-                  ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text('No timetable data available.'),
-                        const SizedBox(height: 8),
-                        ElevatedButton(
-                          onPressed: _fetchTimetable,
-                          child: const Text('Load Timetable'),
-                        ),
-                      ],
+        )
+        : CustomScrollView(
+          slivers: [
+            // Date picker section
+            SliverToBoxAdapter(
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        final previousDay = _selectedDate.subtract(
+                          const Duration(days: 1),
+                        );
+                        setState(() {
+                          _selectedDate = previousDay;
+                          _timedPatterns = [];
+                        });
+                        unawaited(_fetchTimetable());
+                      },
+                      icon: const Icon(Icons.chevron_left),
+                      tooltip: 'Previous day',
                     ),
-                  )
-                  : ListView.builder(
-                    itemCount: _timedPatterns.length,
-                    itemBuilder: (context, index) {
-                      final pattern = _timedPatterns[index];
-                      return Card(
-                        margin: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 4,
-                        ),
-                        child: ExpansionTile(
-                          title: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: pattern.route.color ?? Colors.blue,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  pattern.route.shortName,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  pattern.headSign ?? pattern.route.longName,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children:
-                                    pattern.timedStops.map((timedStop) {
-                                      final departureTime =
-                                          timedStop.departure.scheduledTime;
-                                      if (departureTime != null) {
-                                        final time = DateTime.parse(
-                                          departureTime,
-                                        );
-                                        final timeStr = DateFormat(
-                                          'HH:mm',
-                                        ).format(time);
-                                        return Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 4,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey.shade200,
-                                            borderRadius: BorderRadius.circular(
-                                              4,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            timeStr,
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                        );
-                                      }
-                                      return const SizedBox.shrink();
-                                    }).toList(),
-                              ),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () async {
+                          final date = await showDatePicker(
+                            context: context,
+                            initialDate: _selectedDate,
+                            firstDate: DateTime.now().subtract(
+                              const Duration(days: 1),
                             ),
-                          ],
+                            lastDate: DateTime.now().add(
+                              const Duration(days: 30),
+                            ),
+                          );
+                          if (date != null && date != _selectedDate) {
+                            if (mounted) {
+                              setState(() {
+                                _selectedDate = date;
+                                _timedPatterns = [];
+                              });
+                            }
+                            unawaited(_fetchTimetable());
+                          }
+                        },
+                        child: Text(
+                          _getDateDisplayText(_selectedDate),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
-                      );
-                    },
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        final nextDay = _selectedDate.add(
+                          const Duration(days: 1),
+                        );
+                        setState(() {
+                          _selectedDate = nextDay;
+                          _timedPatterns = [];
+                        });
+                        unawaited(_fetchTimetable());
+                      },
+                      icon: const Icon(Icons.chevron_right),
+                      tooltip: 'Next day',
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Route filter section
+            if (_availableRoutes.isNotEmpty)
+              SliverToBoxAdapter(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
                   ),
-        ),
-      ],
-    );
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.filter_list, size: 25),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: SizedBox(
+                          height: 40,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: _availableRoutes.length,
+                            separatorBuilder:
+                                (context, index) => const SizedBox(width: 8),
+                            itemBuilder: (context, index) {
+                              final routeName = _availableRoutes[index];
+                              final isSelected = _selectedRoutes.contains(
+                                routeName,
+                              );
+
+                              final pattern = _timedPatterns
+                                  .cast<TimedPattern?>()
+                                  .firstWhere(
+                                    (pattern) =>
+                                        pattern?.route.shortName == routeName,
+                                    orElse: () => null,
+                                  );
+                              final route = pattern?.route;
+                              final routeColor =
+                                  route?.color ??
+                                  getRouteBackgroundColor(routeName);
+                              final routeTextColor =
+                                  route?.textColor ?? Colors.black;
+
+                              return FilterChip(
+                                label: Text(
+                                  routeName,
+                                  style: TextStyle(
+                                    color: routeTextColor,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                selected: isSelected,
+                                onSelected:
+                                    (selected) => _toggleRouteFilter(routeName),
+                                backgroundColor: routeColor,
+                                selectedColor: routeColor,
+                                checkmarkColor: Colors.black,
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            // Timetable content or empty state
+            if (groupedDepartures.isEmpty && _timedPatterns.isEmpty)
+              SliverFillRemaining(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text('No timetable data available.'),
+                      const SizedBox(height: 8),
+                      ElevatedButton(
+                        onPressed: _fetchTimetable,
+                        child: const Text('Load Timetable'),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              SliverList(
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  if (index.isOdd) {
+                    return Container(
+                      height: 1.5,
+                      color: Theme.of(context).primaryColor.withOpacity(0.25),
+                    );
+                  }
+                  final hourIndex = index ~/ 2;
+                  final hour = sortedHours.elementAt(hourIndex);
+                  final departures = groupedDepartures[hour]!;
+                  return HourDeparturesWidget(
+                    timedStops: departures,
+                    hour: hour,
+                  );
+                }, childCount: sortedHours.length * 2 - 1),
+              ),
+          ],
+        );
   }
 
   @override

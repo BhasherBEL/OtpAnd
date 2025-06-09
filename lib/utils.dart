@@ -34,7 +34,7 @@ String displayTime(num time) {
   if (time < 3570) {
     return '${round(time / 60, 0)} min';
   }
-  return '${round(time / 3600, 0)} h ${round((time % 3600) / 60, 0)} min';
+  return '${round(time ~/ 3600, 0)} h ${round((time % 3600) / 60, 0)} min';
 }
 
 String displayPreciseTime(num time) {
@@ -50,7 +50,7 @@ String displayPreciseTime(num time) {
   if (time < 3600) {
     return '${round(time / 60, 0)} minutes';
   }
-  return '${round(time / 3600, 0)} h ${round((time % 3600) / 60, 0)}';
+  return '${round(time ~/ 3600, 0)} h ${round((time % 3600) / 60, 0)}';
 }
 
 String displayTimeShort(num time) {
@@ -60,7 +60,7 @@ String displayTimeShort(num time) {
   if (time % 3600 == 0) {
     return '${round(time / 3600, 0)}h';
   }
-  return '${round(time / 3600, 0)}h${round((time % 3600) / 60, 0)}';
+  return '${round(time ~/ 3600, 0)}h${round((time % 3600) / 60, 0)}';
 }
 
 String displayDistanceInTime(num distance) {

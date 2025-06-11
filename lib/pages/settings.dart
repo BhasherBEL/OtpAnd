@@ -77,14 +77,16 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _setUseContactsLocation(bool value) async {
     if (value) {
       bool granted = await FlutterContacts.requestPermission(readonly: true);
-      if (!granted && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Contacts permission is required to use contact\'s location.',
+      if (!granted) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Contacts permission is required to use contact\'s location.',
+              ),
             ),
-          ),
-        );
+          );
+        }
         return;
       }
     }
@@ -101,8 +103,9 @@ class _SettingsPageState extends State<SettingsPage> {
       final calendarPlugin = DeviceCalendarPlugin();
       try {
         var permissionGranted = await calendarPlugin.hasPermissions();
-        if (permissionGranted.isSuccess && permissionGranted.data == null ||
-            permissionGranted.data == false) {
+        if (permissionGranted.isSuccess && permissionGranted.data == true) {
+          granted = true;
+        } else {
           permissionGranted = await calendarPlugin.requestPermissions();
           if (permissionGranted.isSuccess &&
               permissionGranted.data != null &&
@@ -116,7 +119,18 @@ class _SettingsPageState extends State<SettingsPage> {
           label: 'Error requesting calendar permissions: $e',
         );
       }
-      if (!granted) return;
+      if (!granted) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Calendar permission is required to use upcoming events location.',
+              ),
+            ),
+          );
+        }
+        return;
+      }
     }
     if (await Config().setValue(ConfigKey.useCalendarsLocation, value)) {
       setState(() {

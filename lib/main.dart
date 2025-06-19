@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:otpand/api/gtfs.dart';
 import 'package:otpand/db/crud/favourites.dart';
+import 'package:otpand/db/crud/search_history.dart';
 import 'package:otpand/db/crud/stops.dart';
 import 'package:otpand/objects/config.dart';
 import 'package:otpand/pages/homepage.dart';
@@ -12,6 +13,7 @@ void main() async {
   await Config().init();
   unawaited(StopDao().loadAll());
   unawaited(FavouriteDao().loadAll());
+  unawaited(SearchHistoryDao().loadAll()); // Load all search history
   runApp(OTPApp());
 }
 

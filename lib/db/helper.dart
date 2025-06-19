@@ -21,7 +21,7 @@ class DatabaseHelper {
     final path = join(documentsDirectory!.path, 'app.db');
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -125,6 +125,32 @@ class DatabaseHelper {
 				FOREIGN KEY (stopGtfsId) REFERENCES stops(gtfsId)
       )
     ''');
+
+    await db.execute('''
+      CREATE TABLE search_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        fromLocationName TEXT NOT NULL,
+        fromLocationDisplayName TEXT NOT NULL,
+        fromLocationLat REAL NOT NULL,
+        fromLocationLon REAL NOT NULL,
+        toLocationName TEXT NOT NULL,
+        toLocationDisplayName TEXT NOT NULL,
+        toLocationLat REAL NOT NULL,
+        toLocationLon REAL NOT NULL,
+        profileId INTEGER NOT NULL,
+        profileName TEXT NOT NULL,
+        profileColor INTEGER NOT NULL,
+        timeType TEXT NOT NULL,
+        selectedDateTime INTEGER,
+        searchedAt INTEGER NOT NULL
+      )
+    ''');
+    
+    // Create index for performance
+    await db.execute('''
+      CREATE INDEX idx_search_history_searched_at 
+      ON search_history(searchedAt DESC)
+    ''');
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -132,6 +158,33 @@ class DatabaseHelper {
       await db.execute(
         'ALTER TABLE favourites ADD COLUMN isContact INTEGER NOT NULL DEFAULT 0',
       );
+    }
+    if (oldVersion < 3) {
+      await db.execute('''
+        CREATE TABLE search_history (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          fromLocationName TEXT NOT NULL,
+          fromLocationDisplayName TEXT NOT NULL,
+          fromLocationLat REAL NOT NULL,
+          fromLocationLon REAL NOT NULL,
+          toLocationName TEXT NOT NULL,
+          toLocationDisplayName TEXT NOT NULL,
+          toLocationLat REAL NOT NULL,
+          toLocationLon REAL NOT NULL,
+          profileId INTEGER NOT NULL,
+          profileName TEXT NOT NULL,
+          profileColor INTEGER NOT NULL,
+          timeType TEXT NOT NULL,
+          selectedDateTime INTEGER,
+          searchedAt INTEGER NOT NULL
+        )
+      ''');
+      
+      // Create index for performance
+      await db.execute('''
+        CREATE INDEX idx_search_history_searched_at 
+        ON search_history(searchedAt DESC)
+      ''');
     }
   }
 }

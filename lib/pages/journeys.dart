@@ -7,7 +7,9 @@ import 'package:otpand/objects/history.dart';
 import 'package:otpand/objects/location.dart';
 import 'package:otpand/pages/journeys/events.dart';
 import 'package:otpand/pages/journeys/favourites.dart';
+import 'package:otpand/pages/journeys/history.dart';
 import 'package:otpand/pages/routes.dart';
+import 'package:otpand/db/crud/search_history.dart';
 import 'package:otpand/utils/extensions.dart';
 import 'package:otpand/widgets/datetime_picker.dart';
 import 'package:otpand/widgets/search/searchbar.dart';
@@ -348,24 +350,42 @@ class _JourneysState extends State<Journeys> {
                                           borderRadius: BorderRadius.zero,
                                         ),
                                       ),
-                                      onPressed: () {
+                                      onPressed: () async {
                                         if (fromLocation != null &&
                                             toLocation != null &&
                                             profile != null) {
+                                          // Save search history
+                                          final timeType = dateTime.mode ==
+                                                  DateTimePickerMode.now
+                                              ? 'now'
+                                              : (dateTime.mode ==
+                                                      DateTimePickerMode
+                                                          .departure
+                                                  ? 'depart'
+                                                  : 'arrive');
+                                          
+                                          try {
+                                            await SearchHistoryDao().saveSearch(
+                                              fromLocation: fromLocation!,
+                                              toLocation: toLocation!,
+                                              profile: profile!,
+                                              timeType: timeType,
+                                              selectedDateTime: dateTime.dateTime,
+                                            );
+                                          } catch (e) {
+                                            // Don't block navigation if history save fails
+                                            if (mounted) {
+                                              debugPrint('Failed to save search history: $e');
+                                            }
+                                          }
+                                          
                                           Navigator.of(context).push(
                                             MaterialPageRoute<void>(
                                               builder: (context) => RoutesPage(
                                                 fromLocation: fromLocation!,
                                                 toLocation: toLocation!,
                                                 profile: profile!,
-                                                timeType: dateTime.mode ==
-                                                        DateTimePickerMode.now
-                                                    ? 'now'
-                                                    : (dateTime.mode ==
-                                                            DateTimePickerMode
-                                                                .departure
-                                                        ? 'depart'
-                                                        : 'arrive'),
+                                                timeType: timeType,
                                                 selectedDateTime:
                                                     dateTime.dateTime,
                                               ),
@@ -419,6 +439,29 @@ class _JourneysState extends State<Journeys> {
                   },
                 ),
                 EventsWidget(),
+                HistoryWidget(
+                  onHistorySelected: () {
+                    if (fromLocation != null &&
+                        toLocation != null &&
+                        profile != null) {
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (context) => RoutesPage(
+                            fromLocation: fromLocation!,
+                            toLocation: toLocation!,
+                            profile: profile!,
+                            timeType: dateTime.mode == DateTimePickerMode.now
+                                ? 'now'
+                                : (dateTime.mode == DateTimePickerMode.departure
+                                    ? 'depart'
+                                    : 'arrive'),
+                            selectedDateTime: dateTime.dateTime,
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                ),
               ],
             ),
           ),

@@ -23,7 +23,7 @@ class Leg {
   final num distance;
   final List<TimedStop>? tripStops;
   final bool interlineWithPreviousLeg;
-  final List<DepartureArrival> otherDepartures;
+  final List<Leg> otherDepartures;
   final Trip? trip;
   final String? serviceDate;
   final String? geometry;
@@ -60,14 +60,14 @@ class Leg {
   String? otherDeparturesText({bool short = false}) {
     if (otherDepartures.isEmpty) return '';
     if (otherDepartures.length == 1) {
-      return formatTime(otherDepartures[0].realTime);
+      return formatTime(otherDepartures[0].from.departure?.realTime);
     } else if (short == false) {
       return "${otherDepartures.sublist(0, otherDepartures.length - 1).map((e) {
-        return formatTime(e.realTime);
-      }).join(", ")} and ${formatTime(otherDepartures.last.realTime)}";
+        return formatTime(e.from.departure?.realTime);
+      }).join(", ")} and ${formatTime(otherDepartures.last.from.departure?.realTime)}";
     } else {
       return otherDepartures.map((e) {
-        return formatTime(e.realTime);
+        return formatTime(e.from.departure?.realTime);
       }).join(', ');
     }
   }
@@ -154,7 +154,9 @@ class Leg {
 
     List<TimedStop>? intermediate;
 
-    if (legJson['serviceDate'] != null && legJson['trip'] != null) {
+    if (legJson['serviceDate'] != null &&
+        legJson['trip'] != null &&
+        (legJson['trip'] as Map<String, dynamic>).containsKey('stoptimes')) {
       intermediate = [];
       for (final s in legJson['trip']['stoptimes'] as List) {
         final stop = await StopDao().get(s['stop']['gtfsId'] as String);
@@ -186,27 +188,22 @@ class Leg {
       }
     }
 
-    final List<DepartureArrival> otherDepartures = [];
-    if (legJson['previousLegs'] != null) {
+    final List<Leg> otherDepartures = [];
+    if (legJson.containsKey('previousLegs') &&
+        legJson['previousLegs'] != null) {
       for (final leg in legJson['previousLegs'] as Iterable) {
-        if (leg['from']['departure'] != null) {
-          otherDepartures.add(
-            DepartureArrival.parse(
-              leg['from']['departure'] as Map<String, dynamic>,
-            ),
-          );
-        }
+        if (leg == null) continue;
+        otherDepartures.add(
+          await Leg.parse(leg as Map<String, dynamic>),
+        );
       }
     }
-    if (legJson['nextLegs'] != null) {
+    if (legJson.containsKey('nextLegs') && legJson['nextLegs'] != null) {
       for (final leg in legJson['nextLegs'] as Iterable) {
-        if (leg['from']['departure'] != null) {
-          otherDepartures.add(
-            DepartureArrival.parse(
-              leg['from']['departure'] as Map<String, dynamic>,
-            ),
-          );
-        }
+        if (leg == null) continue;
+        otherDepartures.add(
+          await Leg.parse(leg as Map<String, dynamic>),
+        );
       }
     }
 
@@ -231,7 +228,7 @@ class Leg {
       interlineWithPreviousLeg: legJson['interlineWithPreviousLeg'] as bool,
       otherDepartures: otherDepartures,
       serviceDate: legJson['serviceDate'] as String?,
-      geometry: legJson['legGeometry']['points'] as String?,
+      geometry: legJson['legGeometry']?['points'] as String?,
     );
   }
 
@@ -245,7 +242,7 @@ class Leg {
     List<DateTime> departures = [
       from.departure!.scheduledDateTime!,
       ...otherDepartures
-          .map((d) => d.scheduledDateTime)
+          .map((d) => d.from.departure?.scheduledDateTime)
           .where((s) => s != null)
           .map((s) => s!),
     ];

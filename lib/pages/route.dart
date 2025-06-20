@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:otpand/objects/leg.dart';
 import 'package:otpand/objects/plan.dart';
+import 'package:otpand/pages/route/other_departures.dart';
 import 'package:otpand/utils.dart';
 import 'package:otpand/utils/colors.dart';
 import 'package:otpand/widgets/intermediate_stops.dart';
@@ -750,14 +751,7 @@ class _RoutePageState extends State<RoutePage>
                                               ),
                                               if (leg
                                                   .otherDepartures.isNotEmpty)
-                                                Padding(
-                                                  padding:
-                                                      EdgeInsets.only(top: 8),
-                                                  child: Text(leg.frequency !=
-                                                          null
-                                                      ? 'Every ${leg.frequency} minutes (${leg.otherDeparturesText(short: true)})'
-                                                      : 'Also at ${leg.otherDeparturesText()}'),
-                                                ),
+                                                OtherDeparturesWidget(leg: leg),
                                               if (leg.transitLeg)
                                                 IntermediateStopsWidget(
                                                   stops: leg.intermediateStops,

@@ -209,46 +209,63 @@ Future<Map<String, dynamic>> submitQuery({
 
 Future<Leg?> fetchLegById(String legId) async {
   final String gql = '''
+		fragment LegFields on Leg {
+			id
+			mode
+			headsign
+			transitLeg
+			realTime
+			serviceDate
+			from {
+				name
+				lat
+				lon
+				stop {
+					gtfsId
+				}
+				departure {
+					scheduledTime
+					estimated {
+						time
+						delay
+					}
+				}
+			}
+			to {
+				name
+				lat
+				lon
+				stop {
+					gtfsId
+				}
+				arrival {
+					scheduledTime
+					estimated {
+						time
+						delay
+					}
+				}
+			}
+			route {
+				gtfsId
+			}
+			trip {
+				gtfsId
+				tripHeadsign
+				tripShortName
+			}
+			duration
+			distance
+			interlineWithPreviousLeg
+		}
+
     query LegById(\$id: String!) {
       leg(id: \$id) {
-        id
-        mode
-        headsign
-        transitLeg
-				realTime
-        from {
-          name
-          lat
-          lon
-          departure {
-            scheduledTime
-            estimated {
-              time
-              delay
-            }
-          }
-        }
-        to {
-          name
-          lat
-          lon
-          arrival {
-            scheduledTime
-            estimated {
-              time
-              delay
-            }
-          }
-        }
-        route {
-          gtfsId
-        }
-        duration
-        distance
+				...LegFields
+				legGeometry {
+					points
+				}
 				trip {
-					gtfsId
-					tripHeadsign
-					tripShortName
 					stoptimes {
 						stop {
 							gtfsId
@@ -262,30 +279,16 @@ Future<Leg?> fetchLegById(String legId) async {
 						pickupType
 					}
 				}
-        interlineWithPreviousLeg
-				previousLegs(numberOfLegs: 1) {
-					from {
-						departure {
-							estimated {
-								time
-								delay
-							}
-							scheduledTime
-						}
-					}
+				previousLegs(
+					numberOfLegs: 1
+					destinationModesWithParentStation: [BUS, RAIL, SUBWAY, TRAM, FERRY]
+					originModesWithParentStation: [BUS, RAIL, SUBWAY, TRAM, FERRY]
+				) {
+					...LegFields
 				}
 				nextLegs(numberOfLegs: 2) {
-					from {
-						departure {
-							estimated {
-								time
-								delay
-							}
-							scheduledTime
-						}
-					}
+					...LegFields
 				}
-			}
       }
     }
   ''';
@@ -307,6 +310,7 @@ Future<Leg?> fetchLegById(String legId) async {
       return null;
     }
   } else {
+    debugPrint('Failed to update: ${resp.body}');
     return null;
   }
 }

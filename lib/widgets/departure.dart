@@ -17,11 +17,11 @@ class DepartureWidget extends StatelessWidget {
     final dep = timedStop.departure;
     final scheduledTime = dep.scheduledTime;
     final estimatedTime = dep.estimated?.time;
-    
+
     // Get route name for background color
-    final routeName = timedStop.pattern?.route.shortName ?? 
-                     timedStop.trip?.route?.shortName ?? 
-                     'Unknown';
+    final routeName = timedStop.pattern?.route.shortName ??
+        timedStop.trip?.route?.shortName ??
+        'Unknown';
     final backgroundColor = getRouteBackgroundColor(routeName);
 
     return Card(
@@ -94,25 +94,23 @@ class DepartureWidget extends StatelessWidget {
               timedStop.headSign ??
                   timedStop.trip?.headsign ??
                   timedStop.trip?.route?.longName ??
-                  '',
+                  'Unknown',
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 4),
             GestureDetector(
-              onTap:
-                  trip != null && timedStop.serviceDate != null
-                      ? () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder:
-                                (context) => TripPage(
-                                  trip: trip,
-                                  serviceDate: timedStop.serviceDate!,
-                                ),
+              onTap: trip != null && timedStop.serviceDate != null
+                  ? () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (context) => TripPage(
+                            trip: trip,
+                            serviceDate: timedStop.serviceDate!,
                           ),
-                        );
-                      }
-                      : null,
+                        ),
+                      );
+                    }
+                  : null,
               child: Text(
                 [
                   if (route?.shortName != null) route!.shortName,

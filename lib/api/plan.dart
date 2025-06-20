@@ -63,8 +63,6 @@ Future<Map<String, dynamic>> submitQuery({
   if (first != null) variables['first'] = first;
   if (last != null) variables['last'] = last;
 
-  print(jsonEncode(variables));
-
   String gql = '''
 		fragment LegFields on Leg {
 			id
@@ -182,7 +180,6 @@ Future<Map<String, dynamic>> submitQuery({
     headers: {'Content-Type': 'application/json'},
     body: jsonEncode({'query': gql, 'variables': variables}),
   );
-  print(resp.body);
   if (resp.statusCode == 200) {
     final data = jsonDecode(resp.body);
     if (data['data'] != null &&

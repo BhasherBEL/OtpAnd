@@ -17,6 +17,8 @@ Future<List<TimedStop>> fetchTrip(Trip trip, String serviceDate) async {
           realtimeArrival
           scheduledArrival
 					serviceDay
+					dropoffType
+					pickupType
         }
       }
     }

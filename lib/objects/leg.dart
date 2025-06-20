@@ -178,7 +178,7 @@ class Leg {
                 s['dropoffType'] as String?,
               ),
               pickupType: PickupDropoffType.fromString(
-                s['dropoffType'] as String?,
+                s['pickupType'] as String?,
               ),
             ),
           );

@@ -34,17 +34,16 @@ class TripPage extends StatelessWidget {
             return const Center(child: Text('No stops found for this trip.'));
           }
 
-          final List<TimedStop> stopsWithStop =
-              stops
-                  .where(
-                    (s) =>
-                        s.dropoffType != null &&
-                            s.dropoffType != PickupDropoffType.none ||
-                        s.pickupType != null &&
-                            s.pickupType != PickupDropoffType.none ||
-                        s.pickupType == null && s.dropoffType == null,
-                  )
-                  .toList();
+          final List<TimedStop> stopsWithStop = stops
+              .where(
+                (s) =>
+                    s.dropoffType != null &&
+                        s.dropoffType != PickupDropoffType.none ||
+                    s.pickupType != null &&
+                        s.pickupType != PickupDropoffType.none ||
+                    s.pickupType == null && s.dropoffType == null,
+              )
+              .toList();
 
           return SingleChildScrollView(
             child: Padding(
@@ -73,24 +72,22 @@ class TripPage extends StatelessWidget {
 
                     final arrivalTimeRt = timedStop.arrival.estimated?.time;
                     final arrivalTimeTheory = timedStop.arrival.scheduledTime;
-                    final arrivalDelayed =
-                        arrivalTimeRt != null &&
+                    final arrivalDelayed = arrivalTimeRt != null &&
                         arrivalTimeRt != arrivalTimeTheory;
 
                     final departureTimeRt = timedStop.departure.estimated?.time;
                     final departureTimeTheory =
                         timedStop.departure.scheduledTime;
-                    final departureDelayed =
-                        departureTimeRt != null &&
+                    final departureDelayed = departureTimeRt != null &&
                         departureTimeRt != departureTimeTheory;
 
                     final pastColor = Colors.grey;
                     final stopNameStyle = Theme.of(
                       context,
                     ).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w500,
-                      color: timedStop.isPast() ? pastColor : null,
-                    );
+                          fontWeight: FontWeight.w500,
+                          color: timedStop.isPast() ? pastColor : null,
+                        );
 
                     return Padding(
                       padding: const EdgeInsets.only(left: 8.0, bottom: 4.0),
@@ -113,26 +110,23 @@ class TripPage extends StatelessWidget {
                                       child: Text(
                                         formatTime(arrivalTimeRt)!,
                                         style: TextStyle(
-                                          color:
-                                              timedStop.isPast()
-                                                  ? pastColor
-                                                  : Colors.red,
+                                          color: timedStop.isPast()
+                                              ? pastColor
+                                              : Colors.red,
                                         ),
                                       ),
                                     ),
                                   Text(
                                     formatTime(arrivalTimeTheory) ?? '??:??',
                                     style: TextStyle(
-                                      color:
-                                          timedStop.isPast()
-                                              ? pastColor
-                                              : (arrivalTimeRt == null
-                                                  ? Colors.grey.shade700
-                                                  : Colors.green),
-                                      decoration:
-                                          arrivalDelayed
-                                              ? TextDecoration.lineThrough
-                                              : null,
+                                      color: timedStop.isPast()
+                                          ? pastColor
+                                          : (arrivalTimeRt == null
+                                              ? Colors.grey.shade700
+                                              : Colors.green),
+                                      decoration: arrivalDelayed
+                                          ? TextDecoration.lineThrough
+                                          : null,
                                     ),
                                   ),
                                 ],
@@ -147,26 +141,23 @@ class TripPage extends StatelessWidget {
                                       child: Text(
                                         formatTime(departureTimeRt)!,
                                         style: TextStyle(
-                                          color:
-                                              timedStop.isPast()
-                                                  ? pastColor
-                                                  : Colors.red,
+                                          color: timedStop.isPast()
+                                              ? pastColor
+                                              : Colors.red,
                                         ),
                                       ),
                                     ),
                                   Text(
                                     formatTime(departureTimeTheory) ?? '??:??',
                                     style: TextStyle(
-                                      color:
-                                          timedStop.isPast()
-                                              ? pastColor
-                                              : (departureTimeRt == null
-                                                  ? Colors.grey.shade700
-                                                  : Colors.green),
-                                      decoration:
-                                          departureDelayed
-                                              ? TextDecoration.lineThrough
-                                              : null,
+                                      color: timedStop.isPast()
+                                          ? pastColor
+                                          : (departureTimeRt == null
+                                              ? Colors.grey.shade700
+                                              : Colors.green),
+                                      decoration: departureDelayed
+                                          ? TextDecoration.lineThrough
+                                          : null,
                                     ),
                                   ),
                                 ],
@@ -180,14 +171,13 @@ class TripPage extends StatelessWidget {
                   indicatorBuilder: (context, index) {
                     final timedStop = stops[index];
 
-                    final indicatorColor =
-                        timedStop.isPast()
-                            ? Colors.grey
-                            : (index == 0
-                                ? Colors.green
-                                : (index == stops.length - 1
-                                    ? Colors.red
-                                    : Colors.blue));
+                    final indicatorColor = timedStop.isPast()
+                        ? Colors.grey
+                        : (index == 0
+                            ? Colors.green
+                            : (index == stops.length - 1
+                                ? Colors.red
+                                : Colors.blue));
 
                     if (index == 0) {
                       return DotIndicator(

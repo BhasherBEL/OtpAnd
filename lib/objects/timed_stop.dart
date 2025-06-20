@@ -80,25 +80,31 @@ class TimedStop {
     }
 
     return TimedStop(
-        stop: stop!,
-        arrival: DepartureArrival(
-          scheduledTime: scheduledArrival,
-          estimated: realtime
-              ? EstimatedTime(time: realtimeArrival, delay: null)
-              : null,
-        ),
-        departure: DepartureArrival(
-          scheduledTime: scheduledDeparture,
-          estimated: realtime
-              ? EstimatedTime(time: realtimeDeparture, delay: null)
-              : null,
-        ),
-        headSign: json['headsign'] as String?,
-        trip: json['trip'] != null
-            ? await Trip.parse(json['trip'] as Map<String, dynamic>)
+      stop: stop!,
+      arrival: DepartureArrival(
+        scheduledTime: scheduledArrival,
+        estimated:
+            realtime ? EstimatedTime(time: realtimeArrival, delay: null) : null,
+      ),
+      departure: DepartureArrival(
+        scheduledTime: scheduledDeparture,
+        estimated: realtime
+            ? EstimatedTime(time: realtimeDeparture, delay: null)
             : null,
-        serviceDate: serviceDate,
-        pattern: pattern);
+      ),
+      headSign: json['headsign'] as String?,
+      trip: json['trip'] != null
+          ? await Trip.parse(json['trip'] as Map<String, dynamic>)
+          : null,
+      serviceDate: serviceDate,
+      pattern: pattern,
+      dropoffType: PickupDropoffType.fromString(
+        json['dropoffType'] as String?,
+      ),
+      pickupType: PickupDropoffType.fromString(
+        json['pickupType'] as String?,
+      ),
+    );
   }
 
   static Future<List<TimedStop>> parseAllFromStoptimes(

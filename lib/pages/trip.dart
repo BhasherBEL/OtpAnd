@@ -89,18 +89,66 @@ class TripPage extends StatelessWidget {
                           color: timedStop.isPast() ? pastColor : null,
                         );
 
+                    final List<String> pickupDropoffWarns = [];
+
+                    if (timedStop.pickupType != null) {
+                      switch (timedStop.pickupType!) {
+                        case PickupDropoffType.none:
+                          pickupDropoffWarns.add('no pickup');
+                          break;
+                        case PickupDropoffType.coordinateWithDriver:
+                        case PickupDropoffType.callAgency:
+                          pickupDropoffWarns.add('pickup on request');
+                          break;
+                        case PickupDropoffType.scheduled:
+                          break;
+                      }
+                    }
+                    if (timedStop.dropoffType != null) {
+                      switch (timedStop.dropoffType!) {
+                        case PickupDropoffType.none:
+                          pickupDropoffWarns.add('no dropoff');
+                          break;
+                        case PickupDropoffType.coordinateWithDriver:
+                        case PickupDropoffType.callAgency:
+                          pickupDropoffWarns.add('dropoff on request');
+                          break;
+                        case PickupDropoffType.scheduled:
+                          break;
+                      }
+                    }
+
+                    final pickupDropoffText = pickupDropoffWarns.isNotEmpty
+                        ? pickupDropoffWarns.join(', ')
+                        : null;
+
                     return Padding(
                       padding: const EdgeInsets.only(left: 8.0, bottom: 4.0),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
-                            child: Text(stop.name, style: stopNameStyle),
+                            child: Row(
+                              children: [
+                                Text(stop.name, style: stopNameStyle),
+                                if (pickupDropoffText != null)
+                                  Expanded(
+                                    child: Text(
+                                      ' ($pickupDropoffText)',
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                      style: TextStyle(
+                                        color: Colors.grey.shade600,
+                                        fontStyle: FontStyle.italic,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
                           ),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              // Arrival time
                               Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [

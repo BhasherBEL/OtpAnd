@@ -177,7 +177,7 @@ Future<Map<String, dynamic>> submitQuery({
 
   final resp = await http.post(
     Uri.parse('${Config().otpUrl}/otp/gtfs/v1'),
-    headers: {'Content-Type': 'application/json'},
+    headers: {'Content-Type': 'application/json', 'Content-Encoding': 'gzip'},
     body: jsonEncode({'query': gql, 'variables': variables}),
   );
   if (resp.statusCode == 200) {

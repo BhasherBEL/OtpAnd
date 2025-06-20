@@ -40,6 +40,7 @@ class _JourneysState extends State<Journeys> {
         DateTimePickerValue(
           mode: DateTimePickerMode.now,
           dateTime: DateTime.now(),
+          precisionMode: DateTimePrecisionMode.after,
         );
     profile = History.current.value.profile;
   }
@@ -319,7 +320,6 @@ class _JourneysState extends State<Journeys> {
                                           ],
                                         ),
                                         const SizedBox(height: 8),
-                                        // DateTime picker row (full width)
                                         Row(
                                           children: [
                                             Expanded(
@@ -354,16 +354,6 @@ class _JourneysState extends State<Journeys> {
                                         if (fromLocation != null &&
                                             toLocation != null &&
                                             profile != null) {
-                                          // Save search history
-                                          final timeType = dateTime.mode ==
-                                                  DateTimePickerMode.now
-                                              ? 'now'
-                                              : (dateTime.mode ==
-                                                      DateTimePickerMode
-                                                          .departure
-                                                  ? 'depart'
-                                                  : 'arrive');
-
                                           try {
                                             await SearchHistoryDao().saveSearch(
                                               fromLocation: fromLocation!,
@@ -371,7 +361,6 @@ class _JourneysState extends State<Journeys> {
                                               profile: profile!,
                                             );
                                           } catch (e) {
-                                            // Don't block navigation if history save fails
                                             if (mounted) {
                                               debugPrint(
                                                   'Failed to save search history: $e');
@@ -386,9 +375,7 @@ class _JourneysState extends State<Journeys> {
                                                   fromLocation: fromLocation!,
                                                   toLocation: toLocation!,
                                                   profile: profile!,
-                                                  timeType: timeType,
-                                                  selectedDateTime:
-                                                      dateTime.dateTime,
+                                                  dateTimeValue: dateTime,
                                                 ),
                                               ),
                                             );
@@ -428,12 +415,7 @@ class _JourneysState extends State<Journeys> {
                             fromLocation: fromLocation!,
                             toLocation: toLocation!,
                             profile: profile!,
-                            timeType: dateTime.mode == DateTimePickerMode.now
-                                ? 'now'
-                                : (dateTime.mode == DateTimePickerMode.departure
-                                    ? 'depart'
-                                    : 'arrive'),
-                            selectedDateTime: dateTime.dateTime,
+                            dateTimeValue: dateTime,
                           ),
                         ),
                       );
@@ -452,12 +434,7 @@ class _JourneysState extends State<Journeys> {
                             fromLocation: fromLocation!,
                             toLocation: toLocation!,
                             profile: profile!,
-                            timeType: dateTime.mode == DateTimePickerMode.now
-                                ? 'now'
-                                : (dateTime.mode == DateTimePickerMode.departure
-                                    ? 'depart'
-                                    : 'arrive'),
-                            selectedDateTime: dateTime.dateTime,
+                            dateTimeValue: dateTime,
                           ),
                         ),
                       );

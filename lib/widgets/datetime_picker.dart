@@ -3,11 +3,14 @@ import 'package:intl/intl.dart';
 
 enum DateTimePickerMode { now, departure, arrival }
 
+enum DateTimePrecisionMode { before, around, after }
+
 class DateTimePickerValue {
   final DateTimePickerMode mode;
   final DateTime? dateTime;
+  final DateTimePrecisionMode? precisionMode;
 
-  DateTimePickerValue({required this.mode, this.dateTime});
+  DateTimePickerValue({required this.mode, this.dateTime, this.precisionMode});
 
   @override
   bool operator ==(Object other) =>
@@ -127,6 +130,7 @@ class _DateTimePickerModalState extends State<_DateTimePickerModal>
 
   late TabController _tabController;
   late DateTimePickerMode _selectedMode;
+  late DateTimePrecisionMode _selectedPrecisionMode;
   late DateTime _selectedDateTime;
 
   late FixedExtentScrollController _hourController;
@@ -137,10 +141,11 @@ class _DateTimePickerModalState extends State<_DateTimePickerModal>
     super.initState();
     _selectedMode = widget.initialValue.mode;
     _selectedDateTime = widget.initialValue.dateTime ?? DateTime.now();
-    int initialTabIndex =
-        _selectedMode == DateTimePickerMode.now
-            ? DateTimePickerMode.departure.index
-            : _selectedMode.index;
+    _selectedPrecisionMode =
+        widget.initialValue.precisionMode ?? DateTimePrecisionMode.around;
+    int initialTabIndex = _selectedMode == DateTimePickerMode.now
+        ? DateTimePickerMode.departure.index
+        : _selectedMode.index;
     _tabController = TabController(
       length: 3,
       vsync: this,
@@ -148,6 +153,7 @@ class _DateTimePickerModalState extends State<_DateTimePickerModal>
     );
     if (_selectedMode == DateTimePickerMode.now) {
       _selectedMode = DateTimePickerMode.departure;
+      _selectedPrecisionMode = DateTimePrecisionMode.after;
     }
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) return;
@@ -156,7 +162,11 @@ class _DateTimePickerModalState extends State<_DateTimePickerModal>
         if (newMode == DateTimePickerMode.now) {
           Navigator.of(
             context,
-          ).pop(DateTimePickerValue(mode: newMode, dateTime: DateTime.now()));
+          ).pop(DateTimePickerValue(
+            mode: newMode,
+            dateTime: DateTime.now(),
+            precisionMode: _selectedPrecisionMode,
+          ));
         } else {
           _selectedMode = newMode;
         }
@@ -218,134 +228,181 @@ class _DateTimePickerModalState extends State<_DateTimePickerModal>
         ),
         if (_selectedMode != DateTimePickerMode.now)
           Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
+            child: Row(
               children: [
-                Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SizedBox(
-                          width: 50,
-                          height: 100,
-                          child: ListWheelScrollView.useDelegate(
-                            itemExtent: 32,
-                            diameterRatio: 1.2,
-                            physics: const FixedExtentScrollPhysics(),
-                            controller: _hourController,
-                            onSelectedItemChanged: (int index) {
+                Expanded(
+                  child: Column(
+                    children: [
+                      RadioListTile<DateTimePrecisionMode>(
+                        title: const Text('Before'),
+                        contentPadding: EdgeInsets.all(0),
+                        visualDensity: VisualDensity(vertical: -4),
+                        value: DateTimePrecisionMode.before,
+                        groupValue: _selectedPrecisionMode,
+                        onChanged: (DateTimePrecisionMode? mode) {
+                          if (mode == null) return;
+                          setState(() {
+                            _selectedPrecisionMode = mode;
+                          });
+                        },
+                      ),
+                      RadioListTile<DateTimePrecisionMode>(
+                        title: const Text('Around'),
+                        contentPadding: EdgeInsets.all(0),
+                        visualDensity: VisualDensity(vertical: -4),
+                        value: DateTimePrecisionMode.around,
+                        groupValue: _selectedPrecisionMode,
+                        onChanged: (DateTimePrecisionMode? mode) {
+                          if (mode == null) return;
+                          setState(() {
+                            _selectedPrecisionMode = mode;
+                          });
+                        },
+                      ),
+                      RadioListTile<DateTimePrecisionMode>(
+                        title: const Text('After'),
+                        contentPadding: EdgeInsets.all(0),
+                        visualDensity: VisualDensity(vertical: -4),
+                        value: DateTimePrecisionMode.after,
+                        groupValue: _selectedPrecisionMode,
+                        onChanged: (DateTimePrecisionMode? mode) {
+                          if (mode == null) return;
+                          setState(() {
+                            _selectedPrecisionMode = mode;
+                          });
+                        },
+                      )
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: 50,
+                            height: 100,
+                            child: ListWheelScrollView.useDelegate(
+                              itemExtent: 32,
+                              diameterRatio: 1.2,
+                              physics: const FixedExtentScrollPhysics(),
+                              controller: _hourController,
+                              onSelectedItemChanged: (int index) {
+                                setState(() {
+                                  _selectedDateTime = DateTime(
+                                    _selectedDateTime.year,
+                                    _selectedDateTime.month,
+                                    _selectedDateTime.day,
+                                    index,
+                                    _selectedDateTime.minute,
+                                  );
+                                });
+                              },
+                              childDelegate: ListWheelChildBuilderDelegate(
+                                builder: (context, index) {
+                                  if (index < 0 || index > 23) return null;
+                                  return Center(
+                                    child: Text(
+                                      index.toString().padLeft(2, '0'),
+                                      style: const TextStyle(fontSize: 18),
+                                    ),
+                                  );
+                                },
+                                childCount: 24,
+                              ),
+                            ),
+                          ),
+                          const Text(':', style: TextStyle(fontSize: 18)),
+                          // Minute wheel
+                          SizedBox(
+                            width: 50,
+                            height: 100,
+                            child: ListWheelScrollView.useDelegate(
+                              itemExtent: 32,
+                              diameterRatio: 1.2,
+                              physics: const FixedExtentScrollPhysics(),
+                              controller: _minuteController,
+                              onSelectedItemChanged: (int index) {
+                                setState(() {
+                                  _selectedDateTime = DateTime(
+                                    _selectedDateTime.year,
+                                    _selectedDateTime.month,
+                                    _selectedDateTime.day,
+                                    _selectedDateTime.hour,
+                                    index,
+                                  );
+                                });
+                              },
+                              childDelegate: ListWheelChildBuilderDelegate(
+                                builder: (context, index) {
+                                  if (index < 0 || index > 59) return null;
+                                  return Center(
+                                    child: Text(
+                                      index.toString().padLeft(2, '0'),
+                                      style: const TextStyle(fontSize: 18),
+                                    ),
+                                  );
+                                },
+                                childCount: 60,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.chevron_left),
+                            onPressed: () {
                               setState(() {
                                 _selectedDateTime = DateTime(
                                   _selectedDateTime.year,
                                   _selectedDateTime.month,
-                                  _selectedDateTime.day,
-                                  index,
+                                  _selectedDateTime.day - 1,
+                                  _selectedDateTime.hour,
+                                  _selectedDateTime.minute,
+                                );
+                                _hourController.jumpToItem(
+                                  _selectedDateTime.hour,
+                                );
+                                _minuteController.jumpToItem(
                                   _selectedDateTime.minute,
                                 );
                               });
                             },
-                            childDelegate: ListWheelChildBuilderDelegate(
-                              builder: (context, index) {
-                                if (index < 0 || index > 23) return null;
-                                return Center(
-                                  child: Text(
-                                    index.toString().padLeft(2, '0'),
-                                    style: const TextStyle(fontSize: 18),
-                                  ),
-                                );
-                              },
-                              childCount: 24,
-                            ),
                           ),
-                        ),
-                        const Text(':', style: TextStyle(fontSize: 18)),
-                        // Minute wheel
-                        SizedBox(
-                          width: 50,
-                          height: 100,
-                          child: ListWheelScrollView.useDelegate(
-                            itemExtent: 32,
-                            diameterRatio: 1.2,
-                            physics: const FixedExtentScrollPhysics(),
-                            controller: _minuteController,
-                            onSelectedItemChanged: (int index) {
+                          TextButton(
+                            onPressed: _pickDate,
+                            child: Text(_friendlyDateLabel(_selectedDateTime)),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.chevron_right),
+                            onPressed: () {
                               setState(() {
                                 _selectedDateTime = DateTime(
                                   _selectedDateTime.year,
                                   _selectedDateTime.month,
-                                  _selectedDateTime.day,
+                                  _selectedDateTime.day + 1,
                                   _selectedDateTime.hour,
-                                  index,
+                                  _selectedDateTime.minute,
+                                );
+                                _hourController.jumpToItem(
+                                  _selectedDateTime.hour,
+                                );
+                                _minuteController.jumpToItem(
+                                  _selectedDateTime.minute,
                                 );
                               });
                             },
-                            childDelegate: ListWheelChildBuilderDelegate(
-                              builder: (context, index) {
-                                if (index < 0 || index > 59) return null;
-                                return Center(
-                                  child: Text(
-                                    index.toString().padLeft(2, '0'),
-                                    style: const TextStyle(fontSize: 18),
-                                  ),
-                                );
-                              },
-                              childCount: 60,
-                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.chevron_left),
-                          onPressed: () {
-                            setState(() {
-                              _selectedDateTime = DateTime(
-                                _selectedDateTime.year,
-                                _selectedDateTime.month,
-                                _selectedDateTime.day - 1,
-                                _selectedDateTime.hour,
-                                _selectedDateTime.minute,
-                              );
-                              _hourController.jumpToItem(
-                                _selectedDateTime.hour,
-                              );
-                              _minuteController.jumpToItem(
-                                _selectedDateTime.minute,
-                              );
-                            });
-                          },
-                        ),
-                        TextButton(
-                          onPressed: _pickDate,
-                          child: Text(_friendlyDateLabel(_selectedDateTime)),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.chevron_right),
-                          onPressed: () {
-                            setState(() {
-                              _selectedDateTime = DateTime(
-                                _selectedDateTime.year,
-                                _selectedDateTime.month,
-                                _selectedDateTime.day + 1,
-                                _selectedDateTime.hour,
-                                _selectedDateTime.minute,
-                              );
-                              _hourController.jumpToItem(
-                                _selectedDateTime.hour,
-                              );
-                              _minuteController.jumpToItem(
-                                _selectedDateTime.minute,
-                              );
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -366,10 +423,10 @@ class _DateTimePickerModalState extends State<_DateTimePickerModal>
                   Navigator.of(context).pop(
                     DateTimePickerValue(
                       mode: _selectedMode,
-                      dateTime:
-                          _selectedMode == DateTimePickerMode.now
-                              ? DateTime.now()
-                              : _selectedDateTime,
+                      dateTime: _selectedMode == DateTimePickerMode.now
+                          ? DateTime.now()
+                          : _selectedDateTime,
+                      precisionMode: _selectedPrecisionMode,
                     ),
                   );
                 },

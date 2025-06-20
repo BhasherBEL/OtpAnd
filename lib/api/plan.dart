@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/rendering.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:otpand/objects/config.dart';
@@ -17,6 +19,7 @@ Future<Map<String, dynamic>> submitQuery({
   String? before,
   int? first,
   int? last,
+  String? searchWindow,
 }) async {
   double fromLat = fromLocation.lat;
   double fromLon = fromLocation.lon;
@@ -24,10 +27,9 @@ Future<Map<String, dynamic>> submitQuery({
   double toLon = toLocation.lon;
 
   String dtIso;
-  String localTZ =
-      DateTime.now().timeZoneOffset.isNegative
-          ? '-${DateTime.now().timeZoneOffset.inHours.abs().toString().padLeft(2, '0')}:00'
-          : '+${DateTime.now().timeZoneOffset.inHours.toString().padLeft(2, '0')}:00';
+  String localTZ = DateTime.now().timeZoneOffset.isNegative
+      ? '-${DateTime.now().timeZoneOffset.inHours.abs().toString().padLeft(2, '0')}:00'
+      : '+${DateTime.now().timeZoneOffset.inHours.toString().padLeft(2, '0')}:00';
 
   if (timeType == 'now' || selectedDateTime == null) {
     dtIso = DateFormat('yyyy-MM-ddTHH:mm').format(DateTime.now()) + localTZ;
@@ -52,6 +54,7 @@ Future<Map<String, dynamic>> submitQuery({
       'label': toLocation.name,
     },
     'dateTime': {directionType: dtIso},
+    'searchWindow': searchWindow,
     'modes': profile.getPlanModes(),
     'preferences': profile.getPlanPreferences(),
   };
@@ -60,81 +63,83 @@ Future<Map<String, dynamic>> submitQuery({
   if (first != null) variables['first'] = first;
   if (last != null) variables['last'] = last;
 
+  print(jsonEncode(variables));
+
   String gql = '''
-    query PlanConnection(
-      \$origin: PlanLabeledLocationInput!
-      \$destination: PlanLabeledLocationInput!
-      \$dateTime: PlanDateTimeInput
-      \$after: String
-      \$before: String
-      \$first: Int
-      \$last: Int
-      \$modes: PlanModesInput
-			\$preferences: PlanPreferencesInput
-    ) {
-      planConnection(
-        origin: \$origin
-        destination: \$destination
-        dateTime: \$dateTime
-        after: \$after
-        before: \$before
-        first: \$first
-        last: \$last
-        modes: \$modes
+		fragment LegFields on Leg {
+			id
+			mode
+			headsign
+			transitLeg
+			realTime
+			serviceDate
+			from {
+				name
+				lat
+				lon
+				stop {
+					gtfsId
+				}
+				departure {
+					scheduledTime
+					estimated {
+						time
+						delay
+					}
+				}
+			}
+			to {
+				name
+				lat
+				lon
+				stop {
+					gtfsId
+				}
+				arrival {
+					scheduledTime
+					estimated {
+						time
+						delay
+					}
+				}
+			}
+			route {
+				gtfsId
+			}
+			trip {
+				gtfsId
+				tripHeadsign
+				tripShortName
+			}
+			duration
+			distance
+			interlineWithPreviousLeg
+		}
+
+		query PlanConnection(\$origin: PlanLabeledLocationInput!, \$destination: PlanLabeledLocationInput!, \$dateTime: PlanDateTimeInput, \$searchWindow: Duration, \$after: String, \$before: String, \$first: Int, \$last: Int, \$modes: PlanModesInput, \$preferences: PlanPreferencesInput) {
+			planConnection(
+				origin: \$origin
+				destination: \$destination
+				dateTime: \$dateTime
+				searchWindow: \$searchWindow
+				after: \$after
+				before: \$before
+				first: \$first
+				last: \$last
+				modes: \$modes
 				preferences: \$preferences
-      ) {
-        edges {
-          cursor
-          node {
-            start
-            end
-            legs {
-              id
-              mode
-              headsign
-              transitLeg
-							realTime
-							serviceDate
+			) {
+				edges {
+					cursor
+					node {
+						start
+						end
+						legs {
+							...LegFields
 							legGeometry {
 								points
 							}
-              from {
-                name
-                lat
-                lon
-								stop {
-									gtfsId
-								}
-                departure {
-                  scheduledTime
-                  estimated {
-                    time
-                    delay
-                  }
-                }
-              }
-              to {
-                name
-                lat
-                lon
-								stop {
-									gtfsId
-								}
-                arrival {
-                  scheduledTime
-                  estimated {
-                    time
-                    delay
-                  }
-                }
-              }
-              route {
-                gtfsId
-              }
 							trip {
-								gtfsId
-								tripHeadsign
-								tripShortName
 								stoptimes {
 									stop {
 										gtfsId
@@ -148,45 +153,28 @@ Future<Map<String, dynamic>> submitQuery({
 									pickupType
 								}
 							}
-              duration
-              distance
-              interlineWithPreviousLeg
-							previousLegs(numberOfLegs: 1) {
-								from {
-									departure {
-										estimated {
-											time
-											delay
-										}
-										scheduledTime
-									}
-								}
+							previousLegs(
+								numberOfLegs: 1
+								destinationModesWithParentStation: [BUS, RAIL, SUBWAY, TRAM, FERRY]
+								originModesWithParentStation: [BUS, RAIL, SUBWAY, TRAM, FERRY]
+							) {
+								...LegFields
 							}
 							nextLegs(numberOfLegs: 2) {
-								from {
-									departure {
-										estimated {
-											time
-											delay
-										}
-										scheduledTime
-									}
-								}
+								...LegFields
 							}
-            }
-
-          }
-        }
-        pageInfo {
-          endCursor
-          hasNextPage
-          hasPreviousPage
-          searchWindowUsed
-          startCursor
-        }
-      }
-    }
-
+						}
+					}
+				}
+				pageInfo {
+					endCursor
+					hasNextPage
+					hasPreviousPage
+					searchWindowUsed
+					startCursor
+				}
+			}
+		}
   ''';
 
   final resp = await http.post(
@@ -194,6 +182,7 @@ Future<Map<String, dynamic>> submitQuery({
     headers: {'Content-Type': 'application/json'},
     body: jsonEncode({'query': gql, 'variables': variables}),
   );
+  print(resp.body);
   if (resp.statusCode == 200) {
     final data = jsonDecode(resp.body);
     if (data['data'] != null &&
@@ -202,18 +191,18 @@ Future<Map<String, dynamic>> submitQuery({
       final List<dynamic> edges =
           data['data']['planConnection']['edges'] as List<dynamic>;
       final pageInfo = data['data']['planConnection']['pageInfo'];
-      final List<Map<String, dynamic>> plans =
-          edges
-              .map(
-                (e) => {
-                  'start': e['node']['start'],
-                  'end': e['node']['end'],
-                  'legs': e['node']['legs'],
-                },
-              )
-              .toList();
+      final List<Map<String, dynamic>> plans = edges
+          .map(
+            (e) => {
+              'start': e['node']['start'],
+              'end': e['node']['end'],
+              'legs': e['node']['legs'],
+            },
+          )
+          .toList();
       return {'plans': await Plan.parseAll(plans), 'pageInfo': pageInfo};
     } else {
+      debugPrint(resp.body);
       throw Exception('No plan found. Check your input.');
     }
   } else {

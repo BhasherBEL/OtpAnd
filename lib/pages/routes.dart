@@ -20,16 +20,14 @@ class RoutesPage extends StatefulWidget {
   final Location fromLocation;
   final Location toLocation;
   final Profile profile;
-  final String timeType;
-  final DateTime? selectedDateTime;
+  final DateTimePickerValue dateTimeValue;
 
   const RoutesPage({
     super.key,
     required this.fromLocation,
     required this.toLocation,
     required this.profile,
-    required this.timeType,
-    required this.selectedDateTime,
+    required this.dateTimeValue,
   });
 
   @override
@@ -40,9 +38,8 @@ class _RoutesPageState extends State<RoutesPage> {
   late Location? fromLocation;
   late Location? toLocation;
   late Profile profile;
+  late DateTimePickerValue dateTimeValue;
   List<Profile> profiles = [];
-  late String timeType;
-  late DateTime? selectedDateTime;
 
   bool isLoading = true;
   bool isPaginatingForward = false;
@@ -63,8 +60,7 @@ class _RoutesPageState extends State<RoutesPage> {
     fromLocation = widget.fromLocation;
     toLocation = widget.toLocation;
     profile = widget.profile;
-    timeType = widget.timeType;
-    selectedDateTime = widget.selectedDateTime;
+    dateTimeValue = widget.dateTimeValue;
     _loadProfiles();
   }
 
@@ -117,17 +113,46 @@ class _RoutesPageState extends State<RoutesPage> {
       });
     }
 
+    String timeType;
+    DateTime? dateTime = dateTimeValue.dateTime;
+
+    if (dateTimeValue.precisionMode == DateTimePrecisionMode.around) {
+      dateTime = dateTime?.subtract(Duration(hours: 1));
+    }
+
+    switch (dateTimeValue.mode) {
+      case DateTimePickerMode.now:
+        timeType = 'now';
+        if (dateTimeValue.precisionMode == DateTimePrecisionMode.before) {
+          dateTime = dateTime?.subtract(Duration(hours: 2));
+        }
+        break;
+      case DateTimePickerMode.departure:
+        timeType = 'start';
+        if (dateTimeValue.precisionMode == DateTimePrecisionMode.before) {
+          dateTime = dateTime?.subtract(Duration(hours: 2));
+        }
+        break;
+      case DateTimePickerMode.arrival:
+        timeType = 'arrive';
+        if (dateTimeValue.precisionMode == DateTimePrecisionMode.after) {
+          dateTime = dateTime?.add(Duration(hours: 2));
+        }
+        break;
+    }
+
     try {
       final resp = await submitQuery(
         fromLocation: fromLocation!,
         toLocation: toLocation!,
         profile: profile,
         timeType: timeType,
-        selectedDateTime: selectedDateTime,
+        selectedDateTime: dateTime,
+        searchWindow: '2h',
         after: after,
         before: before,
-        first: (after != null || before == null) ? 5 : null,
-        last: (before != null) ? 5 : null,
+        // first: (after != null || before == null) ? 5 : null,
+        // last: (before != null) ? 5 : null,
       );
 
       final newPlans = resp['plans'] as List<Plan>;
@@ -217,10 +242,7 @@ class _RoutesPageState extends State<RoutesPage> {
 
   void _onDateTimeChanged(DateTimePickerValue value) {
     setState(() {
-      timeType = value.mode == DateTimePickerMode.now
-          ? 'now'
-          : (value.mode == DateTimePickerMode.departure ? 'start' : 'arrive');
-      selectedDateTime = value.dateTime;
+      dateTimeValue = value;
     });
     if (fromLocation != null && toLocation != null) {
       _fetchPlans();
@@ -520,14 +542,7 @@ class _RoutesPageState extends State<RoutesPage> {
                     vertical: 8,
                   ),
                   child: DateTimePicker(
-                    value: DateTimePickerValue(
-                      mode: timeType == 'now'
-                          ? DateTimePickerMode.now
-                          : (timeType == 'start'
-                              ? DateTimePickerMode.departure
-                              : DateTimePickerMode.arrival),
-                      dateTime: selectedDateTime ?? DateTime.now(),
-                    ),
+                    value: dateTimeValue,
                     onChanged: _onDateTimeChanged,
                   ),
                 ),

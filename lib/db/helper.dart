@@ -21,7 +21,7 @@ class DatabaseHelper {
     final path = join(documentsDirectory!.path, 'app.db');
     return await openDatabase(
       path,
-      version: 3,
+      version: 5,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -138,14 +138,10 @@ class DatabaseHelper {
         toLocationLat REAL NOT NULL,
         toLocationLon REAL NOT NULL,
         profileId INTEGER NOT NULL,
-        profileName TEXT NOT NULL,
-        profileColor INTEGER NOT NULL,
-        timeType TEXT NOT NULL,
-        selectedDateTime INTEGER,
         searchedAt INTEGER NOT NULL
       )
     ''');
-    
+
     // Create index for performance
     await db.execute('''
       CREATE INDEX idx_search_history_searched_at 
@@ -154,6 +150,8 @@ class DatabaseHelper {
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    print('Upgrading database from version $oldVersion to $newVersion');
+
     if (oldVersion < 2) {
       await db.execute(
         'ALTER TABLE favourites ADD COLUMN isContact INTEGER NOT NULL DEFAULT 0',
@@ -179,12 +177,31 @@ class DatabaseHelper {
           searchedAt INTEGER NOT NULL
         )
       ''');
-      
-      // Create index for performance
+
       await db.execute('''
         CREATE INDEX idx_search_history_searched_at 
         ON search_history(searchedAt DESC)
       ''');
+    }
+    if (oldVersion < 5) {
+      await db.execute('''
+					DROP TABLE IF EXISTS search_history
+					''');
+      await db.execute('''
+					CREATE TABLE search_history (
+						id INTEGER PRIMARY KEY AUTOINCREMENT,
+						fromLocationName TEXT NOT NULL,
+						fromLocationDisplayName TEXT NOT NULL,
+						fromLocationLat REAL NOT NULL,
+						fromLocationLon REAL NOT NULL,
+						toLocationName TEXT NOT NULL,
+						toLocationDisplayName TEXT NOT NULL,
+						toLocationLat REAL NOT NULL,
+						toLocationLon REAL NOT NULL,
+						profileId INTEGER NOT NULL,
+						searchedAt INTEGER NOT NULL
+					)
+					''');
     }
   }
 }

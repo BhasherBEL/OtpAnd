@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:otpand/db/crud/profiles.dart';
+import 'package:otpand/db/crud/search_history.dart';
 import 'package:otpand/objects/location.dart';
 import 'package:otpand/objects/plan.dart';
 import 'package:otpand/objects/profile.dart';
@@ -88,6 +89,11 @@ class _RoutesPageState extends State<RoutesPage> {
 
   Future<void> _fetchPlans({String? after, String? before}) async {
     if (fromLocation == null || toLocation == null) return;
+
+    unawaited(SearchHistoryDao().saveSearch(
+        fromLocation: fromLocation!,
+        toLocation: toLocation!,
+        profile: profile));
 
     if (after == null && before == null) {
       setState(() {
@@ -211,12 +217,9 @@ class _RoutesPageState extends State<RoutesPage> {
 
   void _onDateTimeChanged(DateTimePickerValue value) {
     setState(() {
-      timeType =
-          value.mode == DateTimePickerMode.now
-              ? 'now'
-              : (value.mode == DateTimePickerMode.departure
-                  ? 'start'
-                  : 'arrive');
+      timeType = value.mode == DateTimePickerMode.now
+          ? 'now'
+          : (value.mode == DateTimePickerMode.departure ? 'start' : 'arrive');
       selectedDateTime = value.dateTime;
     });
     if (fromLocation != null && toLocation != null) {
@@ -318,33 +321,29 @@ class _RoutesPageState extends State<RoutesPage> {
                 children: [
                   Expanded(
                     child: DropdownButtonFormField<Profile>(
-                      value:
-                          profiles.isNotEmpty
-                              ? profiles.firstWhere(
-                                (p) => p.id == profile.id,
-                                orElse: () => profile,
-                              )
-                              : profile,
-                      items:
-                          profiles.map((p) {
-                            return DropdownMenuItem(
-                              value: p,
-                              child: Row(
-                                children: [
-                                  CircleAvatar(
-                                    backgroundColor: p.color,
-                                    radius: 10,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    p.name.isNotEmpty
-                                        ? p.name
-                                        : 'Profile ${p.id}',
-                                  ),
-                                ],
+                      value: profiles.isNotEmpty
+                          ? profiles.firstWhere(
+                              (p) => p.id == profile.id,
+                              orElse: () => profile,
+                            )
+                          : profile,
+                      items: profiles.map((p) {
+                        return DropdownMenuItem(
+                          value: p,
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                backgroundColor: p.color,
+                                radius: 10,
                               ),
-                            );
-                          }).toList(),
+                              const SizedBox(width: 8),
+                              Text(
+                                p.name.isNotEmpty ? p.name : 'Profile ${p.id}',
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
                       onChanged: (selected) {
                         if (selected == null) return;
                         setState(() {
@@ -383,12 +382,11 @@ class _RoutesPageState extends State<RoutesPage> {
                         if (updated != null) {
                           setState(() {
                             profile = updated;
-                            profiles =
-                                profiles
-                                    .map(
-                                      (p) => p.id == updated.id ? updated : p,
-                                    )
-                                    .toList();
+                            profiles = profiles
+                                .map(
+                                  (p) => p.id == updated.id ? updated : p,
+                                )
+                                .toList();
                           });
                           if (fromLocation != null && toLocation != null) {
                             unawaited(_fetchPlans());
@@ -435,10 +433,9 @@ class _RoutesPageState extends State<RoutesPage> {
           return _buildPaginationButton(
             text: 'Show earlier trips',
             isLoading: isPaginatingBackward,
-            onPressed:
-                (isPaginatingBackward || startCursor == null)
-                    ? null
-                    : () => _fetchPlans(before: startCursor),
+            onPressed: (isPaginatingBackward || startCursor == null)
+                ? null
+                : () => _fetchPlans(before: startCursor),
           );
         }
 
@@ -446,10 +443,9 @@ class _RoutesPageState extends State<RoutesPage> {
           return _buildPaginationButton(
             text: 'Show later trips',
             isLoading: isPaginatingForward,
-            onPressed:
-                (isPaginatingForward || endCursor == null)
-                    ? null
-                    : () => _fetchPlans(after: endCursor),
+            onPressed: (isPaginatingForward || endCursor == null)
+                ? null
+                : () => _fetchPlans(after: endCursor),
           );
         }
 
@@ -525,12 +521,11 @@ class _RoutesPageState extends State<RoutesPage> {
                   ),
                   child: DateTimePicker(
                     value: DateTimePickerValue(
-                      mode:
-                          timeType == 'now'
-                              ? DateTimePickerMode.now
-                              : (timeType == 'start'
-                                  ? DateTimePickerMode.departure
-                                  : DateTimePickerMode.arrival),
+                      mode: timeType == 'now'
+                          ? DateTimePickerMode.now
+                          : (timeType == 'start'
+                              ? DateTimePickerMode.departure
+                              : DateTimePickerMode.arrival),
                       dateTime: selectedDateTime ?? DateTime.now(),
                     ),
                     onChanged: _onDateTimeChanged,
@@ -560,12 +555,10 @@ class _RoutesPageState extends State<RoutesPage> {
                                 _buildPaginationButton(
                                   text: 'Show earlier trips',
                                   isLoading: isPaginatingBackward,
-                                  onPressed:
-                                      (isPaginatingBackward ||
-                                              startCursor == null)
-                                          ? null
-                                          : () =>
-                                              _fetchPlans(before: startCursor),
+                                  onPressed: (isPaginatingBackward ||
+                                          startCursor == null)
+                                      ? null
+                                      : () => _fetchPlans(before: startCursor),
                                 ),
                               Padding(
                                 padding: const EdgeInsets.symmetric(

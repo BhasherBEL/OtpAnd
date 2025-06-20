@@ -57,14 +57,18 @@ class Leg {
     return Colors.grey.shade400;
   }
 
-  String? get otherDeparturesText {
+  String? otherDeparturesText({bool short = false}) {
     if (otherDepartures.isEmpty) return '';
     if (otherDepartures.length == 1) {
       return formatTime(otherDepartures[0].realTime);
-    } else {
+    } else if (short == false) {
       return "${otherDepartures.sublist(0, otherDepartures.length - 1).map((e) {
         return formatTime(e.realTime);
       }).join(", ")} and ${formatTime(otherDepartures.last.realTime)}";
+    } else {
+      return otherDepartures.map((e) {
+        return formatTime(e.realTime);
+      }).join(', ');
     }
   }
 
@@ -144,10 +148,9 @@ class Leg {
   }
 
   static Future<Leg> parse(Map<String, dynamic> legJson) async {
-    final route =
-        legJson['route'] != null
-            ? await RouteDao().get(legJson['route']['gtfsId'] as String)
-            : null;
+    final route = legJson['route'] != null
+        ? await RouteDao().get(legJson['route']['gtfsId'] as String)
+        : null;
 
     List<TimedStop>? intermediate;
 
@@ -216,13 +219,12 @@ class Leg {
       from: await Place.parse(legJson['from'] as Map<String, dynamic>),
       to: await Place.parse(legJson['to'] as Map<String, dynamic>),
       route: route,
-      trip:
-          legJson['trip'] != null
-              ? Trip.parseWithRoute(
-                route,
-                legJson['trip'] as Map<String, dynamic>,
-              )
-              : null,
+      trip: legJson['trip'] != null
+          ? Trip.parseWithRoute(
+              route,
+              legJson['trip'] as Map<String, dynamic>,
+            )
+          : null,
       duration: legJson['duration'] as num,
       distance: legJson['distance'] as num,
       tripStops: intermediate,
@@ -231,5 +233,35 @@ class Leg {
       serviceDate: legJson['serviceDate'] as String?,
       geometry: legJson['legGeometry']['points'] as String?,
     );
+  }
+
+  int? get frequency {
+    if (from.departure == null ||
+        from.departure!.scheduledDateTime == null ||
+        otherDepartures.length < 2) {
+      return null;
+    }
+
+    List<DateTime> departures = [
+      from.departure!.scheduledDateTime!,
+      ...otherDepartures
+          .map((d) => d.scheduledDateTime)
+          .where((s) => s != null)
+          .map((s) => s!),
+    ];
+
+    departures.sort((a, b) => a.compareTo(b));
+
+    int? currentFreqency;
+
+    for (var i = 0; i < departures.length - 1; i++) {
+      int diff = departures[i + 1].difference(departures[i]).inMinutes.toInt();
+      if (currentFreqency != null && diff != currentFreqency) {
+        return null;
+      }
+      currentFreqency = diff;
+    }
+
+    return currentFreqency;
   }
 }

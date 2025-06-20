@@ -363,34 +363,36 @@ class _JourneysState extends State<Journeys> {
                                                           .departure
                                                   ? 'depart'
                                                   : 'arrive');
-                                          
+
                                           try {
                                             await SearchHistoryDao().saveSearch(
                                               fromLocation: fromLocation!,
                                               toLocation: toLocation!,
                                               profile: profile!,
-                                              timeType: timeType,
-                                              selectedDateTime: dateTime.dateTime,
                                             );
                                           } catch (e) {
                                             // Don't block navigation if history save fails
                                             if (mounted) {
-                                              debugPrint('Failed to save search history: $e');
+                                              debugPrint(
+                                                  'Failed to save search history: $e');
                                             }
                                           }
-                                          
-                                          Navigator.of(context).push(
-                                            MaterialPageRoute<void>(
-                                              builder: (context) => RoutesPage(
-                                                fromLocation: fromLocation!,
-                                                toLocation: toLocation!,
-                                                profile: profile!,
-                                                timeType: timeType,
-                                                selectedDateTime:
-                                                    dateTime.dateTime,
+
+                                          if (context.mounted) {
+                                            await Navigator.of(context).push(
+                                              MaterialPageRoute<void>(
+                                                builder: (context) =>
+                                                    RoutesPage(
+                                                  fromLocation: fromLocation!,
+                                                  toLocation: toLocation!,
+                                                  profile: profile!,
+                                                  timeType: timeType,
+                                                  selectedDateTime:
+                                                      dateTime.dateTime,
+                                                ),
                                               ),
-                                            ),
-                                          );
+                                            );
+                                          }
                                         } else {
                                           ScaffoldMessenger.of(
                                             context,

@@ -13,7 +13,6 @@ class SearchHistoryDao {
 
   final dbHelper = DatabaseHelper();
 
-  
   Future<int> insert(SearchHistory history) async {
     try {
       final db = await dbHelper.database;
@@ -22,24 +21,22 @@ class SearchHistoryDao {
         history.toMap(),
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
-      
-      
+
       final updatedHistory = history.copyWith(id: id);
-      final currentList = List<SearchHistory>.from(SearchHistory.currentHistory.value);
+      final currentList =
+          List<SearchHistory>.from(SearchHistory.currentHistory.value);
       currentList.insert(0, updatedHistory);
-      
-      
+
       if (currentList.length > 50) {
         currentList.removeRange(50, currentList.length);
       }
-      
+
       SearchHistory.currentHistory.value = currentList;
-      
-      
+
       if (currentList.length >= 50) {
         unawaited(_cleanupOldEntries());
       }
-      
+
       return id;
     } catch (e) {
       if (kDebugMode) {
@@ -49,7 +46,6 @@ class SearchHistoryDao {
     }
   }
 
-  
   Future<void> _cleanupOldEntries() async {
     try {
       await deleteOldEntries(keepCount: 100);
@@ -65,15 +61,11 @@ class SearchHistoryDao {
     required Location fromLocation,
     required Location toLocation,
     required Profile profile,
-    required String timeType,
-    DateTime? selectedDateTime,
   }) async {
-    
     final currentList = SearchHistory.currentHistory.value;
     if (currentList.isNotEmpty) {
       final latest = currentList.first;
-      if (_isDuplicateSearch(latest, fromLocation, toLocation, profile, timeType)) {
-        
+      if (_isDuplicateSearch(latest, fromLocation, toLocation, profile)) {
         return latest.id ?? 0;
       }
     }
@@ -82,26 +74,21 @@ class SearchHistoryDao {
       fromLocation: fromLocation,
       toLocation: toLocation,
       profile: profile,
-      timeType: timeType,
-      selectedDateTime: selectedDateTime,
     );
     return await insert(history);
   }
 
-  
   bool _isDuplicateSearch(
     SearchHistory latest,
     Location fromLocation,
     Location toLocation,
     Profile profile,
-    String timeType,
   ) {
     return latest.fromLocationLat == fromLocation.lat &&
         latest.fromLocationLon == fromLocation.lon &&
         latest.toLocationLat == toLocation.lat &&
         latest.toLocationLon == toLocation.lon &&
-        latest.profileId == profile.id &&
-        latest.timeType == timeType;
+        latest.profileId == profile.id;
   }
 
   Future<void> update(SearchHistory history) async {
@@ -114,9 +101,9 @@ class SearchHistoryDao {
         where: 'id = ?',
         whereArgs: [history.id],
       );
-      
-      
-      final currentList = List<SearchHistory>.from(SearchHistory.currentHistory.value);
+
+      final currentList =
+          List<SearchHistory>.from(SearchHistory.currentHistory.value);
       final index = currentList.indexWhere((h) => h.id == history.id);
       if (index != -1) {
         currentList[index] = history;
@@ -195,12 +182,13 @@ class SearchHistoryDao {
         where: 'id = ?',
         whereArgs: [id],
       );
-      
+
       // Update in-memory list efficiently
-      final currentList = List<SearchHistory>.from(SearchHistory.currentHistory.value);
+      final currentList =
+          List<SearchHistory>.from(SearchHistory.currentHistory.value);
       currentList.removeWhere((h) => h.id == id);
       SearchHistory.currentHistory.value = currentList;
-      
+
       return result;
     } catch (e) {
       if (kDebugMode) {
@@ -233,8 +221,7 @@ class SearchHistoryDao {
           LIMIT ?
         )
       ''', [keepCount]);
-      
-      
+
       await loadAll();
     } catch (e) {
       if (kDebugMode) {
@@ -243,4 +230,3 @@ class SearchHistoryDao {
     }
   }
 }
-

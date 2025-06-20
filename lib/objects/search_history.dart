@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:otpand/objects/location.dart';
 import 'package:otpand/objects/profile.dart';
-import 'package:otpand/widgets/datetime_picker.dart';
 
 class SearchHistory {
   final int? id;
@@ -14,10 +13,6 @@ class SearchHistory {
   final double toLocationLat;
   final double toLocationLon;
   final int profileId;
-  final String profileName;
-  final int profileColor;
-  final String timeType;
-  final DateTime? selectedDateTime;
   final DateTime searchedAt;
 
   SearchHistory({
@@ -31,10 +26,6 @@ class SearchHistory {
     required this.toLocationLat,
     required this.toLocationLon,
     required this.profileId,
-    required this.profileName,
-    required this.profileColor,
-    required this.timeType,
-    this.selectedDateTime,
     required this.searchedAt,
   });
 
@@ -52,21 +43,10 @@ class SearchHistory {
         lon: toLocationLon,
       );
 
-  DateTimePickerValue get dateTimeValue => DateTimePickerValue(
-        mode: timeType == 'now'
-            ? DateTimePickerMode.now
-            : timeType == 'depart'
-                ? DateTimePickerMode.departure
-                : DateTimePickerMode.arrival,
-        dateTime: selectedDateTime ?? DateTime.now(),
-      );
-
   factory SearchHistory.fromSearch({
     required Location fromLocation,
     required Location toLocation,
     required Profile profile,
-    required String timeType,
-    DateTime? selectedDateTime,
     int? id,
   }) {
     return SearchHistory(
@@ -79,11 +59,7 @@ class SearchHistory {
       toLocationDisplayName: toLocation.displayName,
       toLocationLat: toLocation.lat,
       toLocationLon: toLocation.lon,
-      profileId: profile.id ?? 0,
-      profileName: profile.name,
-      profileColor: profile.color.value,
-      timeType: timeType,
-      selectedDateTime: selectedDateTime,
+      profileId: profile.id,
       searchedAt: DateTime.now(),
     );
   }
@@ -100,10 +76,6 @@ class SearchHistory {
       'toLocationLat': toLocationLat,
       'toLocationLon': toLocationLon,
       'profileId': profileId,
-      'profileName': profileName,
-      'profileColor': profileColor,
-      'timeType': timeType,
-      'selectedDateTime': selectedDateTime?.millisecondsSinceEpoch,
       'searchedAt': searchedAt.millisecondsSinceEpoch,
     };
   }
@@ -120,12 +92,6 @@ class SearchHistory {
       toLocationLat: (map['toLocationLat'] as num).toDouble(),
       toLocationLon: (map['toLocationLon'] as num).toDouble(),
       profileId: map['profileId'] as int,
-      profileName: map['profileName'] as String,
-      profileColor: map['profileColor'] as int,
-      timeType: map['timeType'] as String,
-      selectedDateTime: map['selectedDateTime'] != null
-          ? DateTime.fromMillisecondsSinceEpoch(map['selectedDateTime'] as int)
-          : null,
       searchedAt: DateTime.fromMillisecondsSinceEpoch(map['searchedAt'] as int),
     );
   }
@@ -145,36 +111,30 @@ class SearchHistory {
     double? toLocationLat,
     double? toLocationLon,
     int? profileId,
-    String? profileName,
-    int? profileColor,
-    String? timeType,
-    DateTime? selectedDateTime,
     DateTime? searchedAt,
   }) {
     return SearchHistory(
       id: id ?? this.id,
       fromLocationName: fromLocationName ?? this.fromLocationName,
-      fromLocationDisplayName: fromLocationDisplayName ?? this.fromLocationDisplayName,
+      fromLocationDisplayName:
+          fromLocationDisplayName ?? this.fromLocationDisplayName,
       fromLocationLat: fromLocationLat ?? this.fromLocationLat,
       fromLocationLon: fromLocationLon ?? this.fromLocationLon,
       toLocationName: toLocationName ?? this.toLocationName,
-      toLocationDisplayName: toLocationDisplayName ?? this.toLocationDisplayName,
+      toLocationDisplayName:
+          toLocationDisplayName ?? this.toLocationDisplayName,
       toLocationLat: toLocationLat ?? this.toLocationLat,
       toLocationLon: toLocationLon ?? this.toLocationLon,
       profileId: profileId ?? this.profileId,
-      profileName: profileName ?? this.profileName,
-      profileColor: profileColor ?? this.profileColor,
-      timeType: timeType ?? this.timeType,
-      selectedDateTime: selectedDateTime ?? this.selectedDateTime,
       searchedAt: searchedAt ?? this.searchedAt,
     );
   }
 
   String get displayText {
-    return '${fromLocationDisplayName} → ${toLocationDisplayName}';
+    return '$fromLocationDisplayName → $toLocationDisplayName';
   }
 
-  static final ValueNotifier<List<SearchHistory>> currentHistory = 
+  static final ValueNotifier<List<SearchHistory>> currentHistory =
       ValueNotifier<List<SearchHistory>>([]);
 
   @override
@@ -186,4 +146,3 @@ class SearchHistory {
   @override
   int get hashCode => id.hashCode;
 }
-

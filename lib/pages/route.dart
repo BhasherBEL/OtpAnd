@@ -296,10 +296,9 @@ class _RoutePageState extends State<RoutePage>
                                                   Text(
                                                     legs.first.from.name,
                                                     overflow: TextOverflow.clip,
-                                                    style:
-                                                        Theme.of(
-                                                          context,
-                                                        ).textTheme.bodyMedium,
+                                                    style: Theme.of(
+                                                      context,
+                                                    ).textTheme.bodyMedium,
                                                   ),
                                                   const SizedBox(height: 2),
                                                   Row(
@@ -312,12 +311,11 @@ class _RoutePageState extends State<RoutePage>
                                                       Expanded(
                                                         child: Text(
                                                           legs.last.to.name,
-                                                          overflow:
-                                                              TextOverflow
-                                                                  .ellipsis,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
                                                           style: Theme.of(
-                                                                context,
-                                                              )
+                                                            context,
+                                                          )
                                                               .textTheme
                                                               .titleMedium
                                                               ?.copyWith(
@@ -371,10 +369,7 @@ class _RoutePageState extends State<RoutePage>
                                                                 .arrival
                                                                 ?.estimated
                                                                 ?.time ??
-                                                            legs
-                                                                .last
-                                                                .to
-                                                                .arrival
+                                                            legs.last.to.arrival
                                                                 ?.scheduledTime,
                                                       ) ??
                                                       '',
@@ -412,32 +407,28 @@ class _RoutePageState extends State<RoutePage>
                                   animation: _rotationController,
                                   builder: (context, child) {
                                     return Transform.rotate(
-                                      angle:
-                                          _updating
-                                              ? _rotationController.value *
-                                                  6.28319 *
-                                                  2
-                                              : 0,
+                                      angle: _updating
+                                          ? _rotationController.value *
+                                              6.28319 *
+                                              2
+                                          : 0,
                                       child: IconButton(
                                         icon: Icon(
                                           _autoUpdateEnabled
                                               ? Icons.autorenew
                                               : Icons.autorenew_outlined,
-                                          color:
-                                              _autoUpdateEnabled
-                                                  ? Colors.blue
-                                                  : Colors.grey,
+                                          color: _autoUpdateEnabled
+                                              ? Colors.blue
+                                              : Colors.grey,
                                         ),
-                                        tooltip:
-                                            _autoUpdateEnabled
-                                                ? (_updating
-                                                    ? 'Updating...'
-                                                    : 'Disable automatic update')
-                                                : 'Enable automatic update',
-                                        onPressed:
-                                            _updating
-                                                ? null
-                                                : _toggleAutoUpdate,
+                                        tooltip: _autoUpdateEnabled
+                                            ? (_updating
+                                                ? 'Updating...'
+                                                : 'Disable automatic update')
+                                            : 'Enable automatic update',
+                                        onPressed: _updating
+                                            ? null
+                                            : _toggleAutoUpdate,
                                       ),
                                     );
                                   },
@@ -496,7 +487,7 @@ class _RoutePageState extends State<RoutePage>
                                     departureTimeRt ?? departureTimeTheory;
                                 final departureDelayed =
                                     departureTimeRt != null &&
-                                    departureTimeRt != departureTimeTheory;
+                                        departureTimeRt != departureTimeTheory;
 
                                 final arrivalTimeRt =
                                     previousLeg?.to.arrival?.estimated?.time;
@@ -504,18 +495,16 @@ class _RoutePageState extends State<RoutePage>
                                     previousLeg?.to.arrival?.scheduledTime;
                                 final arrivalTime =
                                     arrivalTimeRt ?? arrivalTimeTheory;
-                                final arrivalDelayed =
-                                    arrivalTimeRt != null &&
+                                final arrivalDelayed = arrivalTimeRt != null &&
                                     arrivalTimeRt != arrivalTimeTheory;
 
-                                final transferTime =
-                                    arrivalTime != null
-                                        ? parseTime(departureTime)
-                                            ?.difference(
-                                              parseTime(arrivalTime)!,
-                                            )
-                                            .inSeconds
-                                        : null;
+                                final transferTime = arrivalTime != null
+                                    ? parseTime(departureTime)
+                                        ?.difference(
+                                          parseTime(arrivalTime)!,
+                                        )
+                                        .inSeconds
+                                    : null;
                                 final hasTransfer =
                                     transferTime != null && transferTime > 0;
 
@@ -531,52 +520,30 @@ class _RoutePageState extends State<RoutePage>
                                       Row(
                                         children: [
                                           Expanded(
-                                            child:
-                                                (leg?.transitLeg == true ||
-                                                        (leg == null &&
-                                                            previousLeg
-                                                                    ?.transitLeg ==
-                                                                true))
-                                                    ? GestureDetector(
-                                                      onTap: () {
-                                                        if (place.stop !=
-                                                            null) {
-                                                          Navigator.of(
-                                                            context,
-                                                          ).push(
-                                                            MaterialPageRoute<
-                                                              void
-                                                            >(
-                                                              builder:
-                                                                  (
-                                                                    context,
-                                                                  ) => StopPage(
-                                                                    stop:
-                                                                        place
-                                                                            .stop!,
-                                                                  ),
+                                            child: (leg?.transitLeg == true ||
+                                                    (leg == null &&
+                                                        previousLeg
+                                                                ?.transitLeg ==
+                                                            true))
+                                                ? GestureDetector(
+                                                    onTap: () {
+                                                      if (place.stop != null) {
+                                                        Navigator.of(
+                                                          context,
+                                                        ).push(
+                                                          MaterialPageRoute<
+                                                              void>(
+                                                            builder: (
+                                                              context,
+                                                            ) =>
+                                                                StopPage(
+                                                              stop: place.stop!,
                                                             ),
-                                                          );
-                                                        }
-                                                      },
-                                                      child: Text(
-                                                        place.name,
-                                                        style: Theme.of(context)
-                                                            .textTheme
-                                                            .bodyMedium
-                                                            ?.copyWith(
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w500,
-                                                              decoration:
-                                                                  TextDecoration
-                                                                      .underline,
-                                                              decorationColor:
-                                                                  Colors.grey,
-                                                            ),
-                                                      ),
-                                                    )
-                                                    : Text(
+                                                          ),
+                                                        );
+                                                      }
+                                                    },
+                                                    child: Text(
                                                       place.name,
                                                       style: Theme.of(context)
                                                           .textTheme
@@ -584,8 +551,24 @@ class _RoutePageState extends State<RoutePage>
                                                           ?.copyWith(
                                                             fontWeight:
                                                                 FontWeight.w500,
+                                                            decoration:
+                                                                TextDecoration
+                                                                    .underline,
+                                                            decorationColor:
+                                                                Colors.grey,
                                                           ),
                                                     ),
+                                                  )
+                                                : Text(
+                                                    place.name,
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .bodyMedium
+                                                        ?.copyWith(
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                        ),
+                                                  ),
                                           ),
                                           if (hasTransfer)
                                             Text(
@@ -610,9 +593,10 @@ class _RoutePageState extends State<RoutePage>
                                                     if (arrivalDelayed)
                                                       Padding(
                                                         padding:
-                                                            const EdgeInsets.only(
-                                                              right: 4,
-                                                            ),
+                                                            const EdgeInsets
+                                                                .only(
+                                                          right: 4,
+                                                        ),
                                                         child: Text(
                                                           formatTime(
                                                             arrivalTimeRt,
@@ -628,13 +612,11 @@ class _RoutePageState extends State<RoutePage>
                                                           ) ??
                                                           '??:??',
                                                       style: TextStyle(
-                                                        color:
-                                                            arrivalTimeRt ==
-                                                                    null
-                                                                ? Colors
-                                                                    .grey
-                                                                    .shade700
-                                                                : Colors.green,
+                                                        color: arrivalTimeRt ==
+                                                                null
+                                                            ? Colors
+                                                                .grey.shade700
+                                                            : Colors.green,
                                                         decoration:
                                                             arrivalDelayed
                                                                 ? TextDecoration
@@ -648,8 +630,8 @@ class _RoutePageState extends State<RoutePage>
                                                 Padding(
                                                   padding:
                                                       const EdgeInsets.only(
-                                                        right: 12,
-                                                      ),
+                                                    right: 12,
+                                                  ),
                                                   child: Icon(
                                                     Icons.arrow_downward,
                                                     size: 12,
@@ -664,9 +646,10 @@ class _RoutePageState extends State<RoutePage>
                                                     if (departureDelayed)
                                                       Padding(
                                                         padding:
-                                                            const EdgeInsets.only(
-                                                              right: 4,
-                                                            ),
+                                                            const EdgeInsets
+                                                                .only(
+                                                          right: 4,
+                                                        ),
                                                         child: Text(
                                                           formatTime(
                                                             departureTimeRt,
@@ -685,8 +668,7 @@ class _RoutePageState extends State<RoutePage>
                                                         color:
                                                             departureTimeRt ==
                                                                     null
-                                                                ? Colors
-                                                                    .grey
+                                                                ? Colors.grey
                                                                     .shade700
                                                                 : Colors.green,
                                                         decoration:
@@ -712,30 +694,26 @@ class _RoutePageState extends State<RoutePage>
                                                 CrossAxisAlignment.start,
                                             children: [
                                               GestureDetector(
-                                                onTap:
-                                                    leg.trip != null &&
-                                                            leg.serviceDate !=
-                                                                null
-                                                        ? () {
-                                                          Navigator.of(
-                                                            context,
-                                                          ).push(
-                                                            MaterialPageRoute<
-                                                              void
-                                                            >(
-                                                              builder:
-                                                                  (
-                                                                    context,
-                                                                  ) => TripPage(
-                                                                    trip:
-                                                                        leg.trip!,
-                                                                    serviceDate:
-                                                                        leg.serviceDate!,
-                                                                  ),
+                                                onTap: leg.trip != null &&
+                                                        leg.serviceDate != null
+                                                    ? () {
+                                                        Navigator.of(
+                                                          context,
+                                                        ).push(
+                                                          MaterialPageRoute<
+                                                              void>(
+                                                            builder: (
+                                                              context,
+                                                            ) =>
+                                                                TripPage(
+                                                              trip: leg.trip!,
+                                                              serviceDate: leg
+                                                                  .serviceDate!,
                                                             ),
-                                                          );
-                                                        }
-                                                        : null,
+                                                          ),
+                                                        );
+                                                      }
+                                                    : null,
                                                 child: Row(
                                                   crossAxisAlignment:
                                                       CrossAxisAlignment.center,
@@ -748,8 +726,7 @@ class _RoutePageState extends State<RoutePage>
                                                       child: Text(
                                                         leg.transitLeg
                                                             ? leg.headsign ??
-                                                                leg
-                                                                    .route
+                                                                leg.route
                                                                     ?.longName ??
                                                                 'Unknown'
                                                             : '${displayDistance(leg.distance)} - ${displayTime(leg.duration)}',
@@ -757,11 +734,12 @@ class _RoutePageState extends State<RoutePage>
                                                           fontSize: 16,
                                                           fontWeight:
                                                               FontWeight.w500,
-                                                          decoration:
-                                                              leg.trip != null
-                                                                  ? TextDecoration
-                                                                      .underline
-                                                                  : null,
+                                                          decoration: leg
+                                                                      .trip !=
+                                                                  null
+                                                              ? TextDecoration
+                                                                  .underline
+                                                              : null,
                                                           decorationColor:
                                                               Colors.grey,
                                                         ),
@@ -771,16 +749,14 @@ class _RoutePageState extends State<RoutePage>
                                                 ),
                                               ),
                                               if (leg
-                                                  .otherDepartures
-                                                  .isNotEmpty)
+                                                  .otherDepartures.isNotEmpty)
                                                 Padding(
                                                   padding:
-                                                      const EdgeInsets.only(
-                                                        top: 8.0,
-                                                      ),
-                                                  child: Text(
-                                                    'Also at ${leg.otherDeparturesText}',
-                                                  ),
+                                                      EdgeInsets.only(top: 8),
+                                                  child: Text(leg.frequency !=
+                                                          null
+                                                      ? 'Every ${leg.frequency} minutes (${leg.otherDeparturesText(short: true)})'
+                                                      : 'Also at ${leg.otherDeparturesText()}'),
                                                 ),
                                               if (leg.transitLeg)
                                                 IntermediateStopsWidget(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:otpand/objects/history.dart';
+import 'package:otpand/objects/profile.dart';
 import 'package:otpand/objects/search_history.dart';
 import 'package:otpand/utils/colors.dart';
 
@@ -62,26 +63,21 @@ class _HistoryWidgetState extends State<HistoryWidget> {
               return _HistoryCard(
                 history: history,
                 onTap: () {
-                  try {
-                    // Update the current journey state with this history
-                    History.update(
-                      fromLocation: history.fromLocation,
-                      toLocation: history.toLocation,
-                      dateTime: history.dateTimeValue,
-                    );
+                  History.update(
+                    fromLocation: history.fromLocation,
+                    toLocation: history.toLocation,
+                  );
 
-                    if (widget.onHistorySelected != null) {
-                      widget.onHistorySelected!();
-                    }
-                  } catch (e) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Failed to load search history'),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                    }
+                  if (widget.onHistorySelected != null) {
+                    widget.onHistorySelected!();
+                  }
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to load search history'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
                   }
                 },
               );
@@ -211,16 +207,12 @@ class _HistoryCard extends StatelessWidget {
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: Color(history.profileColor).withOpacity(0.2),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    history.profileName.isNotEmpty
-                        ? history.profileName
-                        : 'Profile ${history.profileId}',
+                    'Profile ${history.profileId}',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Color(history.profileColor),
                       fontWeight: FontWeight.w500,
                     ),
                   ),

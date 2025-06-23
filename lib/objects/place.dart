@@ -87,6 +87,10 @@ class DepartureArrival {
     }
   }
 
+  DateTime? get realDateTime {
+    return realTime != null ? DateTime.tryParse(realTime!) : null;
+  }
+
   DateTime? get scheduledDateTime {
     if (scheduledTime == null) return null;
     return DateTime.tryParse(scheduledTime!);

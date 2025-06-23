@@ -21,11 +21,17 @@ class _OtherDeparturesWidgetState extends State<OtherDeparturesWidget> {
   @override
   Widget build(BuildContext context) {
     final departuresList = widget.leg.otherDepartures
-        .where(
-          (departure) => departure.realTime,
-        )
-        .toList();
+        .where((leg) =>
+            leg.from.departure?.realDateTime != null &&
+            leg.to.arrival?.realDateTime != null)
+        .toList()
+      ..add(widget.leg)
+      ..sort((a, b) {
+        final aTime = a.from.departure!.realDateTime!;
+        final bTime = b.from.departure!.realDateTime!;
 
+        return aTime.compareTo(bTime);
+      });
     final summaryText = widget.leg.frequency != null
         ? 'Every ${widget.leg.frequency} minutes'
         : 'Other Departures';
@@ -53,7 +59,10 @@ class _OtherDeparturesWidgetState extends State<OtherDeparturesWidget> {
                 children: departuresList
                     .map((leg) => Padding(
                         padding: const EdgeInsets.symmetric(vertical: 2),
-                        child: LegDepartureWidget(leg: leg)))
+                        child: LegDepartureWidget(
+                          leg: leg,
+                          isCurrent: leg.id == widget.leg.id,
+                        )))
                     .toList(),
               ),
             ),

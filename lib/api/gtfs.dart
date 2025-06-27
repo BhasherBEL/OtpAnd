@@ -9,12 +9,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 const String _lastGtfsSyncKey = 'last_gtfs_sync';
 
-Future<void> checkAndSyncGtfsData() async {
+Future<void> checkAndSyncGtfsData({bool force = false}) async {
   final prefs = await SharedPreferences.getInstance();
   final now = DateTime.now();
   final lastSyncMillis = prefs.getInt(_lastGtfsSyncKey);
 
-  if (lastSyncMillis != null) {
+  if (!force && lastSyncMillis != null) {
     final lastSync = DateTime.fromMillisecondsSinceEpoch(lastSyncMillis);
     final diff = now.difference(lastSync);
     if (diff.inHours < 23) {
@@ -49,6 +49,7 @@ Future<void> fetchAndStoreGtfsData() async {
 						lat
 						lon
 						vehicleMode
+						platformCode
 					}
 				}
       }
@@ -94,7 +95,7 @@ Future<void> fetchAndStoreGtfsData() async {
 
     final routes =
         (agency['routes'] as List<dynamic>?)?.cast<Map<String, dynamic>>() ??
-        [];
+            [];
 
     for (final route in routes) {
       routeMaps.add({
@@ -112,12 +113,11 @@ Future<void> fetchAndStoreGtfsData() async {
 
       final patterns =
           (route['patterns'] as List<dynamic>?)?.cast<Map<String, dynamic>>() ??
-          [];
+              [];
 
       for (int i = 0; i < patterns.length; i++) {
         final pattern = patterns[i];
-        final stops =
-            (pattern['stops'] as List<dynamic>?)
+        final stops = (pattern['stops'] as List<dynamic>?)
                 ?.cast<Map<String, dynamic>>() ??
             [];
         directionMaps.add({

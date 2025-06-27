@@ -545,7 +545,12 @@ class _RoutePageState extends State<RoutePage>
                                                       }
                                                     },
                                                     child: Text(
-                                                      place.name,
+                                                      place.stop != null &&
+                                                              place.stop!
+                                                                      .platformCode !=
+                                                                  null
+                                                          ? '${place.name} (Platform ${place.stop!.platformCode})'
+                                                          : place.name,
                                                       style: Theme.of(context)
                                                           .textTheme
                                                           .bodyMedium
@@ -561,7 +566,12 @@ class _RoutePageState extends State<RoutePage>
                                                     ),
                                                   )
                                                 : Text(
-                                                    place.name,
+                                                    place.stop != null &&
+                                                            place.stop!
+                                                                    .platformCode !=
+                                                                null
+                                                        ? '${place.name} (Platform ${place.stop!.platformCode})'
+                                                        : place.name,
                                                     style: Theme.of(context)
                                                         .textTheme
                                                         .bodyMedium

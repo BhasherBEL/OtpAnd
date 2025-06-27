@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:device_calendar/device_calendar.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator_android/geolocator_android.dart';
+import 'package:otpand/api/gtfs.dart';
+import 'package:otpand/db/helper.dart';
 import 'package:otpand/objects/config.dart';
 import 'package:otpand/pages/otpconfig.dart';
 import 'package:otpand/pages/profiles.dart';
@@ -194,6 +196,42 @@ class _SettingsPageState extends State<SettingsPage> {
               );
             },
           ),
+          ListTile(
+            leading: const Icon(Icons.download),
+            title: const Text('Force GTFS cleanup and download'),
+            onTap: () async {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Starting GTFS cleanup...')),
+                );
+              }
+
+              final db = await DatabaseHelper().database;
+              await db.delete('direction_items');
+              await db.delete('directions');
+              await db.delete('agencies_routes');
+              await db.delete('routes');
+              await db.delete('stops');
+              await db.delete('agencies');
+
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text('GTFS cleanup Done. Starting download...')),
+                );
+              }
+
+              await checkAndSyncGtfsData(force: true);
+
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('GTFS data download completed successfully!'),
+                  ),
+                );
+              }
+            },
+          )
         ],
       ),
     );

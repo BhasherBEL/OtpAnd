@@ -44,11 +44,14 @@ class StopDao {
     int order,
   ) async {
     final db = await dbHelper.database;
-    await db.insert('direction_items', {
-      'stop_gtfsId': stopId,
-      'direction_id': directionId,
-      'order': order,
-    }, conflictAlgorithm: ConflictAlgorithm.ignore);
+    await db.insert(
+        'direction_items',
+        {
+          'stop_gtfsId': stopId,
+          'direction_id': directionId,
+          'order': order,
+        },
+        conflictAlgorithm: ConflictAlgorithm.ignore);
   }
 
   Future<Stop?> get(String gtfsId) async {

@@ -156,7 +156,12 @@ class Profile {
     return {
       'direct': direct,
       'directOnly': !transit,
-      'transitOnly': (avoidDirectWalking && !bike && !car),
+      'transitOnly': (avoidDirectWalking &&
+          !bike &&
+          !bikeParkRide &&
+          !car &&
+          !carKissRide &&
+          !carParkRide),
       'transit': {
         'access': [
           if (!bikeFriendly) 'WALK',

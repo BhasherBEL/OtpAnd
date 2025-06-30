@@ -34,6 +34,16 @@ class ProfileDao {
       'carKissRide': 0,
       'carPickup': 0,
       'agenciesEnabled': '',
+      'enableModeBus': 1,
+      'preferenceModeBus': 1.0,
+      'enableModeMetro': 1,
+      'preferenceModeMetro': 1.0,
+      'enableModeTram': 1,
+      'preferenceModeTram': 1.0,
+      'enableModeTrain': 1,
+      'preferenceModeTrain': 1.0,
+      'enableModeFerry': 1,
+      'preferenceModeFerry': 1.0,
     });
     final maps = await db.query(table, where: 'id = ?', whereArgs: [id]);
     if (maps.isNotEmpty) {

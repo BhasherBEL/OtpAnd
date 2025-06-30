@@ -21,7 +21,7 @@ class DatabaseHelper {
     final path = join(documentsDirectory!.path, 'app.db');
     return await openDatabase(
       path,
-      version: 6,
+      version: 7,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -55,7 +55,17 @@ class DatabaseHelper {
         carParkRide INTEGER NOT NULL,
         carKissRide INTEGER NOT NULL,
         carPickup INTEGER NOT NULL,
-				agenciesEnabled TEXT NOT NULL
+				agenciesEnabled TEXT NOT NULL,
+        enableModeBus INTEGER NOT NULL,
+        preferenceModeBus REAL NOT NULL,
+        enableModeMetro INTEGER NOT NULL,
+        preferenceModeMetro REAL NOT NULL,
+        enableModeTram INTEGER NOT NULL,
+        preferenceModeTram REAL NOT NULL,
+        enableModeTrain INTEGER NOT NULL,
+        preferenceModeTrain REAL NOT NULL,
+        enableModeFerry INTEGER NOT NULL,
+        preferenceModeFerry REAL NOT NULL
       )
     ''');
 
@@ -207,6 +217,38 @@ class DatabaseHelper {
     if (oldVersion < 6) {
       await db.execute('''
 			ALTER TABLE profiles ADD COLUMN agenciesEnabled TEXT NOT NULL DEFAULT ''
+			''');
+    }
+    if (oldVersion < 7) {
+      await db.execute('''
+			ALTER TABLE profiles ADD COLUMN enableModeBus INTEGER NOT NULL DEFAULT 1
+			''');
+      await db.execute('''
+			ALTER TABLE profiles ADD COLUMN preferenceModeBus REAL NOT NULL DEFAULT 1.0
+			''');
+      await db.execute('''
+			ALTER TABLE profiles ADD COLUMN enableModeMetro INTEGER NOT NULL DEFAULT 1
+			''');
+      await db.execute('''
+			ALTER TABLE profiles ADD COLUMN preferenceModeMetro REAL NOT NULL DEFAULT 1.0
+			''');
+      await db.execute('''
+			ALTER TABLE profiles ADD COLUMN enableModeTram INTEGER NOT NULL DEFAULT 1
+			''');
+      await db.execute('''
+			ALTER TABLE profiles ADD COLUMN preferenceModeTram REAL NOT NULL DEFAULT 1.0
+			''');
+      await db.execute('''
+			ALTER TABLE profiles ADD COLUMN enableModeTrain INTEGER NOT NULL DEFAULT 1
+			''');
+      await db.execute('''
+			ALTER TABLE profiles ADD COLUMN preferenceModeTrain REAL NOT NULL DEFAULT 1.0
+			''');
+      await db.execute('''
+			ALTER TABLE profiles ADD COLUMN enableModeFerry INTEGER NOT NULL DEFAULT 1
+			''');
+      await db.execute('''
+			ALTER TABLE profiles ADD COLUMN preferenceModeFerry REAL NOT NULL DEFAULT 1.0
 			''');
     }
   }

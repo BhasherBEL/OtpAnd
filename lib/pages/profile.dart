@@ -3,6 +3,7 @@ import 'package:otpand/db/crud/profiles.dart';
 import 'package:otpand/objects/agency.dart';
 
 import 'package:otpand/objects/profile.dart';
+import 'package:otpand/pages/profile/card.dart';
 
 class ProfilePage extends StatefulWidget {
   final Profile profile;
@@ -44,6 +45,17 @@ class _ProfilePageState extends State<ProfilePage> {
   late bool carPickup;
 
   late Map<Agency, bool> agenciesEnabled;
+
+  late bool enableModeBus;
+  late double preferenceModeBus;
+  late bool enableModeMetro;
+  late double preferenceModeMetro;
+  late bool enableModeTram;
+  late double preferenceModeTram;
+  late bool enableModeTrain;
+  late double preferenceModeTrain;
+  late bool enableModeFerry;
+  late double preferenceModeFerry;
 
   final List<Color> _colorOptions = [
     Colors.blue,
@@ -89,6 +101,17 @@ class _ProfilePageState extends State<ProfilePage> {
     carParkRide = widget.profile.carParkRide;
     carKissRide = widget.profile.carKissRide;
     carPickup = widget.profile.carPickup;
+
+    enableModeBus = widget.profile.enableModeBus;
+    preferenceModeBus = widget.profile.preferenceModeBus;
+    enableModeMetro = widget.profile.enableModeMetro;
+    preferenceModeMetro = widget.profile.preferenceModeMetro;
+    enableModeTram = widget.profile.enableModeTram;
+    preferenceModeTram = widget.profile.preferenceModeTram;
+    enableModeTrain = widget.profile.enableModeTrain;
+    preferenceModeTrain = widget.profile.preferenceModeTrain;
+    enableModeFerry = widget.profile.enableModeFerry;
+    preferenceModeFerry = widget.profile.preferenceModeFerry;
 
     agenciesEnabled = widget.profile.agenciesEnabled;
     ensureAgencies();
@@ -147,7 +170,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _buildSliderTile({
     required String title,
-    required String description,
+    String? description,
     required double value,
     required double min,
     required double max,
@@ -160,7 +183,7 @@ class _ProfilePageState extends State<ProfilePage> {
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(description),
+          if (description != null) Text(description),
           Slider(
             value: value,
             min: min,
@@ -179,19 +202,19 @@ class _ProfilePageState extends State<ProfilePage> {
             : value.toStringAsFixed(2),
         style: const TextStyle(fontWeight: FontWeight.bold),
       ),
-      contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      // contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
     );
   }
 
   Widget _buildSwitchTile({
     required String title,
-    required String description,
+    String? description,
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
     return SwitchListTile(
       title: Text(title),
-      subtitle: Text(description),
+      subtitle: description != null ? Text(description) : null,
       value: value,
       onChanged: onChanged,
       contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -279,75 +302,146 @@ class _ProfilePageState extends State<ProfilePage> {
               'Transit',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
-            _buildSwitchTile(
-              title: 'Enable transit',
-              description: 'Allow using public transport.',
-              value: transit,
-              onChanged: (v) => setState(() => transit = v),
-            ),
-            _buildSliderTile(
-              title: 'Transit preference',
-              description: 'How much you prefer transit over other modes.',
-              value: transitPreference,
-              min: 0.1,
-              max: 2.0,
-              divisions: 19,
-              onChanged: (v) => setState(() => transitPreference = v),
-            ),
-            _buildSliderTile(
-              title: 'Transit wait reluctance',
-              description: 'How much you dislike waiting for transit.',
-              value: transitWaitReluctance,
-              min: 0.1,
-              max: 2.0,
-              divisions: 19,
-              onChanged: (v) => setState(() => transitWaitReluctance = v),
-            ),
-            _buildSliderTile(
-              title: 'Transit transfer worth',
-              description: 'How much a transfer is worth in minutes.',
-              value: transitTransferWorth,
-              min: 0.0,
-              max: 15.0,
-              divisions: 15,
-              onChanged: (v) => setState(() => transitTransferWorth = v),
-              valueSuffix: 'min',
-            ),
-            ListTile(
-              title: const Text('Minimal transfer time'),
-              subtitle: const Text(
-                'Minimum time (in seconds) required for a transfer.',
-              ),
-              trailing: SizedBox(
-                width: 120,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.remove),
-                      onPressed: transitMinimalTransferTime > 0
-                          ? () => setState(
-                                () => transitMinimalTransferTime -= 1,
-                              )
-                          : null,
+            ProfileCardWidget(
+                title: 'Enable transit',
+                description: 'Allow using public transport.',
+                initialState: transit,
+                onStateChanged: (v) => setState(() => transit = v),
+                hasBorder: true,
+                children: [
+                  _buildSliderTile(
+                    title: 'Transit preference',
+                    description:
+                        'How much you prefer transit over other modes.',
+                    value: transitPreference,
+                    min: 0.1,
+                    max: 2.0,
+                    divisions: 19,
+                    onChanged: (v) => setState(() => transitPreference = v),
+                  ),
+                  _buildSliderTile(
+                    title: 'Transit wait reluctance',
+                    description: 'How much you dislike waiting for transit.',
+                    value: transitWaitReluctance,
+                    min: 0.1,
+                    max: 2.0,
+                    divisions: 19,
+                    onChanged: (v) => setState(() => transitWaitReluctance = v),
+                  ),
+                  _buildSliderTile(
+                    title: 'Transit transfer worth',
+                    description: 'How much a transfer is worth in minutes.',
+                    value: transitTransferWorth,
+                    min: 0.0,
+                    max: 15.0,
+                    divisions: 15,
+                    onChanged: (v) => setState(() => transitTransferWorth = v),
+                    valueSuffix: 'min',
+                  ),
+                  ListTile(
+                    title: const Text('Minimal transfer time'),
+                    subtitle: const Text(
+                      'Minimum time (in seconds) required for a transfer.',
                     ),
-                    Text('$transitMinimalTransferTime m'),
-                    IconButton(
-                      icon: const Icon(Icons.add),
-                      onPressed: transitMinimalTransferTime < 60
-                          ? () => setState(
-                                () => transitMinimalTransferTime += 1,
-                              )
-                          : null,
+                    trailing: SizedBox(
+                      width: 120,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.remove),
+                            onPressed: transitMinimalTransferTime > 0
+                                ? () => setState(
+                                      () => transitMinimalTransferTime -= 1,
+                                    )
+                                : null,
+                          ),
+                          Text('$transitMinimalTransferTime m'),
+                          IconButton(
+                            icon: const Icon(Icons.add),
+                            onPressed: transitMinimalTransferTime < 60
+                                ? () => setState(
+                                      () => transitMinimalTransferTime += 1,
+                                    )
+                                : null,
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
-                ),
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                vertical: 8,
-                horizontal: 16,
-              ),
-            ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 8,
+                      horizontal: 16,
+                    ),
+                  ),
+                  const Divider(),
+                  const Text(
+                    'Modes',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  ProfileCardWidget(
+                    title: 'Bus',
+                    initialState: enableModeBus,
+                    onStateChanged: (v) => setState(() => enableModeBus = v),
+                    children: [
+                      _buildSliderTile(
+                        title: 'Preference for bus',
+                        value: preferenceModeBus,
+                        min: 0.1,
+                        max: 2.0,
+                        divisions: 19,
+                        onChanged: (v) => setState(() => preferenceModeBus = v),
+                      ),
+                    ],
+                  ),
+                  ProfileCardWidget(
+                    title: 'Tram',
+                    initialState: enableModeTram,
+                    onStateChanged: (v) => setState(() => enableModeTram = v),
+                    children: [
+                      _buildSliderTile(
+                        title: 'Preference for tram',
+                        value: preferenceModeTram,
+                        min: 0.1,
+                        max: 2.0,
+                        divisions: 19,
+                        onChanged: (v) =>
+                            setState(() => preferenceModeTram = v),
+                      ),
+                    ],
+                  ),
+                  ProfileCardWidget(
+                    title: 'Metro',
+                    initialState: enableModeMetro,
+                    onStateChanged: (v) => setState(() => enableModeMetro = v),
+                    children: [
+                      _buildSliderTile(
+                        title: 'Preference for metro',
+                        value: preferenceModeMetro,
+                        min: 0.1,
+                        max: 2.0,
+                        divisions: 19,
+                        onChanged: (v) =>
+                            setState(() => preferenceModeMetro = v),
+                      ),
+                    ],
+                  ),
+                  ProfileCardWidget(
+                    title: 'Ferry',
+                    initialState: enableModeFerry,
+                    onStateChanged: (v) => setState(() => enableModeFerry = v),
+                    children: [
+                      _buildSliderTile(
+                        title: 'Preference for ferry',
+                        value: preferenceModeFerry,
+                        min: 0.1,
+                        max: 2.0,
+                        divisions: 19,
+                        onChanged: (v) =>
+                            setState(() => preferenceModeFerry = v),
+                      )
+                    ],
+                  ),
+                ]),
             const Divider(),
             const Text(
               'Bicycle',
@@ -492,6 +586,16 @@ class _ProfilePageState extends State<ProfilePage> {
                   carKissRide: carKissRide,
                   carPickup: carPickup,
                   agenciesEnabled: agenciesEnabled,
+                  enableModeBus: enableModeBus,
+                  preferenceModeBus: preferenceModeBus,
+                  enableModeMetro: enableModeMetro,
+                  preferenceModeMetro: preferenceModeMetro,
+                  enableModeTram: enableModeTram,
+                  preferenceModeTram: preferenceModeTram,
+                  enableModeTrain: enableModeTrain,
+                  preferenceModeTrain: preferenceModeTrain,
+                  enableModeFerry: enableModeFerry,
+                  preferenceModeFerry: preferenceModeFerry,
                 );
                 await ProfileDao.update(updatedProfile.id, updatedProfile);
                 if (context.mounted) {

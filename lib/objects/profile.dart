@@ -36,6 +36,17 @@ class Profile {
 
   Map<Agency, bool> agenciesEnabled = {};
 
+  bool enableModeBus;
+  double preferenceModeBus;
+  bool enableModeMetro;
+  double preferenceModeMetro;
+  bool enableModeTram;
+  double preferenceModeTram;
+  bool enableModeTrain;
+  double preferenceModeTrain;
+  bool enableModeFerry;
+  double preferenceModeFerry;
+
   Profile({
     required this.id,
     required this.name,
@@ -63,6 +74,16 @@ class Profile {
     required this.carKissRide,
     required this.carPickup,
     required this.agenciesEnabled,
+    required this.enableModeBus,
+    required this.preferenceModeBus,
+    required this.enableModeMetro,
+    required this.preferenceModeMetro,
+    required this.enableModeTram,
+    required this.preferenceModeTram,
+    required this.enableModeTrain,
+    required this.preferenceModeTrain,
+    required this.enableModeFerry,
+    required this.preferenceModeFerry,
   });
 
   @override
@@ -150,6 +171,43 @@ class Profile {
           if (carPickup) 'CAR_PICKUP',
         ],
         'transfer': [if (!bikeFriendly) 'WALK', if (bikeFriendly) 'BICYCLE'],
+        'transit': [
+          if (enableModeBus)
+            {
+              'mode': 'BUS',
+              'cost': {
+                'reluctance': round(transitPreference / preferenceModeBus, 5)
+              }
+            },
+          if (enableModeMetro)
+            {
+              'mode': 'SUBWAY',
+              'cost': {
+                'reluctance': round(transitPreference / preferenceModeMetro, 5)
+              }
+            },
+          if (enableModeTram)
+            {
+              'mode': 'TRAM',
+              'cost': {
+                'reluctance': round(transitPreference / preferenceModeTram, 5)
+              }
+            },
+          if (enableModeTrain)
+            {
+              'mode': 'RAIL',
+              'cost': {
+                'reluctance': round(transitPreference / preferenceModeTrain, 5)
+              }
+            },
+          if (enableModeFerry)
+            {
+              'mode': 'FERRY',
+              'cost': {
+                'reluctance': round(transitPreference / preferenceModeFerry, 5)
+              }
+            },
+        ],
       },
     };
   }
@@ -184,6 +242,16 @@ class Profile {
       'agenciesEnabled': agenciesEnabled.entries
           .map((entry) => '${entry.key.gtfsId}.${entry.value}')
           .join(','),
+      'enableModeBus': enableModeBus ? 1 : 0,
+      'preferenceModeBus': preferenceModeBus,
+      'enableModeMetro': enableModeMetro ? 1 : 0,
+      'preferenceModeMetro': preferenceModeMetro,
+      'enableModeTram': enableModeTram ? 1 : 0,
+      'preferenceModeTram': preferenceModeTram,
+      'enableModeTrain': enableModeTrain ? 1 : 0,
+      'preferenceModeTrain': preferenceModeTrain,
+      'enableModeFerry': enableModeFerry ? 1 : 0,
+      'preferenceModeFerry': preferenceModeFerry,
     };
   }
 
@@ -235,6 +303,16 @@ class Profile {
                   .whereType<MapEntry<Agency, bool>>(),
             )
           : {},
+      enableModeBus: map['enableModeBus'] == 1,
+      preferenceModeBus: map['preferenceModeBus'] as double,
+      enableModeMetro: map['enableModeMetro'] == 1,
+      preferenceModeMetro: map['preferenceModeMetro'] as double,
+      enableModeTram: map['enableModeTram'] == 1,
+      preferenceModeTram: map['preferenceModeTram'] as double,
+      enableModeTrain: map['enableModeTrain'] == 1,
+      preferenceModeTrain: map['preferenceModeTrain'] as double,
+      enableModeFerry: map['enableModeFerry'] == 1,
+      preferenceModeFerry: map['preferenceModeFerry'] as double,
     );
   }
 }

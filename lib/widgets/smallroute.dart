@@ -69,20 +69,17 @@ class SmallRoute extends StatelessWidget {
               const SizedBox(height: 8),
               LayoutBuilder(
                 builder: (context, constraints) {
-                  final minWidths =
-                      filteredLegs.map((leg) {
-                        if ((leg.mode == 'WALK' || leg.mode == 'BICYCLE') &&
-                            leg.distance < 100) {
-                          return 8.0;
-                        } else if (leg.mode == 'WALK' ||
-                            leg.mode == 'BICYCLE') {
-                          return 25.0 +
-                              (leg.distance.round().toString().length * 10);
-                        } else {
-                          return 48.0 +
-                              ((leg.route?.shortName ?? '').length * 10);
-                        }
-                      }).toList();
+                  final minWidths = filteredLegs.map((leg) {
+                    if ((leg.mode == 'WALK' || leg.mode == 'BICYCLE') &&
+                        leg.distance < 100) {
+                      return 8.0;
+                    } else if (leg.mode == 'WALK' || leg.mode == 'BICYCLE') {
+                      return 25.0 +
+                          (leg.distance.round().toString().length * 10);
+                    } else {
+                      return 48.0 + ((leg.route?.shortName ?? '').length * 10);
+                    }
+                  }).toList();
 
                   final totalMinWidth = minWidths.fold<double>(
                     0,
@@ -92,13 +89,12 @@ class SmallRoute extends StatelessWidget {
                   final availableWidth = constraints.maxWidth;
 
                   final totalHorizontalPadding = 2.0 * 2 * filteredLegs.length;
-                  final adjustedAvailableWidth = (availableWidth -
-                          totalHorizontalPadding)
-                      .clamp(0.0, double.infinity);
-                  final extraWidth =
-                      (adjustedAvailableWidth > totalMinWidth)
-                          ? adjustedAvailableWidth - totalMinWidth
-                          : 0.0;
+                  final adjustedAvailableWidth =
+                      (availableWidth - totalHorizontalPadding)
+                          .clamp(0.0, double.infinity);
+                  final extraWidth = (adjustedAvailableWidth > totalMinWidth)
+                      ? adjustedAvailableWidth - totalMinWidth
+                      : 0.0;
 
                   final totalDuration = filteredLegs.fold<num>(
                     0,
@@ -150,7 +146,7 @@ class _LegTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = leg.color ?? leg.route?.color ?? Colors.grey.shade300;
+    final bgColor = leg.color ?? Colors.grey.shade300;
 
     if ((leg.mode == 'WALK' || leg.mode == 'BICYCLE') && leg.distance < 100) {
       return Container(
@@ -163,8 +159,7 @@ class _LegTile extends StatelessWidget {
       );
     }
 
-    final textColor =
-        leg.route?.textColor ??
+    final textColor = leg.route?.textColor ??
         (ThemeData.estimateBrightnessForColor(bgColor) == Brightness.dark
             ? Colors.white
             : Colors.black);

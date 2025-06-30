@@ -47,13 +47,25 @@ class Leg {
     this.geometry,
   });
 
-  Color? get color {
-    if (route?.color != null) return route!.color;
-    if (mode == 'WALK') return Colors.grey.shade300;
+  Color get color {
+    if (route?.color != null) return route!.color!;
     if (mode == 'BUS') return Colors.amber.shade600;
     if (mode == 'RAIL' || mode == 'TRAIN') {
       return Colors.lightBlue.shade300;
     }
+    return Colors.grey.shade400;
+  }
+
+  Color get lineColor {
+    if (route?.color != null) return route!.color!;
+    if (mode == 'WALK' || mode == 'CAR' || mode == 'BICYCLE') {
+      return Colors.black;
+    }
+    if (mode == 'BUS') return Colors.amber.shade600;
+    if (mode == 'RAIL' || mode == 'TRAIN') {
+      return Colors.lightBlue.shade300;
+    }
+    print(mode);
     return Colors.grey.shade400;
   }
 
@@ -96,7 +108,7 @@ class Leg {
     if (geometry == null) {
       return Polyline(
         points: [LatLng(from.lat, from.lon), LatLng(to.lat, to.lon)],
-        color: color ?? Colors.grey.shade400,
+        color: lineColor,
         strokeWidth: 8.0,
       );
     }
@@ -105,7 +117,7 @@ class Leg {
 
     return Polyline(
       points: points,
-      color: route?.color ?? route?.mode.color ?? color ?? Colors.grey.shade400,
+      color: route?.color ?? route?.mode.color ?? lineColor,
       strokeWidth: 4.0,
     );
   }

@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:otpand/utils.dart';
 
 enum RouteMode {
-  bus('bus', Icons.directions_bus, Colors.blue),
+  bus('bus', Icons.directions_bus, Colors.amber),
   rail('rail', Icons.train, Colors.teal),
   subway('subway', Icons.subway, Colors.deepOrange),
   tram('tram', Icons.tram, Colors.purple),
-  walk('walk', Icons.directions_walk, Colors.green),
+  walk('walk', Icons.directions_walk, Colors.grey),
   bicycle('bicycle', Icons.directions_bike, Colors.lightGreen),
   car('car', Icons.directions_car, Colors.red),
   ferry('ferry', Icons.directions_boat, Colors.grey),

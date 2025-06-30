@@ -159,6 +159,29 @@ class Leg {
     return LatLng((from.lat + to.lat) / 2, (from.lon + to.lon) / 2);
   }
 
+  // https://mobilite.wallonie.be/files/eDocsMobilite/Outils/explicatifs_calculateur_092019.pdf
+  double getEmissions() {
+    final km = distance / 1000;
+    switch (mode) {
+      case 'WALK':
+        return 0.016 * km;
+      case 'BICYCLE':
+        return 0.021 * km;
+      case 'CAR':
+        return 0.271 * km;
+      case 'BUS':
+        return 0.101 * km;
+      case 'RAIL':
+      case 'TRAIN':
+      case 'TRAM':
+      case 'SUBWAY':
+      case 'METRO':
+        return 0.031 * km;
+      default:
+        return 0;
+    }
+  }
+
   static Future<Leg> parse(Map<String, dynamic> legJson) async {
     final route = legJson['route'] != null
         ? await RouteDao().get(legJson['route']['gtfsId'] as String)

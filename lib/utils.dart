@@ -37,6 +37,13 @@ String displayTime(num time) {
   return '${round(time ~/ 3600, 0)} h ${round((time % 3600) / 60, 0)} min';
 }
 
+String displayTimeShortVague(num time) {
+  final hours = time ~/ 3600;
+  final minutes = (time % 3600) ~/ 60;
+
+  return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}h';
+}
+
 String displayPreciseTime(num time) {
   if (time == 1) {
     return '1 second';

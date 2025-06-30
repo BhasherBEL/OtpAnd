@@ -443,6 +443,10 @@ class _RoutesPageState extends State<RoutesPage> {
   Widget _buildListView() {
     int itemCount =
         results.length + (hasPreviousPage ? 1 : 0) + (hasNextPage ? 1 : 0);
+    final shortestPlan = results
+        .reduce((p1, p2) => p1.getDuration() < p2.getDuration() ? p1 : p2);
+    final ecofriendlyPlan = results
+        .reduce((p1, p2) => p1.getEmissions() < p2.getEmissions() ? p1 : p2);
 
     return ListView.builder(
       controller: _scrollController,
@@ -474,6 +478,8 @@ class _RoutesPageState extends State<RoutesPage> {
         final plan = results[idx - offset];
         return SmallRoute(
           plan: plan,
+          isShortest: plan == shortestPlan,
+          isEcofriendly: plan == ecofriendlyPlan,
           onTap: () {
             Navigator.of(context).push(
               MaterialPageRoute<void>(builder: (_) => RoutePage(plan: plan)),

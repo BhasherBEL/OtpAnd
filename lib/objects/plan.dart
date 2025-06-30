@@ -29,6 +29,18 @@ class Plan {
     return LatLngBounds(LatLng(minLat, minLon), LatLng(maxLat, maxLon));
   }
 
+  int getDuration() {
+    if (legs.isEmpty) return 0;
+    final firstDeparture = legs.first.from.departure?.scheduledDateTime;
+    final lastArrival = legs.last.to.arrival?.scheduledDateTime;
+    if (firstDeparture == null || lastArrival == null) return 0;
+    return lastArrival.difference(firstDeparture).inSeconds;
+  }
+
+  double getEmissions() {
+    return legs.fold(0, (prev, leg) => prev + leg.getEmissions());
+  }
+
   static Future<Plan> parse(Map<String, dynamic> planJson) async {
     List<Leg> legs = [];
 

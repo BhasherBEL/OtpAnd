@@ -6,7 +6,14 @@ import 'package:otpand/utils.dart';
 class SmallRoute extends StatelessWidget {
   final Plan plan;
   final VoidCallback? onTap;
-  const SmallRoute({super.key, required this.plan, this.onTap});
+  final bool isShortest;
+  final bool isEcofriendly;
+  const SmallRoute(
+      {super.key,
+      required this.plan,
+      this.onTap,
+      this.isShortest = false,
+      this.isEcofriendly = false});
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +38,7 @@ class SmallRoute extends StatelessWidget {
         formatTime(filteredLegs.first.from.departure?.scheduledTime) ?? '--:--';
     final arrival =
         formatTime(filteredLegs.last.to.arrival?.scheduledTime) ?? '--:--';
-    final duration = displayTime(
+    final duration = displayTimeShortVague(
       calculateDurationFromString(
         filteredLegs.first.from.departure?.scheduledTime,
         filteredLegs.last.to.arrival?.scheduledTime,
@@ -54,11 +61,14 @@ class SmallRoute extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '$departure - $arrival',
-                    style: const TextStyle(fontSize: 16),
+                    departure,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   Text(
-                    duration,
+                    arrival,
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -131,6 +141,53 @@ class SmallRoute extends StatelessWidget {
                   );
                 },
               ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    margin: EdgeInsets.only(left: 8),
+                    padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: isShortest ? Colors.blue.shade100 : null,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.timelapse, color: Colors.blue.shade500),
+                        const SizedBox(width: 2),
+                        Text(
+                          duration,
+                          style: TextStyle(
+                            color: Colors.blue.shade800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    margin: EdgeInsets.only(right: 8),
+                    padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: isEcofriendly ? Colors.green.shade100 : null,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.eco, color: Colors.green.shade500),
+                        const SizedBox(width: 2),
+                        Text(
+                          '${round(plan.getEmissions(), 1)}kg CO₂e',
+                          style: TextStyle(
+                            color: Colors.green.shade800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              )
             ],
           ),
         ),
@@ -146,7 +203,7 @@ class _LegTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = leg.color ?? Colors.grey.shade300;
+    final bgColor = leg.color;
 
     if ((leg.mode == 'WALK' || leg.mode == 'BICYCLE') && leg.distance < 100) {
       return Container(

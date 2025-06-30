@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:otpand/objects/plan.dart';
@@ -37,49 +39,47 @@ class RouteMapWidget extends StatelessWidget {
           attributions: [
             TextSourceAttribution(
               'OpenStreetMap contributors',
-              onTap:
-                  () => launchUrl(
-                    Uri.parse('https://www.openstreetmap.org/copyright'),
-                  ),
+              onTap: () => launchUrl(
+                Uri.parse('https://www.openstreetmap.org/copyright'),
+              ),
             ),
             TextSourceAttribution(
               'The best way to help the community is to contribute.',
-              onTap:
-                  () => launchUrl(
-                    Uri.parse('https://www.openstreetmap.org/fixthemap'),
-                  ),
+              onTap: () => launchUrl(
+                Uri.parse('https://www.openstreetmap.org/fixthemap'),
+              ),
               prependCopyright: false,
             ),
           ],
         ),
         PolylineLayer(polylines: plan.legs.map((leg) => leg.polyline).toList()),
         MarkerLayer(
-          markers:
-              plan.legs
-                  .where((leg) => leg.route != null)
-                  .map(
-                    (leg) => Marker(
-                      point: leg.midPoint,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: leg.route!.color ?? leg.route!.mode.color,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          leg.route!.shortName,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: leg.route!.textColor ?? Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                      alignment: Alignment.center,
+          markers: plan.legs
+              .where((leg) => leg.route != null)
+              .map(
+                (leg) => Marker(
+                  point: leg.midPoint,
+                  width: min(max(leg.route!.shortName.length * 12.5, 30), 75),
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: leg.route!.color ?? leg.route!.mode.color,
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                  )
-                  .toList(),
+                    child: Text(
+                      leg.route!.shortName,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: leg.route!.textColor ?? Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                  alignment: Alignment.center,
+                ),
+              )
+              .toList(),
         ),
         MarkerLayer(
           markers: [

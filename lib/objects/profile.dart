@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:otpand/db/crud/agencies.dart';
+import 'package:otpand/objects/agency.dart';
 import 'package:otpand/utils.dart';
 
 class Profile {
@@ -32,6 +34,8 @@ class Profile {
   bool carKissRide;
   bool carPickup;
 
+  Map<Agency, bool> agenciesEnabled = {};
+
   Profile({
     required this.id,
     required this.name,
@@ -58,6 +62,7 @@ class Profile {
     required this.carParkRide,
     required this.carKissRide,
     required this.carPickup,
+    required this.agenciesEnabled,
   });
 
   @override
@@ -106,6 +111,17 @@ class Profile {
           'cost': round(transitTransferWorth * 60, 0),
           'slack': '${transitMinimalTransferTime}m',
         },
+        'filters': [
+          if (agenciesEnabled.entries.any((entry) => !entry.value))
+            {
+              'exclude': {
+                'agencies': agenciesEnabled.entries
+                    .where((entry) => !entry.value)
+                    .map((entry) => entry.key.gtfsId)
+                    .toList(),
+              },
+            }
+        ],
       },
     };
   }
@@ -165,14 +181,19 @@ class Profile {
       'carParkRide': carParkRide ? 1 : 0,
       'carKissRide': carKissRide ? 1 : 0,
       'carPickup': carPickup ? 1 : 0,
+      'agenciesEnabled': agenciesEnabled.entries
+          .map((entry) => '${entry.key.gtfsId}.${entry.value}')
+          .join(','),
     };
   }
 
-  static List<Profile> parseAll(List<dynamic> list) {
-    return list.map((e) => Profile.parse(e as Map<String, dynamic>)).toList();
+  static Future<List<Profile>> parseAll(List<dynamic> list) async {
+    return Future.wait(
+      list.map((item) => parse(item as Map<String, dynamic>)),
+    );
   }
 
-  static Profile parse(Map<String, dynamic> map) {
+  static Future<Profile> parse(Map<String, dynamic> map) async {
     return Profile(
       id: map['id'] as int,
       name: map['name'] as String,
@@ -199,6 +220,21 @@ class Profile {
       carParkRide: map['carParkRide'] == 1,
       carKissRide: map['carKissRide'] == 1,
       carPickup: map['carPickup'] == 1,
+      agenciesEnabled: (map['agenciesEnabled'] as String).isNotEmpty
+          ? Map.fromEntries(
+              (await Future.wait(
+                (map['agenciesEnabled'] as String).split(',').map((item) async {
+                  final parts = item.split('.');
+                  final agency = await AgencyDao().get(parts[0]);
+                  if (agency == null) return null;
+
+                  return MapEntry(
+                      agency, parts.length > 1 && parts[1] == 'true');
+                }),
+              ))
+                  .whereType<MapEntry<Agency, bool>>(),
+            )
+          : {},
     );
   }
 }

@@ -157,4 +157,5 @@ Future<void> fetchAndStoreGtfsData() async {
   await stopDao.batchInsertDirection(directionStopLinks);
 
   await StopDao().loadAll();
+  await AgencyDao().loadAll();
 }

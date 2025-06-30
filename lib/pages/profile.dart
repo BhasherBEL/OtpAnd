@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:otpand/db/crud/profiles.dart';
+import 'package:otpand/objects/agency.dart';
 
 import 'package:otpand/objects/profile.dart';
 
@@ -16,7 +17,6 @@ class _ProfilePageState extends State<ProfilePage> {
   late TextEditingController _nameController;
   late Color _selectedColor;
 
-  // All profile fields
   late bool avoidDirectWalking;
   late double walkPreference;
   late double walkSafetyPreference;
@@ -42,6 +42,8 @@ class _ProfilePageState extends State<ProfilePage> {
   late bool carParkRide;
   late bool carKissRide;
   late bool carPickup;
+
+  late Map<Agency, bool> agenciesEnabled;
 
   final List<Color> _colorOptions = [
     Colors.blue,
@@ -87,6 +89,18 @@ class _ProfilePageState extends State<ProfilePage> {
     carParkRide = widget.profile.carParkRide;
     carKissRide = widget.profile.carKissRide;
     carPickup = widget.profile.carPickup;
+
+    agenciesEnabled = widget.profile.agenciesEnabled;
+    ensureAgencies();
+    Agency.currentAgencies.addListener(ensureAgencies);
+  }
+
+  void ensureAgencies() {
+    for (Agency agency in Agency.currentAgencies.value) {
+      if (!agenciesEnabled.containsKey(agency)) {
+        agenciesEnabled[agency] = true;
+      }
+    }
   }
 
   @override
@@ -98,40 +112,36 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget _buildColorPicker() {
     return Wrap(
       spacing: 8,
-      children:
-          _colorOptions.map((color) {
-            return GestureDetector(
-              onTap: () {
-                setState(() {
-                  _selectedColor = color;
-                });
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color:
-                        _selectedColor == color
-                            ? Colors.black
-                            : Colors.transparent,
-                    width: 2,
-                  ),
-                ),
-                child: CircleAvatar(
-                  backgroundColor: color,
-                  radius: 18,
-                  child:
-                      _selectedColor == color
-                          ? const Icon(
-                            Icons.check,
-                            color: Colors.white,
-                            size: 18,
-                          )
-                          : null,
-                ),
+      children: _colorOptions.map((color) {
+        return GestureDetector(
+          onTap: () {
+            setState(() {
+              _selectedColor = color;
+            });
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color:
+                    _selectedColor == color ? Colors.black : Colors.transparent,
+                width: 2,
               ),
-            );
-          }).toList(),
+            ),
+            child: CircleAvatar(
+              backgroundColor: color,
+              radius: 18,
+              child: _selectedColor == color
+                  ? const Icon(
+                      Icons.check,
+                      color: Colors.white,
+                      size: 18,
+                    )
+                  : null,
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 
@@ -156,10 +166,9 @@ class _ProfilePageState extends State<ProfilePage> {
             min: min,
             max: max,
             divisions: divisions,
-            label:
-                valueSuffix != null
-                    ? '${value.toStringAsFixed(2)} $valueSuffix'
-                    : value.toStringAsFixed(2),
+            label: valueSuffix != null
+                ? '${value.toStringAsFixed(2)} $valueSuffix'
+                : value.toStringAsFixed(2),
             onChanged: onChanged,
           ),
         ],
@@ -316,22 +325,20 @@ class _ProfilePageState extends State<ProfilePage> {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.remove),
-                      onPressed:
-                          transitMinimalTransferTime > 0
-                              ? () => setState(
+                      onPressed: transitMinimalTransferTime > 0
+                          ? () => setState(
                                 () => transitMinimalTransferTime -= 1,
                               )
-                              : null,
+                          : null,
                     ),
                     Text('$transitMinimalTransferTime m'),
                     IconButton(
                       icon: const Icon(Icons.add),
-                      onPressed:
-                          transitMinimalTransferTime < 60
-                              ? () => setState(
+                      onPressed: transitMinimalTransferTime < 60
+                          ? () => setState(
                                 () => transitMinimalTransferTime += 1,
                               )
-                              : null,
+                          : null,
                     ),
                   ],
                 ),
@@ -342,8 +349,6 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
             const Divider(),
-
-            // Bike
             const Text(
               'Bicycle',
               style: TextStyle(fontWeight: FontWeight.bold),
@@ -440,6 +445,22 @@ class _ProfilePageState extends State<ProfilePage> {
               value: carPickup,
               onChanged: (v) => setState(() => carPickup = v),
             ),
+            const Divider(),
+            const Text(
+              'Agencies',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            ...agenciesEnabled.entries.map((entry) {
+              return CheckboxListTile(
+                title: Text(entry.key.name ?? entry.key.gtfsId),
+                value: entry.value,
+                onChanged: (bool? value) {
+                  setState(() {
+                    agenciesEnabled[entry.key] = value ?? false;
+                  });
+                },
+              );
+            }),
             const SizedBox(height: 24),
 
             ElevatedButton(
@@ -470,6 +491,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   carParkRide: carParkRide,
                   carKissRide: carKissRide,
                   carPickup: carPickup,
+                  agenciesEnabled: agenciesEnabled,
                 );
                 await ProfileDao.update(updatedProfile.id, updatedProfile);
                 if (context.mounted) {

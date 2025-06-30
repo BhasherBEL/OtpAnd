@@ -105,13 +105,13 @@ Future<List<TimedPattern>> fetchTimetable(Stop stop, DateTime date) async {
       final stoptimesForServiceDate =
           data['data']['stop']['stoptimesForServiceDate'] as List;
       return (await Future.wait(
-            stoptimesForServiceDate.map(
-              (json) => TimedPattern.parseFromStoptimesInPattern(
-                stop,
-                json as Map<String, dynamic>,
-              ),
-            ),
-          ))
+        stoptimesForServiceDate.map(
+          (json) => TimedPattern.parseFromStoptimesInPattern(
+            stop,
+            json as Map<String, dynamic>,
+          ),
+        ),
+      ))
           .where((pattern) => pattern != null && pattern.timedStops.isNotEmpty)
           .cast<TimedPattern>()
           .toList();

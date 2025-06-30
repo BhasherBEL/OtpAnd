@@ -69,4 +69,9 @@ class AgencyDao {
     );
     return Agency.parseAll(maps);
   }
+
+  Future<void> loadAll() async {
+    final agencies = await getAll();
+    Agency.currentAgencies.value = agencies;
+  }
 }

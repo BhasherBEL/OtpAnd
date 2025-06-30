@@ -1,7 +1,21 @@
+import 'package:flutter/material.dart';
+
 class Agency {
   final String gtfsId;
   final String? name;
   final String? url;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Agency &&
+          runtimeType == other.runtimeType &&
+          gtfsId == other.gtfsId;
+
+  @override
+  int get hashCode => gtfsId.hashCode;
+
+  static final currentAgencies = ValueNotifier<List<Agency>>([]);
 
   Agency({required this.gtfsId, required this.name, required this.url});
 

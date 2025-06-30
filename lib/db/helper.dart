@@ -21,7 +21,7 @@ class DatabaseHelper {
     final path = join(documentsDirectory!.path, 'app.db');
     return await openDatabase(
       path,
-      version: 5,
+      version: 6,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -54,7 +54,8 @@ class DatabaseHelper {
         carPreference REAL NOT NULL,
         carParkRide INTEGER NOT NULL,
         carKissRide INTEGER NOT NULL,
-        carPickup INTEGER NOT NULL
+        carPickup INTEGER NOT NULL,
+				agenciesEnabled TEXT NOT NULL
       )
     ''');
 
@@ -202,6 +203,11 @@ class DatabaseHelper {
 						searchedAt INTEGER NOT NULL
 					)
 					''');
+    }
+    if (oldVersion < 6) {
+      await db.execute('''
+			ALTER TABLE profiles ADD COLUMN agenciesEnabled TEXT NOT NULL DEFAULT ''
+			''');
     }
   }
 }

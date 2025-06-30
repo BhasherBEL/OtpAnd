@@ -33,6 +33,7 @@ class ProfileDao {
       'carParkRide': 0,
       'carKissRide': 0,
       'carPickup': 0,
+      'agenciesEnabled': '',
     });
     final maps = await db.query(table, where: 'id = ?', whereArgs: [id]);
     if (maps.isNotEmpty) {

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:otpand/objects/leg.dart';
 import 'package:otpand/objects/plan.dart';
@@ -7,13 +9,14 @@ class SmallRoute extends StatelessWidget {
   final Plan plan;
   final VoidCallback? onTap;
   final bool isShortest;
-  final bool isEcofriendly;
-  const SmallRoute(
-      {super.key,
-      required this.plan,
-      this.onTap,
-      this.isShortest = false,
-      this.isEcofriendly = false});
+  final double lowestEmissions;
+  const SmallRoute({
+    super.key,
+    required this.plan,
+    this.onTap,
+    this.isShortest = false,
+    required this.lowestEmissions,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -44,6 +47,13 @@ class SmallRoute extends StatelessWidget {
         filteredLegs.last.to.arrival?.scheduledTime,
       ),
     );
+
+    final bool isEcofriendliest = plan.getEmissions() < lowestEmissions * 1.1;
+    final ecoRelative = lowestEmissions / plan.getEmissions() / 2;
+    final ecoAbsolute = plan.getFlightDistance() / plan.getEmissions() / 20000;
+    final ecoScore = min(ecoRelative, 0.5) + min(ecoAbsolute, 0.5);
+    final ecoColor =
+        Color.lerp(Colors.red.shade500, Colors.green.shade500, ecoScore);
 
     return Card(
       color: Colors.white,
@@ -170,12 +180,12 @@ class SmallRoute extends StatelessWidget {
                     margin: EdgeInsets.only(right: 8),
                     padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                     decoration: BoxDecoration(
-                      color: isEcofriendly ? Colors.green.shade100 : null,
+                      color: isEcofriendliest ? Colors.green.shade100 : null,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.eco, color: Colors.green.shade500),
+                        Icon(Icons.eco, color: ecoColor),
                         const SizedBox(width: 2),
                         Text(
                           '${round(plan.getEmissions(), 1)}kg CO₂e',

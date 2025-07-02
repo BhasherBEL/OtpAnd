@@ -1,6 +1,7 @@
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:otpand/objects/leg.dart';
+import 'package:otpand/utils/maps.dart';
 
 class Plan {
   final String? start;
@@ -39,6 +40,15 @@ class Plan {
 
   double getEmissions() {
     return legs.fold(0, (prev, leg) => prev + leg.getEmissions());
+  }
+
+  double getFlightDistance() {
+    return calculateDistance(
+      legs.first.from.lat,
+      legs.first.from.lon,
+      legs.last.to.lat,
+      legs.last.to.lon,
+    );
   }
 
   static Future<Plan> parse(Map<String, dynamic> planJson) async {

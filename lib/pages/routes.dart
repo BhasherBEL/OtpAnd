@@ -2,19 +2,50 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:otpand/blocs/plans/bloc.dart';
+import 'package:otpand/blocs/plans/events.dart';
+import 'package:otpand/blocs/plans/helpers.dart';
+import 'package:otpand/blocs/plans/repository.dart';
+import 'package:otpand/blocs/plans/states.dart';
 import 'package:otpand/db/crud/profiles.dart';
 import 'package:otpand/db/crud/search_history.dart';
 import 'package:otpand/objects/location.dart';
-import 'package:otpand/objects/plan.dart';
 import 'package:otpand/objects/profile.dart';
 import 'package:otpand/pages/profile.dart';
-import 'package:otpand/pages/route.dart';
-import 'package:otpand/api/plan.dart';
+import 'package:otpand/pages/routes/plans_list.dart';
 import 'package:otpand/utils/colors.dart';
-import 'package:otpand/widgets/smallroute.dart';
 import 'package:otpand/widgets/search/searchbar.dart';
 import 'package:otpand/widgets/datetime_picker.dart';
 import 'package:dotted_line/dotted_line.dart';
+
+class RoutesPageBlocProvider extends StatelessWidget {
+  final Location fromLocation;
+  final Location toLocation;
+  final Profile profile;
+  final DateTimePickerValue dateTimeValue;
+
+  const RoutesPageBlocProvider({
+    super.key,
+    required this.fromLocation,
+    required this.toLocation,
+    required this.profile,
+    required this.dateTimeValue,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => PlansBloc(PlansRepository()),
+      child: RoutesPage(
+        fromLocation: fromLocation,
+        toLocation: toLocation,
+        profile: profile,
+        dateTimeValue: dateTimeValue,
+      ),
+    );
+  }
+}
 
 class RoutesPage extends StatefulWidget {
   final Location fromLocation;
@@ -41,19 +72,6 @@ class _RoutesPageState extends State<RoutesPage> {
   late DateTimePickerValue dateTimeValue;
   List<Profile> profiles = [];
 
-  bool isLoading = true;
-  bool isPaginatingForward = false;
-  bool isPaginatingBackward = false;
-  List<Plan> results = [];
-  String? errorMsg;
-
-  String? startCursor;
-  String? endCursor;
-  bool hasNextPage = false;
-  bool hasPreviousPage = false;
-
-  final ScrollController _scrollController = ScrollController();
-
   @override
   void initState() {
     super.initState();
@@ -65,150 +83,34 @@ class _RoutesPageState extends State<RoutesPage> {
   }
 
   Future<void> _loadProfiles() async {
-    // Load all profiles for the dropdown
     final loadedProfiles = await ProfileDao.getAll();
     setState(() {
       profiles = loadedProfiles;
-      // If the current profile is not in the list, add it
       if (!profiles.any((p) => p.id == profile.id)) {
         profiles.insert(0, profile);
       }
     });
-    unawaited(_fetchPlans());
+    _fetchPlans();
   }
 
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _fetchPlans({String? after, String? before}) async {
+  void _fetchPlans() {
     if (fromLocation == null || toLocation == null) return;
 
-    unawaited(SearchHistoryDao().saveSearch(
-        fromLocation: fromLocation!,
-        toLocation: toLocation!,
-        profile: profile));
+    unawaited(
+      SearchHistoryDao().saveSearch(
+          fromLocation: fromLocation!,
+          toLocation: toLocation!,
+          profile: profile),
+    );
 
-    if (after == null && before == null) {
-      setState(() {
-        isLoading = true;
-        isPaginatingForward = false;
-        isPaginatingBackward = false;
-        errorMsg = null;
-        results.clear();
-      });
-    } else if (after != null) {
-      setState(() {
-        isPaginatingForward = true;
-        isPaginatingBackward = false;
-        errorMsg = null;
-      });
-    } else if (before != null) {
-      setState(() {
-        isPaginatingBackward = true;
-        isPaginatingForward = false;
-        errorMsg = null;
-      });
-    }
+    final variables = PlansQueryVariables(
+      fromLocation: fromLocation!,
+      toLocation: toLocation!,
+      profile: profile,
+      dateTimeValue: dateTimeValue,
+    );
 
-    String timeType;
-    DateTime? dateTime = dateTimeValue.dateTime;
-
-    if (dateTimeValue.precisionMode == DateTimePrecisionMode.around) {
-      dateTime = dateTime?.subtract(Duration(hours: 1));
-    }
-
-    switch (dateTimeValue.mode) {
-      case DateTimePickerMode.now:
-        timeType = 'now';
-        if (dateTimeValue.precisionMode == DateTimePrecisionMode.before) {
-          dateTime = dateTime?.subtract(Duration(hours: 2));
-        }
-        break;
-      case DateTimePickerMode.departure:
-        timeType = 'start';
-        if (dateTimeValue.precisionMode == DateTimePrecisionMode.before) {
-          dateTime = dateTime?.subtract(Duration(hours: 2));
-        }
-        break;
-      case DateTimePickerMode.arrival:
-        timeType = 'arrive';
-        if (dateTimeValue.precisionMode == DateTimePrecisionMode.after) {
-          dateTime = dateTime?.add(Duration(hours: 2));
-        }
-        break;
-    }
-
-    try {
-      final resp = await submitQuery(
-        fromLocation: fromLocation!,
-        toLocation: toLocation!,
-        profile: profile,
-        timeType: timeType,
-        selectedDateTime: dateTime,
-        searchWindow: '2h',
-        after: after,
-        before: before,
-        // first: (after != null || before == null) ? 5 : null,
-        // last: (before != null) ? 5 : null,
-      );
-
-      final newPlans = resp['plans'] as List<Plan>;
-
-      newPlans.sort((a, b) {
-        if (a.end == null && b.end == null) return 0;
-        if (a.end == null) return 1;
-        if (b.end == null) return -1;
-        if (a.end == b.end) return 0;
-
-        final aTime = DateTime.tryParse(a.end!) ?? DateTime.now();
-        final bTime = DateTime.tryParse(b.end!) ?? DateTime.now();
-        return aTime.compareTo(bTime);
-      });
-
-      if (!mounted) return;
-      setState(() {
-        if (after != null) {
-          results.addAll(newPlans.where((plan) => !results.contains(plan)));
-        } else if (before != null) {
-          results.insertAll(
-            0,
-            newPlans.where((plan) => !results.contains(plan)),
-          );
-        } else {
-          results = newPlans;
-        }
-
-        results.sort((a, b) {
-          if (a.end == null && b.end == null) return 0;
-          if (a.end == null) return 1;
-          if (b.end == null) return -1;
-          if (a.end == b.end) return 0;
-
-          final aTime = DateTime.tryParse(a.end!) ?? DateTime.now();
-          final bTime = DateTime.tryParse(b.end!) ?? DateTime.now();
-          return aTime.compareTo(bTime);
-        });
-
-        isLoading = false;
-        isPaginatingForward = false;
-        isPaginatingBackward = false;
-        final pageInfo = resp['pageInfo'];
-        startCursor = pageInfo?['startCursor'] as String?;
-        endCursor = pageInfo?['endCursor'] as String?;
-        hasNextPage = pageInfo?['hasNextPage'] as bool;
-        hasPreviousPage = pageInfo?['hasPreviousPage'] as bool;
-      });
-    } on Exception catch (e, stack) {
-      setState(() {
-        debugPrintStack(stackTrace: stack, label: 'Error fetching plans: $e');
-        isLoading = false;
-        isPaginatingForward = false;
-        isPaginatingBackward = false;
-      });
-    }
+    context.read<PlansBloc>().add(LoadPlans(variables));
   }
 
   void _onFromLocationChanged(Location? location) {
@@ -247,34 +149,6 @@ class _RoutesPageState extends State<RoutesPage> {
     if (fromLocation != null && toLocation != null) {
       _fetchPlans();
     }
-  }
-
-  Widget _buildPaginationButton({
-    required String text,
-    required bool isLoading,
-    required VoidCallback? onPressed,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          TextButton(
-            onPressed: isLoading ? null : onPressed,
-            child: Text(text),
-          ),
-          if (isLoading)
-            Padding(
-              padding: const EdgeInsets.only(left: 8.0),
-              child: SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            ),
-        ],
-      ),
-    );
   }
 
   Widget _buildSearchCard() {
@@ -411,7 +285,7 @@ class _RoutesPageState extends State<RoutesPage> {
                                 .toList();
                           });
                           if (fromLocation != null && toLocation != null) {
-                            unawaited(_fetchPlans());
+                            _fetchPlans();
                           }
                         }
                       },
@@ -440,57 +314,6 @@ class _RoutesPageState extends State<RoutesPage> {
     );
   }
 
-  Widget _buildListView() {
-    int itemCount =
-        results.length + (hasPreviousPage ? 1 : 0) + (hasNextPage ? 1 : 0);
-    final shortestPlan = results
-        .reduce((p1, p2) => p1.getDuration() < p2.getDuration() ? p1 : p2);
-    final double lowestEmissions = results
-        .reduce((p1, p2) => p1.getEmissions() < p2.getEmissions() ? p1 : p2)
-        .getEmissions();
-
-    return ListView.builder(
-      controller: _scrollController,
-      physics: const AlwaysScrollableScrollPhysics(),
-      itemCount: itemCount,
-      itemBuilder: (ctx, idx) {
-        int offset = hasPreviousPage ? 1 : 0;
-
-        if (hasPreviousPage && idx == 0) {
-          return _buildPaginationButton(
-            text: 'Show earlier trips',
-            isLoading: isPaginatingBackward,
-            onPressed: (isPaginatingBackward || startCursor == null)
-                ? null
-                : () => _fetchPlans(before: startCursor),
-          );
-        }
-
-        if (hasNextPage && idx == results.length + offset) {
-          return _buildPaginationButton(
-            text: 'Show later trips',
-            isLoading: isPaginatingForward,
-            onPressed: (isPaginatingForward || endCursor == null)
-                ? null
-                : () => _fetchPlans(after: endCursor),
-          );
-        }
-
-        final plan = results[idx - offset];
-        return SmallRoute(
-          plan: plan,
-          isShortest: plan == shortestPlan,
-          lowestEmissions: lowestEmissions,
-          onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => RoutePage(plan: plan)),
-            );
-          },
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -509,103 +332,58 @@ class _RoutesPageState extends State<RoutesPage> {
         child: Scaffold(
           backgroundColor: primary50,
           body: SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Stack(
-                  children: [
-                    Container(
-                      width: double.infinity,
-                      height: 200,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(color: primary500),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(10),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+            child: BlocBuilder<PlansBloc, PlansState>(
+              builder: (context, state) {
+                return SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Stack(
                         children: [
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              'How do we get there?',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                              ),
+                          Container(
+                            width: double.infinity,
+                            height: 200,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(color: primary500),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(10),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    'How do we get there?',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                _buildSearchCard(),
+                              ],
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          _buildSearchCard(),
                         ],
                       ),
-                    ),
-                  ],
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        child: DateTimePicker(
+                          value: dateTimeValue,
+                          onChanged: _onDateTimeChanged,
+                        ),
+                      ),
+                      PlansListWidget(),
+                    ],
                   ),
-                  child: DateTimePicker(
-                    value: dateTimeValue,
-                    onChanged: _onDateTimeChanged,
-                  ),
-                ),
-                Expanded(
-                  child: Builder(
-                    builder: (context) {
-                      if (isLoading && results.isEmpty) {
-                        return Center(child: CircularProgressIndicator());
-                      }
-                      if (errorMsg != null && results.isEmpty) {
-                        return Center(
-                          child: Text(
-                            errorMsg!,
-                            style: TextStyle(color: Colors.red),
-                          ),
-                        );
-                      }
-                      if (results.isEmpty) {
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 150),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              if (hasPreviousPage)
-                                _buildPaginationButton(
-                                  text: 'Show earlier trips',
-                                  isLoading: isPaginatingBackward,
-                                  onPressed: (isPaginatingBackward ||
-                                          startCursor == null)
-                                      ? null
-                                      : () => _fetchPlans(before: startCursor),
-                                ),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16.0,
-                                ),
-                                child: Text('No plans found.'),
-                              ),
-                              if (hasNextPage)
-                                _buildPaginationButton(
-                                  text: 'Show later trips',
-                                  isLoading: isPaginatingForward,
-                                  onPressed:
-                                      (isPaginatingForward || endCursor == null)
-                                          ? null
-                                          : () => _fetchPlans(after: endCursor),
-                                ),
-                            ],
-                          ),
-                        );
-                      }
-                      return _buildListView();
-                    },
-                  ),
-                ),
-              ],
+                );
+              },
             ),
           ),
         ),

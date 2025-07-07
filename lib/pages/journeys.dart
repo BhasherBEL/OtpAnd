@@ -371,7 +371,7 @@ class _JourneysState extends State<Journeys> {
                                             await Navigator.of(context).push(
                                               MaterialPageRoute<void>(
                                                 builder: (context) =>
-                                                    RoutesPage(
+                                                    RoutesPageBlocProvider(
                                                   fromLocation: fromLocation!,
                                                   toLocation: toLocation!,
                                                   profile: profile!,
@@ -411,7 +411,7 @@ class _JourneysState extends State<Journeys> {
                         profile != null) {
                       Navigator.of(context).push(
                         MaterialPageRoute<void>(
-                          builder: (context) => RoutesPage(
+                          builder: (context) => RoutesPageBlocProvider(
                             fromLocation: fromLocation!,
                             toLocation: toLocation!,
                             profile: profile!,
@@ -430,7 +430,7 @@ class _JourneysState extends State<Journeys> {
                         profile != null) {
                       Navigator.of(context).push(
                         MaterialPageRoute<void>(
-                          builder: (context) => RoutesPage(
+                          builder: (context) => RoutesPageBlocProvider(
                             fromLocation: fromLocation!,
                             toLocation: toLocation!,
                             profile: profile!,

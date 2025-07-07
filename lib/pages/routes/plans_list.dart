@@ -76,8 +76,9 @@ class PlansListWidget extends StatelessWidget {
   }
 
   Iterable<Widget> _buildPlansList(List<Plan> plans, BuildContext context) {
-    final shortestPlan =
-        plans.reduce((p1, p2) => p1.getDuration() < p2.getDuration() ? p1 : p2);
+    final shortestPlan = plans
+        .reduce((p1, p2) => p1.getDuration() < p2.getDuration() ? p1 : p2)
+        .getDuration();
     final double lowestEmissions = plans
         .reduce((p1, p2) => p1.getEmissions() < p2.getEmissions() ? p1 : p2)
         .getEmissions();
@@ -96,7 +97,7 @@ class PlansListWidget extends StatelessWidget {
     return plans.map((plan) {
       return SmallRoute(
         plan: plan,
-        isShortest: plan == shortestPlan,
+        shortestPlan: shortestPlan,
         lowestEmissions: lowestEmissions,
         onTap: () {
           Navigator.of(context).push(

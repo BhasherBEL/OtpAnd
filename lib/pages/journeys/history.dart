@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:otpand/objects/history.dart';
-import 'package:otpand/objects/profile.dart';
 import 'package:otpand/objects/search_history.dart';
 import 'package:otpand/utils/colors.dart';
 
@@ -70,14 +69,6 @@ class _HistoryWidgetState extends State<HistoryWidget> {
 
                   if (widget.onHistorySelected != null) {
                     widget.onHistorySelected!();
-                  }
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Failed to load search history'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
                   }
                 },
               );

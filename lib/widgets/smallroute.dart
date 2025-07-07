@@ -8,13 +8,13 @@ import 'package:otpand/utils.dart';
 class SmallRoute extends StatelessWidget {
   final Plan plan;
   final VoidCallback? onTap;
-  final bool isShortest;
+  final int shortestPlan;
   final double lowestEmissions;
   const SmallRoute({
     super.key,
     required this.plan,
     this.onTap,
-    this.isShortest = false,
+    required this.shortestPlan,
     required this.lowestEmissions,
   });
 
@@ -48,12 +48,14 @@ class SmallRoute extends StatelessWidget {
       ),
     );
 
-    final bool isEcofriendliest = plan.getEmissions() < lowestEmissions * 1.1;
+    final bool isEcofriendliest = plan.getEmissions() < lowestEmissions * 1.05;
     final ecoRelative = lowestEmissions / plan.getEmissions() / 2;
     final ecoAbsolute = plan.getFlightDistance() / plan.getEmissions() / 20000;
     final ecoScore = min(ecoRelative, 0.5) + min(ecoAbsolute, 0.5);
     final ecoColor =
         Color.lerp(Colors.red.shade500, Colors.green.shade500, ecoScore);
+
+    final bool isShortest = plan.getDuration() < shortestPlan * 1.05;
 
     return Card(
       color: Colors.white,

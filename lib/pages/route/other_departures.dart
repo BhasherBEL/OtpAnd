@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:otpand/objects/leg.dart';
 import 'package:otpand/pages/route/leg_departure.dart';
-import 'package:otpand/utils.dart';
-import 'package:otpand/widgets/departure.dart';
-import 'package:otpand/widgets/route_icon.dart';
 
 class OtherDeparturesWidget extends StatefulWidget {
   const OtherDeparturesWidget({
@@ -56,14 +53,21 @@ class _OtherDeparturesWidgetState extends State<OtherDeparturesWidget> {
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: departuresList
-                    .map((leg) => Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 2),
-                        child: LegDepartureWidget(
-                          leg: leg,
-                          isCurrent: leg.id == widget.leg.id,
-                        )))
-                    .toList(),
+                children: departuresList.asMap().entries.map((e) {
+                  final bool isSlower = departuresList.sublist(e.key + 1).any(
+                      (leg) =>
+                          leg.to.arrival?.realDateTime != null &&
+                          e.value.to.arrival?.realDateTime != null &&
+                          e.value.to.arrival!.realDateTime!
+                              .isAfter(leg.to.arrival!.realDateTime!));
+                  return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      child: LegDepartureWidget(
+                        leg: e.value,
+                        isCurrent: e.value.id == widget.leg.id,
+                        isSlower: isSlower,
+                      ));
+                }).toList(),
               ),
             ),
         ],

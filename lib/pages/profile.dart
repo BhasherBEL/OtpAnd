@@ -464,6 +464,22 @@ class _ProfilePageState extends State<ProfilePage> {
                     ],
                   ),
                   ProfileCardWidget(
+                    title: 'Train',
+                    initialState: enableModeTrain,
+                    onStateChanged: (v) => setState(() => enableModeTrain = v),
+                    children: [
+                      _buildSliderTile(
+                        title: 'Preference for train',
+                        value: preferenceModeTrain,
+                        min: 0.1,
+                        max: 2.0,
+                        divisions: 19,
+                        onChanged: (v) =>
+                            setState(() => preferenceModeTrain = v),
+                      ),
+                    ],
+                  ),
+                  ProfileCardWidget(
                     title: 'Ferry',
                     initialState: enableModeFerry,
                     onStateChanged: (v) => setState(() => enableModeFerry = v),
@@ -606,7 +622,8 @@ class _ProfilePageState extends State<ProfilePage> {
                         widget.profile.revertToOriginal();
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Reverted to original!')),
+                            const SnackBar(
+                                content: Text('Reverted to original!')),
                           );
                           Navigator.of(context).pop(widget.profile);
                         }
@@ -624,15 +641,18 @@ class _ProfilePageState extends State<ProfilePage> {
                       onPressed: () async {
                         _applyCurrentValuesToProfile();
                         widget.profile.commitTemporaryEdits();
-                        await ProfileDao.update(widget.profile.id, widget.profile);
+                        await ProfileDao.update(
+                            widget.profile.id, widget.profile);
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Profile saved permanently!')),
+                            const SnackBar(
+                                content: Text('Profile saved permanently!')),
                           );
                           Navigator.of(context).pop(widget.profile);
                         }
                       },
-                      style: ElevatedButton.styleFrom(backgroundColor: _selectedColor),
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: _selectedColor),
                       icon: const Icon(Icons.save, size: 18),
                       label: const Text('Save'),
                     ),
@@ -647,7 +667,9 @@ class _ProfilePageState extends State<ProfilePage> {
                     _applyCurrentValuesToProfile();
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Continuing with temporary changes!')),
+                        const SnackBar(
+                            content:
+                                Text('Continuing with temporary changes!')),
                       );
                       Navigator.of(context).pop(widget.profile);
                     }
@@ -672,7 +694,8 @@ class _ProfilePageState extends State<ProfilePage> {
                         _applyCurrentValuesToProfile();
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Temporary changes applied!')),
+                            const SnackBar(
+                                content: Text('Temporary changes applied!')),
                           );
                           Navigator.of(context).pop(widget.profile);
                         }
@@ -690,7 +713,8 @@ class _ProfilePageState extends State<ProfilePage> {
                     child: ElevatedButton.icon(
                       onPressed: () async {
                         _applyCurrentValuesToProfile();
-                        await ProfileDao.update(widget.profile.id, widget.profile);
+                        await ProfileDao.update(
+                            widget.profile.id, widget.profile);
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('Profile saved!')),
@@ -698,7 +722,8 @@ class _ProfilePageState extends State<ProfilePage> {
                           Navigator.of(context).pop(widget.profile);
                         }
                       },
-                      style: ElevatedButton.styleFrom(backgroundColor: _selectedColor),
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: _selectedColor),
                       icon: const Icon(Icons.save, size: 18),
                       label: const Text('Save'),
                     ),

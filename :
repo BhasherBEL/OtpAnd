@@ -3,7 +3,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:otpand/objects/plan.dart';
 import 'package:otpand/objects/leg.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -387,23 +386,11 @@ class _RouteMapWidgetState extends State<RouteMapWidget>
     }
   }
 
-  final MapController mapController = MapController();
-  bool showIntermediateStops = true;
-
   @override
   Widget build(BuildContext context) {
-    mapController.mapEventStream.listen((event) {
-      if (event is MapEventMove) {
-        setState(() {
-          showIntermediateStops = event.camera.zoom >= 10.0;
-        });
-      }
-    });
-
     return Stack(
       children: [
         FlutterMap(
-          mapController: mapController,
           options: MapOptions(
             keepAlive: true,
             interactionOptions: InteractionOptions(
@@ -445,40 +432,38 @@ class _RouteMapWidgetState extends State<RouteMapWidget>
             PolylineLayer(
               polylines: widget.plan.legs.map((leg) => leg.polyline).toList(),
             ),
-            if (showIntermediateStops)
-              MarkerLayer(
-                markers: widget.plan.legs
-                    .where((leg) =>
-                        leg.transitLeg &&
-                        leg.intermediateStopsWithStop.isNotEmpty)
-                    .expand((leg) =>
-                        leg.intermediateStopsWithStop.map((stop) => Marker(
-                              point: LatLng(stop.stop.lat, stop.stop.lon),
-                              child: Container(
-                                width: 8,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: leg.lineColor,
-                                    width: 2,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black26,
-                                      blurRadius: 2,
-                                      offset: Offset(0, 1),
-                                    ),
-                                  ],
-                                ),
+            MarkerLayer(
+              markers: widget.plan.legs
+                  .where((leg) =>
+                      leg.transitLeg && leg.intermediateStops.isNotEmpty)
+                  .expand((leg) => leg.intermediateStops.map((stop) => Marker(
+                        point: LatLng(stop.stop.lat, stop.stop.lon),
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: leg.lineColor,
+                              // color: leg.route!.color ?? leg.route!.mode.color,
+                              width: 2,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black26,
+                                blurRadius: 2,
+                                offset: Offset(0, 1),
                               ),
-                              width: 8,
-                              height: 8,
-                              alignment: Alignment.center,
-                            )))
-                    .toList(),
-              ),
+                            ],
+                          ),
+                        ),
+                        width: 8,
+                        height: 8,
+                        alignment: Alignment.center,
+                      )))
+                  .toList(),
+            ),
             MarkerLayer(
               markers: widget.plan.legs
                   .expand((leg) => [
@@ -488,8 +473,8 @@ class _RouteMapWidgetState extends State<RouteMapWidget>
                   .map((point) => Marker(
                         point: LatLng(point.$2, point.$3),
                         child: Container(
-                          width: 16,
-                          height: 16,
+                          width: 12,
+                          height: 12,
                           decoration: BoxDecoration(
                             color: Colors.white,
                             shape: BoxShape.circle,
@@ -506,8 +491,8 @@ class _RouteMapWidgetState extends State<RouteMapWidget>
                             ],
                           ),
                         ),
-                        width: 16,
-                        height: 16,
+                        width: 8,
+                        height: 8,
                         alignment: Alignment.center,
                       ))
                   .toList(),
@@ -547,18 +532,45 @@ class _RouteMapWidgetState extends State<RouteMapWidget>
                   point: LatLng(widget.plan.legs.first.from.lat,
                       widget.plan.legs.first.from.lon),
                   child: Icon(Icons.place, color: Colors.green, size: 40),
-                  alignment: Alignment.topCenter,
                 ),
                 Marker(
                   point: LatLng(widget.plan.legs.last.to.lat,
                       widget.plan.legs.last.to.lon),
                   child: Icon(Icons.place, color: Colors.red, size: 40),
-                  alignment: Alignment.topCenter,
                 ),
               ],
             ),
             if (showLiveLocation && currentPosition != null)
-              CurrentLocationLayer(),
+              MarkerLayer(
+                markers: [
+                  Marker(
+                    point: LatLng(
+                        currentPosition!.latitude, currentPosition!.longitude),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.blue,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 3),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 6,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.my_location,
+                        color: Colors.white,
+                        size: 14,
+                      ),
+                    ),
+                    width: 20,
+                    height: 20,
+                    alignment: Alignment.center,
+                  ),
+                ],
+              ),
             if (showLiveVehicles && vehiclePositions.isNotEmpty)
               MarkerLayer(
                 markers: vehiclePositions.entries.map((entry) {

@@ -49,9 +49,9 @@ class Leg {
 
   Color get color {
     if (route?.color != null) return route!.color!;
-    if (mode == 'BUS') return Colors.amber.shade600;
+    if (mode == 'BUS') return Colors.amber;
     if (mode == 'RAIL' || mode == 'TRAIN') {
-      return Colors.lightBlue.shade300;
+      return Colors.teal;
     }
     return Colors.grey.shade400;
   }
@@ -61,11 +61,10 @@ class Leg {
     if (mode == 'WALK' || mode == 'CAR' || mode == 'BICYCLE') {
       return Colors.black;
     }
-    if (mode == 'BUS') return Colors.amber.shade600;
+    if (mode == 'BUS') return Colors.amber;
     if (mode == 'RAIL' || mode == 'TRAIN') {
-      return Colors.lightBlue.shade300;
+      return Colors.teal;
     }
-    print(mode);
     return Colors.grey.shade400;
   }
 
@@ -102,6 +101,16 @@ class Leg {
       }
     }
     return [];
+  }
+
+  List<TimedStop> get intermediateStopsWithStop {
+    return intermediateStops
+        .where((ts) =>
+            ts.pickupType == null ||
+            ts.dropoffType == null ||
+            ts.pickupType != PickupDropoffType.none ||
+            ts.dropoffType != PickupDropoffType.none)
+        .toList();
   }
 
   Polyline get polyline {

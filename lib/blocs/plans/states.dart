@@ -19,8 +19,18 @@ class PlansLoaded extends PlansState {
   final List<Plan> plans;
   final PlansPageInfo pageInfo;
   final PlansQueryVariables variables;
+  final String? searchDateTime;
+  final String? overallSearchStartTime;
+  final String? overallSearchEndTime;
 
-  const PlansLoaded(this.plans, this.pageInfo, this.variables);
+  const PlansLoaded(
+    this.plans, 
+    this.pageInfo, 
+    this.variables, 
+    this.searchDateTime, {
+    this.overallSearchStartTime,
+    this.overallSearchEndTime,
+  });
 }
 
 class PlansError extends PlansState {

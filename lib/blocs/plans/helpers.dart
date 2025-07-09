@@ -31,9 +31,12 @@ class PlansQueryVariables {
       : 'earliestDeparture';
 
   String get dtIso {
-    String localTZ = DateTime.now().timeZoneOffset.isNegative
-        ? '-${DateTime.now().timeZoneOffset.inHours.abs().toString().padLeft(2, '0')}:00'
-        : '+${DateTime.now().timeZoneOffset.inHours.toString().padLeft(2, '0')}:00';
+    final offset = DateTime.now().timeZoneOffset;
+    final hours = offset.inHours.abs();
+    final minutes = (offset.inMinutes.abs() % 60);
+    String localTZ = offset.isNegative
+        ? '-${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}'
+        : '+${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}';
 
     if (dateTimeValue.mode == DateTimePickerMode.now ||
         dateTimeValue.dateTime == null) {
@@ -130,12 +133,14 @@ class PlansPageInfo {
   final String? endCursor;
   final bool hasNextPage;
   final bool hasPreviousPage;
+  final String? searchWindowUsed;
 
   const PlansPageInfo({
     this.startCursor,
     this.endCursor,
     required this.hasNextPage,
     required this.hasPreviousPage,
+    this.searchWindowUsed,
   });
 
   factory PlansPageInfo.fromJson(Map<String, dynamic> json) {
@@ -144,6 +149,7 @@ class PlansPageInfo {
       endCursor: json['endCursor'] as String?,
       hasNextPage: json['hasNextPage'] as bool,
       hasPreviousPage: json['hasPreviousPage'] as bool,
+      searchWindowUsed: json['searchWindowUsed'] as String?,
     );
   }
 }

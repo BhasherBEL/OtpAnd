@@ -120,6 +120,7 @@ class PlansRepository {
 					searchWindowUsed
 					startCursor
 				}
+				searchDateTime
 			}
 		}
   ''';
@@ -137,6 +138,7 @@ class PlansRepository {
         final List<dynamic> edges =
             data['data']['planConnection']['edges'] as List<dynamic>;
         final pageInfo = data['data']['planConnection']['pageInfo'];
+        final searchDateTime = data['data']['planConnection']['searchDateTime'];
         final List<Map<String, dynamic>> plans = edges
             .map(
               (e) => {
@@ -146,7 +148,11 @@ class PlansRepository {
               },
             )
             .toList();
-        return {'plans': await Plan.parseAll(plans), 'pageInfo': pageInfo};
+        return {
+          'plans': await Plan.parseAll(plans), 
+          'pageInfo': pageInfo,
+          'searchDateTime': searchDateTime
+        };
       } else {
         debugPrint(resp.body);
         throw Exception('No plan found. Check your input.');

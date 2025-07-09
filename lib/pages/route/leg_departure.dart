@@ -6,11 +6,13 @@ import 'package:otpand/widgets/route_icon.dart';
 class LegDepartureWidget extends StatelessWidget {
   final Leg leg;
   final bool isCurrent;
+  final bool? isSlower;
 
   const LegDepartureWidget({
     super.key,
     required this.leg,
     this.isCurrent = false,
+    this.isSlower,
   });
 
   @override
@@ -139,6 +141,13 @@ class LegDepartureWidget extends StatelessWidget {
             }
           },
         ),
+        if (isSlower == true) SizedBox(width: 4),
+        if (isSlower == true)
+          Icon(
+            Icons.slow_motion_video,
+            size: 16,
+            color: Colors.orange,
+          ),
       ],
     );
   }

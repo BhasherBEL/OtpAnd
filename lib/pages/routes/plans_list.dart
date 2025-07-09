@@ -6,6 +6,7 @@ import 'package:otpand/blocs/plans/states.dart';
 import 'package:otpand/objects/plan.dart';
 import 'package:otpand/pages/route.dart';
 import 'package:otpand/widgets/smallroute.dart';
+import 'package:intl/intl.dart';
 
 class PlansListWidget extends StatelessWidget {
   const PlansListWidget({super.key});
@@ -47,6 +48,9 @@ class PlansListWidget extends StatelessWidget {
       throw 'Unmanaged state: $state';
     }
 
+    final searchStartTime = _getSearchStartTime(loadedState);
+    final searchEndTime = _getSearchEndTime(loadedState);
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 150),
       child: Column(
@@ -54,22 +58,91 @@ class PlansListWidget extends StatelessWidget {
         children: [
           if (state is PlansLoadingPrevious)
             CircularProgressIndicator()
-          else if (loadedState.pageInfo.hasPreviousPage)
+          else if (loadedState.pageInfo.hasPreviousPage) ...[
             TextButton(
               onPressed: () => _onShowEarlierTrips(context, loadedState),
               child: Text('Show earlier trips'),
             ),
+            if (searchStartTime != null) _buildTimeIndicator(searchStartTime),
+          ],
           if (loadedState.plans.isEmpty)
             Text('No plans found.')
           else
             ..._buildPlansList(loadedState.plans, context),
           if (state is PlansLoadingNext)
             CircularProgressIndicator()
-          else if (loadedState.pageInfo.hasNextPage)
+          else if (loadedState.pageInfo.hasNextPage) ...[
+            if (searchEndTime != null)
+              _buildTimeIndicator(searchEndTime, isEnd: false),
             TextButton(
               onPressed: () => _onShowNextTrips(context, loadedState),
               child: Text('Show next trips'),
             ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  String? _getSearchStartTime(PlansLoaded state) {
+    if (state.overallSearchStartTime == null) return null;
+
+    // Parse the ISO 8601 datetime with timezone info
+    final searchTime = DateTime.tryParse(state.overallSearchStartTime!);
+    if (searchTime == null) return null;
+
+    // Convert to local time for display
+    final localTime = searchTime.toLocal();
+    return DateFormat('HH:mm').format(localTime);
+  }
+
+  String? _getSearchEndTime(PlansLoaded state) {
+    if (state.overallSearchEndTime == null) return null;
+
+    // Parse the ISO 8601 datetime with timezone info
+    final searchTime = DateTime.tryParse(state.overallSearchEndTime!);
+    if (searchTime == null) return null;
+
+    // Convert to local time for display
+    final localTime = searchTime.toLocal();
+    return DateFormat('HH:mm').format(localTime);
+  }
+
+
+
+  Widget _buildTimeIndicator(String time, {bool isEnd = false}) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      child: Row(
+        children: [
+          if (!isEnd) ...[
+            Text(
+              time,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(width: 8),
+          ],
+          Expanded(
+            child: Container(
+              height: 1,
+              color: Colors.grey[300],
+            ),
+          ),
+          if (isEnd) ...[
+            const SizedBox(width: 8),
+            Text(
+              time,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ],
       ),
     );

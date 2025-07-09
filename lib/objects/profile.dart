@@ -7,6 +7,8 @@ class Profile {
   int id;
   String name;
   Color color;
+  bool hasTemporaryEdits = false;
+  Map<String, dynamic>? originalValues; // Stores original values when temporarily editing
 
   bool avoidDirectWalking;
   double walkPreference;
@@ -51,6 +53,8 @@ class Profile {
     required this.id,
     required this.name,
     required this.color,
+    this.hasTemporaryEdits = false,
+    this.originalValues,
     required this.avoidDirectWalking,
     required this.walkPreference,
     required this.walkSafetyPreference,
@@ -93,6 +97,115 @@ class Profile {
 
   @override
   int get hashCode => id.hashCode;
+
+  /// Store original values and mark as having temporary edits
+  void startTemporaryEditing() {
+    if (!hasTemporaryEdits) {
+      originalValues = _getCurrentValues();
+      hasTemporaryEdits = true;
+    }
+  }
+
+  /// Revert to original values and clear temporary edit flag
+  void revertToOriginal() {
+    if (hasTemporaryEdits && originalValues != null) {
+      _restoreFromMap(originalValues!);
+      hasTemporaryEdits = false;
+      originalValues = null;
+    }
+  }
+
+  /// Clear temporary edit flag and original values (when saving permanently)
+  void commitTemporaryEdits() {
+    hasTemporaryEdits = false;
+    originalValues = null;
+  }
+
+  /// Gets the display name for this profile
+  String get displayName {
+    if (name.isNotEmpty) {
+      return hasTemporaryEdits ? '$name*' : name;
+    }
+    return hasTemporaryEdits ? 'Profile $id*' : 'Profile $id';
+  }
+
+  Map<String, dynamic> _getCurrentValues() {
+    return {
+      'name': name,
+      'color': color.value,
+      'avoidDirectWalking': avoidDirectWalking,
+      'walkPreference': walkPreference,
+      'walkSafetyPreference': walkSafetyPreference,
+      'walkSpeed': walkSpeed,
+      'transit': transit,
+      'transitPreference': transitPreference,
+      'transitWaitReluctance': transitWaitReluctance,
+      'transitTransferWorth': transitTransferWorth,
+      'transitMinimalTransferTime': transitMinimalTransferTime,
+      'wheelchairAccessible': wheelchairAccessible,
+      'bike': bike,
+      'bikePreference': bikePreference,
+      'bikeFlatnessPreference': bikeFlatnessPreference,
+      'bikeSafetyPreference': bikeSafetyPreference,
+      'bikeSpeed': bikeSpeed,
+      'bikeFriendly': bikeFriendly,
+      'bikeParkRide': bikeParkRide,
+      'car': car,
+      'carPreference': carPreference,
+      'carParkRide': carParkRide,
+      'carKissRide': carKissRide,
+      'carPickup': carPickup,
+      'agenciesEnabled': Map<Agency, bool>.from(agenciesEnabled),
+      'enableModeBus': enableModeBus,
+      'preferenceModeBus': preferenceModeBus,
+      'enableModeMetro': enableModeMetro,
+      'preferenceModeMetro': preferenceModeMetro,
+      'enableModeTram': enableModeTram,
+      'preferenceModeTram': preferenceModeTram,
+      'enableModeTrain': enableModeTrain,
+      'preferenceModeTrain': preferenceModeTrain,
+      'enableModeFerry': enableModeFerry,
+      'preferenceModeFerry': preferenceModeFerry,
+    };
+  }
+
+  void _restoreFromMap(Map<String, dynamic> values) {
+    name = values['name'] as String;
+    color = Color(values['color'] as int);
+    avoidDirectWalking = values['avoidDirectWalking'] as bool;
+    walkPreference = values['walkPreference'] as double;
+    walkSafetyPreference = values['walkSafetyPreference'] as double;
+    walkSpeed = values['walkSpeed'] as double;
+    transit = values['transit'] as bool;
+    transitPreference = values['transitPreference'] as double;
+    transitWaitReluctance = values['transitWaitReluctance'] as double;
+    transitTransferWorth = values['transitTransferWorth'] as double;
+    transitMinimalTransferTime = values['transitMinimalTransferTime'] as int;
+    wheelchairAccessible = values['wheelchairAccessible'] as bool;
+    bike = values['bike'] as bool;
+    bikePreference = values['bikePreference'] as double;
+    bikeFlatnessPreference = values['bikeFlatnessPreference'] as double;
+    bikeSafetyPreference = values['bikeSafetyPreference'] as double;
+    bikeSpeed = values['bikeSpeed'] as double;
+    bikeFriendly = values['bikeFriendly'] as bool;
+    bikeParkRide = values['bikeParkRide'] as bool;
+    car = values['car'] as bool;
+    carPreference = values['carPreference'] as double;
+    carParkRide = values['carParkRide'] as bool;
+    carKissRide = values['carKissRide'] as bool;
+    carPickup = values['carPickup'] as bool;
+    agenciesEnabled = Map<Agency, bool>.from(values['agenciesEnabled'] as Map);
+    enableModeBus = values['enableModeBus'] as bool;
+    preferenceModeBus = values['preferenceModeBus'] as double;
+    enableModeMetro = values['enableModeMetro'] as bool;
+    preferenceModeMetro = values['preferenceModeMetro'] as double;
+    enableModeTram = values['enableModeTram'] as bool;
+    preferenceModeTram = values['preferenceModeTram'] as double;
+    enableModeTrain = values['enableModeTrain'] as bool;
+    preferenceModeTrain = values['preferenceModeTrain'] as double;
+    enableModeFerry = values['enableModeFerry'] as bool;
+    preferenceModeFerry = values['preferenceModeFerry'] as double;
+  }
 
   Map<String, dynamic> getPlanPreferences() {
     num bikeFlatnessRatio = round(

@@ -227,15 +227,35 @@ class _RoutesPageState extends State<RoutesPage> {
                         return DropdownMenuItem(
                           value: p,
                           child: Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               CircleAvatar(
                                 backgroundColor: p.color,
                                 radius: 10,
+                                child: p.hasTemporaryEdits
+                                    ? Icon(
+                                        Icons.edit,
+                                        size: 12,
+                                        color: Colors.white,
+                                      )
+                                    : null,
                               ),
                               const SizedBox(width: 8),
-                              Text(
-                                p.name.isNotEmpty ? p.name : 'Profile ${p.id}',
+                              Flexible(
+                                child: Text(
+                                  p.name.isNotEmpty ? p.name : 'Profile ${p.id}',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
+                              if (p.hasTemporaryEdits)
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 4),
+                                  child: Icon(
+                                    Icons.access_time,
+                                    size: 16,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
                             ],
                           ),
                         );
@@ -278,6 +298,7 @@ class _RoutesPageState extends State<RoutesPage> {
                         if (updated != null) {
                           setState(() {
                             profile = updated;
+                            // Update existing profile
                             profiles = profiles
                                 .map(
                                   (p) => p.id == updated.id ? updated : p,

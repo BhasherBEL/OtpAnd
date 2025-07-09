@@ -221,6 +221,44 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  void _applyCurrentValuesToProfile() {
+    widget.profile.name = _nameController.text;
+    widget.profile.color = _selectedColor;
+    widget.profile.avoidDirectWalking = avoidDirectWalking;
+    widget.profile.walkPreference = walkPreference;
+    widget.profile.walkSafetyPreference = walkSafetyPreference;
+    widget.profile.walkSpeed = walkSpeed;
+    widget.profile.transit = transit;
+    widget.profile.transitPreference = transitPreference;
+    widget.profile.transitWaitReluctance = transitWaitReluctance;
+    widget.profile.transitTransferWorth = transitTransferWorth;
+    widget.profile.transitMinimalTransferTime = transitMinimalTransferTime;
+    widget.profile.wheelchairAccessible = wheelchairAccessible;
+    widget.profile.bike = bike;
+    widget.profile.bikePreference = bikePreference;
+    widget.profile.bikeFlatnessPreference = bikeFlatnessPreference;
+    widget.profile.bikeSafetyPreference = bikeSafetyPreference;
+    widget.profile.bikeSpeed = bikeSpeed;
+    widget.profile.bikeFriendly = bikeFriendly;
+    widget.profile.bikeParkRide = bikeParkRide;
+    widget.profile.car = car;
+    widget.profile.carPreference = carPreference;
+    widget.profile.carParkRide = carParkRide;
+    widget.profile.carKissRide = carKissRide;
+    widget.profile.carPickup = carPickup;
+    widget.profile.agenciesEnabled = agenciesEnabled;
+    widget.profile.enableModeBus = enableModeBus;
+    widget.profile.preferenceModeBus = preferenceModeBus;
+    widget.profile.enableModeMetro = enableModeMetro;
+    widget.profile.preferenceModeMetro = preferenceModeMetro;
+    widget.profile.enableModeTram = enableModeTram;
+    widget.profile.preferenceModeTram = preferenceModeTram;
+    widget.profile.enableModeTrain = enableModeTrain;
+    widget.profile.preferenceModeTrain = preferenceModeTrain;
+    widget.profile.enableModeFerry = enableModeFerry;
+    widget.profile.preferenceModeFerry = preferenceModeFerry;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -557,57 +595,117 @@ class _ProfilePageState extends State<ProfilePage> {
             }),
             const SizedBox(height: 24),
 
-            ElevatedButton(
-              onPressed: () async {
-                final updatedProfile = Profile(
-                  id: widget.profile.id,
-                  name: _nameController.text,
-                  color: _selectedColor,
-                  avoidDirectWalking: avoidDirectWalking,
-                  walkPreference: walkPreference,
-                  walkSafetyPreference: walkSafetyPreference,
-                  walkSpeed: walkSpeed,
-                  transit: transit,
-                  transitPreference: transitPreference,
-                  transitWaitReluctance: transitWaitReluctance,
-                  transitTransferWorth: transitTransferWorth,
-                  transitMinimalTransferTime: transitMinimalTransferTime,
-                  wheelchairAccessible: wheelchairAccessible,
-                  bike: bike,
-                  bikePreference: bikePreference,
-                  bikeFlatnessPreference: bikeFlatnessPreference,
-                  bikeSafetyPreference: bikeSafetyPreference,
-                  bikeSpeed: bikeSpeed,
-                  bikeFriendly: bikeFriendly,
-                  bikeParkRide: bikeParkRide,
-                  car: car,
-                  carPreference: carPreference,
-                  carParkRide: carParkRide,
-                  carKissRide: carKissRide,
-                  carPickup: carPickup,
-                  agenciesEnabled: agenciesEnabled,
-                  enableModeBus: enableModeBus,
-                  preferenceModeBus: preferenceModeBus,
-                  enableModeMetro: enableModeMetro,
-                  preferenceModeMetro: preferenceModeMetro,
-                  enableModeTram: enableModeTram,
-                  preferenceModeTram: preferenceModeTram,
-                  enableModeTrain: enableModeTrain,
-                  preferenceModeTrain: preferenceModeTrain,
-                  enableModeFerry: enableModeFerry,
-                  preferenceModeFerry: preferenceModeFerry,
-                );
-                await ProfileDao.update(updatedProfile.id, updatedProfile);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Profile saved!')),
-                  );
-                  Navigator.of(context).pop(updatedProfile);
-                }
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: _selectedColor),
-              child: const Text('Save'),
-            ),
+            // Action buttons
+            if (widget.profile.hasTemporaryEdits) ...[
+              // For profiles with temporary edits
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        widget.profile.revertToOriginal();
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Reverted to original!')),
+                          );
+                          Navigator.of(context).pop(widget.profile);
+                        }
+                      },
+                      icon: const Icon(Icons.undo, size: 18),
+                      label: const Text('Revert'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.grey[700],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        _applyCurrentValuesToProfile();
+                        widget.profile.commitTemporaryEdits();
+                        await ProfileDao.update(widget.profile.id, widget.profile);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Profile saved permanently!')),
+                          );
+                          Navigator.of(context).pop(widget.profile);
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(backgroundColor: _selectedColor),
+                      icon: const Icon(Icons.save, size: 18),
+                      label: const Text('Save'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton.icon(
+                  onPressed: () {
+                    _applyCurrentValuesToProfile();
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Continuing with temporary changes!')),
+                      );
+                      Navigator.of(context).pop(widget.profile);
+                    }
+                  },
+                  icon: const Icon(Icons.check, size: 18),
+                  label: const Text('Continue with these settings'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: _selectedColor,
+                  ),
+                ),
+              ),
+            ] else ...[
+              // For profiles without temporary edits
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        if (!widget.profile.hasTemporaryEdits) {
+                          widget.profile.startTemporaryEditing();
+                        }
+                        _applyCurrentValuesToProfile();
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Temporary changes applied!')),
+                          );
+                          Navigator.of(context).pop(widget.profile);
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.grey[700],
+                        foregroundColor: Colors.white,
+                      ),
+                      icon: const Icon(Icons.edit, size: 18),
+                      label: const Text('Use Temporarily'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        _applyCurrentValuesToProfile();
+                        await ProfileDao.update(widget.profile.id, widget.profile);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Profile saved!')),
+                          );
+                          Navigator.of(context).pop(widget.profile);
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(backgroundColor: _selectedColor),
+                      icon: const Icon(Icons.save, size: 18),
+                      label: const Text('Save'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),

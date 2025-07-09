@@ -18,6 +18,68 @@ class SmallRoute extends StatelessWidget {
     required this.lowestEmissions,
   });
 
+  bool _isFirstOfDay() {
+    // Find the first transit leg with other departures
+    final transitLegs = plan.legs
+        .where((leg) =>
+            leg.transitLeg &&
+            leg.otherDepartures.isNotEmpty &&
+            leg.from.departure?.scheduledTime != null &&
+            leg.serviceDate != null)
+        .toList();
+
+    if (transitLegs.isEmpty) return false;
+
+    final firstTransitLeg = transitLegs.first;
+    final currentDeparture = firstTransitLeg.from.departure!.scheduledTime!;
+    final currentServiceDate = firstTransitLeg.serviceDate!;
+
+    // Check if current departure is earlier than all other departures on the same service date
+    for (final otherLeg in firstTransitLeg.otherDepartures) {
+      if (otherLeg.from.departure?.scheduledTime != null &&
+          otherLeg.serviceDate == currentServiceDate) {
+        final otherTime = otherLeg.from.departure!.scheduledTime!;
+        if (DateTime.parse(otherTime)
+            .isBefore(DateTime.parse(currentDeparture))) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
+  bool _isLastOfDay() {
+    // Find the first transit leg with other departures
+    final transitLegs = plan.legs
+        .where((leg) =>
+            leg.transitLeg &&
+            leg.otherDepartures.isNotEmpty &&
+            leg.from.departure?.scheduledTime != null &&
+            leg.serviceDate != null)
+        .toList();
+
+    if (transitLegs.isEmpty) return false;
+
+    final firstTransitLeg = transitLegs.first;
+    final currentDeparture = firstTransitLeg.from.departure!.scheduledTime!;
+    final currentServiceDate = firstTransitLeg.serviceDate!;
+
+    // Check if current departure is later than all other departures on the same service date
+    for (final otherLeg in firstTransitLeg.otherDepartures) {
+      if (otherLeg.from.departure?.scheduledTime != null &&
+          otherLeg.serviceDate == currentServiceDate) {
+        final otherTime = otherLeg.from.departure!.scheduledTime!;
+        if (DateTime.parse(otherTime)
+            .isAfter(DateTime.parse(currentDeparture))) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
     final filteredLegs = <Leg>[];
@@ -56,6 +118,8 @@ class SmallRoute extends StatelessWidget {
         Color.lerp(Colors.red.shade500, Colors.green.shade500, ecoScore);
 
     final bool isShortest = plan.getDuration() < shortestPlan * 1.05;
+    final bool isFirstOfDay = _isFirstOfDay();
+    final bool isLastOfDay = _isLastOfDay();
 
     return Card(
       color: Colors.white,
@@ -72,12 +136,59 @@ class SmallRoute extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    departure,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        departure,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      if (isFirstOfDay) ...[
+                        const SizedBox(width: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 4, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.shade100,
+                            borderRadius: BorderRadius.circular(3),
+                            border: Border.all(
+                                color: Colors.orange.shade300, width: 0.5),
+                          ),
+                          child: Text(
+                            'First Departure',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.orange.shade700,
+                            ),
+                          ),
+                        ),
+                      ],
+                      if (isLastOfDay) ...[
+                        const SizedBox(width: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 4, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: Colors.purple.shade100,
+                            borderRadius: BorderRadius.circular(3),
+                            border: Border.all(
+                                color: Colors.purple.shade300, width: 0.5),
+                          ),
+                          child: Text(
+                            'Last departure',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.purple.shade700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                   Text(
                     arrival,

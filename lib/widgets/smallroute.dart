@@ -10,12 +10,16 @@ class SmallRoute extends StatelessWidget {
   final VoidCallback? onTap;
   final int shortestPlan;
   final double lowestEmissions;
+  final int lowestTransfers;
+  final int lowestWalk;
   const SmallRoute({
     super.key,
     required this.plan,
     this.onTap,
     required this.shortestPlan,
     required this.lowestEmissions,
+    required this.lowestTransfers,
+    required this.lowestWalk,
   });
 
   bool _isFirstOfDay() {
@@ -148,6 +152,13 @@ class SmallRoute extends StatelessWidget {
 
     final bool isShortest = plan.getDuration() < shortestPlan * 1.05 ||
         round(plan.getDuration(), 1) == round(shortestPlan, 1);
+
+    final int transferCount = _getTransferCount();
+    final bool isLowestTransfer = transferCount == lowestTransfers;
+    final int walkingDistance = _getWalkingDistance();
+    final bool isLowestWalk = walkingDistance < lowestWalk * 1.05 ||
+        round(walkingDistance, 1) == round(lowestWalk, 1);
+
     final bool isFirstOfDay = _isFirstOfDay();
     final bool isLastOfDay = _isLastOfDay();
 
@@ -320,32 +331,36 @@ class SmallRoute extends StatelessWidget {
                         Text(
                           'Departing by ',
                           style:
-                              TextStyle(fontSize: 14, color: Colors.grey[800]),
+                              TextStyle(fontSize: 12, color: Colors.grey[800]),
                         ),
                         Text(
                           mode,
                           style: const TextStyle(
-                              fontSize: 14, fontWeight: FontWeight.bold),
+                              fontSize: 12, fontWeight: FontWeight.bold),
                         ),
                         Text(
                           ' at ',
                           style:
-                              TextStyle(fontSize: 14, color: Colors.grey[800]),
+                              TextStyle(fontSize: 12, color: Colors.grey[800]),
                         ),
                         Text(
                           depTime,
                           style: const TextStyle(
-                              fontSize: 14, fontWeight: FontWeight.bold),
+                              fontSize: 12, fontWeight: FontWeight.bold),
                         ),
                         Text(
                           ' from stop ',
                           style:
-                              TextStyle(fontSize: 14, color: Colors.grey[800]),
+                              TextStyle(fontSize: 12, color: Colors.grey[800]),
                         ),
-                        Text(
-                          stopName,
-                          style: const TextStyle(
-                              fontSize: 14, fontWeight: FontWeight.bold),
+                        Expanded(
+                          child: Text(
+                            stopName,
+                            style: const TextStyle(
+                                fontSize: 12, fontWeight: FontWeight.bold),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
                         ),
                       ],
                     ),
@@ -379,6 +394,7 @@ class SmallRoute extends StatelessWidget {
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 4),
                     decoration: BoxDecoration(
+                      color: isLowestTransfer ? Colors.orange.shade100 : null,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Row(
@@ -387,7 +403,7 @@ class SmallRoute extends StatelessWidget {
                             color: Colors.orange.shade500),
                         const SizedBox(width: 2),
                         Text(
-                          _getTransferCount().toString(),
+                          transferCount.toString(),
                           style: TextStyle(
                             color: Colors.orange.shade800,
                           ),
@@ -399,6 +415,7 @@ class SmallRoute extends StatelessWidget {
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 4),
                     decoration: BoxDecoration(
+                      color: isLowestWalk ? Colors.purple.shade100 : null,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Row(
@@ -407,7 +424,7 @@ class SmallRoute extends StatelessWidget {
                             color: Colors.purple.shade500),
                         const SizedBox(width: 2),
                         Text(
-                          displayDistanceShort(_getWalkingDistance()),
+                          displayDistanceShort(walkingDistance),
                           style: TextStyle(
                             color: Colors.purple.shade800,
                           ),

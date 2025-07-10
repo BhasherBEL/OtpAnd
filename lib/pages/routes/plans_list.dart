@@ -148,6 +148,27 @@ class PlansListWidget extends StatelessWidget {
     );
   }
 
+  int _getTransferCount(Plan plan) {
+    final transitLegs = plan.legs.where((leg) => leg.transitLeg).toList();
+    if (transitLegs.length <= 1) return 0;
+    int transfers = 0;
+    for (int i = 1; i < transitLegs.length; i++) {
+      final prevRoute = transitLegs[i - 1].route?.shortName ?? '';
+      final currentRoute = transitLegs[i].route?.shortName ?? '';
+      if (prevRoute != currentRoute) {
+        transfers++;
+      }
+    }
+    return transfers;
+  }
+
+  int _getWalkingDistance(Plan plan) {
+    // Sum up distances from walking, biking, and driving legs
+    return plan.legs
+        .where((leg) => leg.mode == 'WALK' || leg.mode == 'BICYCLE' || leg.mode == 'CAR')
+        .fold<int>(0, (sum, leg) => sum + leg.distance.round());
+  }
+
   Iterable<Widget> _buildPlansList(List<Plan> plans, BuildContext context) {
     final shortestPlan = plans
         .reduce((p1, p2) => p1.getDuration() < p2.getDuration() ? p1 : p2)
@@ -155,6 +176,8 @@ class PlansListWidget extends StatelessWidget {
     final double lowestEmissions = plans
         .reduce((p1, p2) => p1.getEmissions() < p2.getEmissions() ? p1 : p2)
         .getEmissions();
+    final int lowestTransfers = plans.map(_getTransferCount).fold<int>(9999, (min, t) => t < min ? t : min);
+    final int lowestWalk = plans.map(_getWalkingDistance).fold<int>(9999999, (min, w) => w < min ? w : min);
 
     plans.sort((a, b) {
       if (a.end == null && b.end == null) return 0;
@@ -172,6 +195,8 @@ class PlansListWidget extends StatelessWidget {
         plan: plan,
         shortestPlan: shortestPlan,
         lowestEmissions: lowestEmissions,
+        lowestTransfers: lowestTransfers,
+        lowestWalk: lowestWalk,
         onTap: () {
           Navigator.of(context).push(
             MaterialPageRoute<void>(builder: (_) => RoutePage(plan: plan)),

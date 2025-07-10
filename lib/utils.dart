@@ -27,6 +27,10 @@ String displayDistance(num distance) {
   return '${round(distance / 1000, 0)} km';
 }
 
+String displayDistanceShort(num distance) {
+  return '${round(distance / 1000, 1)} km';
+}
+
 String displayTime(num time) {
   if (time < 55) {
     return '${round(time, -1)}s';

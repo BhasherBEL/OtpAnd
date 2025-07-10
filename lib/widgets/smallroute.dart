@@ -80,6 +80,33 @@ class SmallRoute extends StatelessWidget {
     return true;
   }
 
+  int _getTransferCount() {
+    // Count the number of transfers (transitions between different transit routes)
+    final transitLegs = plan.legs.where((leg) => leg.transitLeg).toList();
+
+    if (transitLegs.length <= 1) return 0;
+
+    int transfers = 0;
+    for (int i = 1; i < transitLegs.length; i++) {
+      // Check if this is a different route from the previous one
+      final prevRoute = transitLegs[i - 1].route?.shortName ?? '';
+      final currentRoute = transitLegs[i].route?.shortName ?? '';
+      if (prevRoute != currentRoute) {
+        transfers++;
+      }
+    }
+
+    return transfers;
+  }
+
+  int _getWalkingDistance() {
+    // Sum up distances from walking, biking, and driving legs
+    return plan.legs
+        .where((leg) =>
+            leg.mode == 'WALK' || leg.mode == 'BICYCLE' || leg.mode == 'CAR')
+        .fold<int>(0, (sum, leg) => sum + leg.distance.round());
+  }
+
   @override
   Widget build(BuildContext context) {
     final filteredLegs = <Leg>[];
@@ -110,14 +137,17 @@ class SmallRoute extends StatelessWidget {
       ),
     );
 
-    final bool isEcofriendliest = plan.getEmissions() < lowestEmissions * 1.05;
+    final bool isEcofriendliest =
+        plan.getEmissions() < lowestEmissions * 1.05 ||
+            round(plan.getEmissions(), 1) == round(lowestEmissions, 1);
     final ecoRelative = lowestEmissions / plan.getEmissions() / 2;
     final ecoAbsolute = plan.getFlightDistance() / plan.getEmissions() / 20000;
     final ecoScore = min(ecoRelative, 0.5) + min(ecoAbsolute, 0.5);
     final ecoColor =
         Color.lerp(Colors.red.shade500, Colors.green.shade500, ecoScore);
 
-    final bool isShortest = plan.getDuration() < shortestPlan * 1.05;
+    final bool isShortest = plan.getDuration() < shortestPlan * 1.05 ||
+        round(plan.getDuration(), 1) == round(shortestPlan, 1);
     final bool isFirstOfDay = _isFirstOfDay();
     final bool isLastOfDay = _isLastOfDay();
 
@@ -264,13 +294,70 @@ class SmallRoute extends StatelessWidget {
                   );
                 },
               ),
-              const SizedBox(height: 12),
+              // Insert transit departure row if applicable
+              Builder(
+                builder: (context) {
+                  Leg? firstTransitLeg;
+                  try {
+                    firstTransitLeg =
+                        plan.legs.firstWhere((leg) => leg.transitLeg);
+                  } on StateError {
+                    firstTransitLeg = null;
+                  }
+                  if (firstTransitLeg == null) return const SizedBox.shrink();
+                  final mode = firstTransitLeg.mode.toLowerCase();
+                  final depTime = formatTime(
+                          firstTransitLeg.from.departure?.scheduledTime) ??
+                      '--:--';
+                  final stopName = firstTransitLeg.from.stop?.name ??
+                      firstTransitLeg.from.name;
+                  return Padding(
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 10, horizontal: 2),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Departing by ',
+                          style:
+                              TextStyle(fontSize: 14, color: Colors.grey[800]),
+                        ),
+                        Text(
+                          mode,
+                          style: const TextStyle(
+                              fontSize: 14, fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          ' at ',
+                          style:
+                              TextStyle(fontSize: 14, color: Colors.grey[800]),
+                        ),
+                        Text(
+                          depTime,
+                          style: const TextStyle(
+                              fontSize: 14, fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          ' from stop ',
+                          style:
+                              TextStyle(fontSize: 14, color: Colors.grey[800]),
+                        ),
+                        Text(
+                          stopName,
+                          style: const TextStyle(
+                              fontSize: 14, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Container(
                     margin: EdgeInsets.only(left: 8),
-                    padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    padding: EdgeInsets.symmetric(horizontal: 4),
                     decoration: BoxDecoration(
                       color: isShortest ? Colors.blue.shade100 : null,
                       borderRadius: BorderRadius.circular(4),
@@ -290,8 +377,48 @@ class SmallRoute extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Container(
+                    padding: EdgeInsets.symmetric(horizontal: 4),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.swap_horiz_sharp,
+                            color: Colors.orange.shade500),
+                        const SizedBox(width: 2),
+                        Text(
+                          _getTransferCount().toString(),
+                          style: TextStyle(
+                            color: Colors.orange.shade800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 4),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.directions_walk,
+                            color: Colors.purple.shade500),
+                        const SizedBox(width: 2),
+                        Text(
+                          displayDistanceShort(_getWalkingDistance()),
+                          style: TextStyle(
+                            color: Colors.purple.shade800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
                     margin: EdgeInsets.only(right: 8),
-                    padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    padding: EdgeInsets.symmetric(horizontal: 4),
                     decoration: BoxDecoration(
                       color: isEcofriendliest ? Colors.green.shade100 : null,
                       borderRadius: BorderRadius.circular(4),

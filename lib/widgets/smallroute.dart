@@ -284,13 +284,97 @@ class SmallRoute extends StatelessWidget {
                   }
 
                   final row = Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       for (int i = 0; i < filteredLegs.length; i++)
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 2),
                           child: SizedBox(
                             width: widths[i],
-                            child: _LegTile(leg: filteredLegs[i]),
+                            child: (() {
+                              final leg = filteredLegs[i];
+                              if (leg.transitLeg && i > 0) {
+                                int prevTransitIdx = i - 1;
+                                while (prevTransitIdx >= 0 &&
+                                    !filteredLegs[prevTransitIdx].transitLeg) {
+                                  prevTransitIdx--;
+                                }
+                                if (prevTransitIdx >= 0) {
+                                  final prevLeg = filteredLegs[prevTransitIdx];
+                                  final prevArrival =
+                                      prevLeg.to.arrival?.scheduledTime;
+                                  final currDeparture =
+                                      leg.from.departure?.scheduledTime;
+                                  if (prevArrival != null &&
+                                      currDeparture != null) {
+                                    final prev = DateTime.tryParse(prevArrival);
+                                    final curr =
+                                        DateTime.tryParse(currDeparture);
+                                    if (prev != null && curr != null) {
+                                      final gap =
+                                          curr.difference(prev).inMinutes;
+                                      if (gap > 0 && gap < 180) {
+                                        double leftOffset = -20;
+                                        if (i > 0 &&
+                                            filteredLegs[i - 1].mode ==
+                                                'WALK' &&
+                                            filteredLegs[i - 1].distance <
+                                                100) {
+                                          leftOffset = -27;
+                                        }
+                                        return Stack(
+                                          clipBehavior: Clip.none,
+                                          children: [
+                                            _LegTile(leg: leg),
+                                            Positioned(
+                                              top: -10,
+                                              left: leftOffset,
+                                              child: Center(
+                                                child: Container(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                      horizontal: 6,
+                                                      vertical: 2),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.grey
+                                                        .withOpacity(0.7),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            8),
+                                                  ),
+                                                  child: Row(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      Icon(
+                                                        Icons.schedule,
+                                                        size: 14,
+                                                        color: Colors.white,
+                                                      ),
+                                                      const SizedBox(width: 2),
+                                                      Text(
+                                                        gap.toString(),
+                                                        style: TextStyle(
+                                                            fontSize: 10,
+                                                            color: Colors.white,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .bold),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                              return _LegTile(leg: leg);
+                            })(),
                           ),
                         ),
                     ],

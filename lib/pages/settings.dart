@@ -8,6 +8,7 @@ import 'package:otpand/db/helper.dart';
 import 'package:otpand/objects/config.dart';
 import 'package:otpand/pages/otpconfig.dart';
 import 'package:otpand/pages/profiles.dart';
+import 'package:otpand/utils/import_export_service.dart';
 
 import 'package:otpand/utils/gnss.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
@@ -229,6 +230,131 @@ class _SettingsPageState extends State<SettingsPage> {
                     content: Text('GTFS data download completed successfully!'),
                   ),
                 );
+              }
+            },
+          ),
+          const Divider(),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Text(
+              'Data Management',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey,
+              ),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.upload_file),
+            title: const Text('Export Settings & Data'),
+            subtitle: const Text('Export all settings, profiles, and favorites'),
+            onTap: () async {
+              try {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Exporting data...')),
+                  );
+                }
+
+                final filePath = await ImportExportService.exportDataWithFilePicker();
+                
+                if (context.mounted) {
+                  if (filePath != null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Data exported successfully to: $filePath'),
+                        duration: const Duration(seconds: 4),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Export cancelled')),
+                    );
+                  }
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Export failed: $e')),
+                  );
+                }
+              }
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.download),
+            title: const Text('Import Settings & Data'),
+            subtitle: const Text('Import settings, profiles, and favorites from file'),
+            onTap: () async {
+              try {
+                final filePath = await ImportExportService.pickImportFile();
+                
+                if (filePath != null) {
+                  // Show confirmation dialog with import info
+                  final importInfo = await ImportExportService.getExportInfo(filePath);
+                  
+                  if (context.mounted) {
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Import Data'),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('This will replace all current data with:'),
+                            const SizedBox(height: 8),
+                            Text('• ${importInfo['profilesCount']} profiles'),
+                            Text('• ${importInfo['favouritesCount']} favorites'),
+                            Text('• ${importInfo['historyCount']} search history entries'),
+                            const SizedBox(height: 8),
+                            Text('Exported: ${DateTime.parse(importInfo['exportedAt']).toLocal()}'),
+                            const SizedBox(height: 12),
+                            const Text(
+                              'WARNING: This cannot be undone. Consider exporting your current data first.',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.red,
+                              ),
+                            ),
+                          ],
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(false),
+                            child: const Text('Cancel'),
+                          ),
+                          ElevatedButton(
+                            onPressed: () => Navigator.of(context).pop(true),
+                            child: const Text('Import'),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (confirmed == true) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Importing data...')),
+                      );
+
+                      await ImportExportService.importData(filePath);
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Data imported successfully!'),
+                          duration: Duration(seconds: 3),
+                        ),
+                      );
+                    }
+                  }
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Import failed: $e')),
+                  );
+                }
               }
             },
           )

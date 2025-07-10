@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -304,5 +306,41 @@ class Leg {
     }
 
     return currentFreqency;
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Leg &&
+        (id != null && other.id != null && id == other.id ||
+            mode == other.mode &&
+                transitLeg == other.transitLeg &&
+                realTime == other.realTime &&
+                from == other.from &&
+                to == other.to &&
+                route == other.route &&
+                duration == other.duration &&
+                distance == other.distance &&
+                serviceDate == other.serviceDate &&
+                geometry == other.geometry);
+  }
+
+  @override
+  int get hashCode {
+    if (id != null) {
+      return id.hashCode;
+    }
+    return Object.hash(
+      mode,
+      transitLeg,
+      realTime,
+      from,
+      to,
+      route,
+      duration,
+      distance,
+      serviceDate,
+      geometry,
+    );
   }
 }

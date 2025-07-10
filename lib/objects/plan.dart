@@ -70,4 +70,25 @@ class Plan {
   ) async {
     return await Future.wait(rawPlans.map((e) => parse(e)));
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+
+    if (other.runtimeType != runtimeType) return false;
+    final Plan otherPlan = other as Plan;
+    if (start != otherPlan.start || end != otherPlan.end) return false;
+    if (legs.length != otherPlan.legs.length) return false;
+    for (int i = 0; i < legs.length; i++) {
+      if (legs[i] != otherPlan.legs[i]) return false;
+    }
+    return true;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        start,
+        end,
+        legs.map((leg) => leg.hashCode).reduce((a, b) => a ^ b),
+      );
 }

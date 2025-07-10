@@ -1,7 +1,8 @@
 import 'package:otpand/db/crud/stops.dart';
 import 'package:otpand/objects/stop.dart';
+import 'package:equatable/equatable.dart';
 
-class Place {
+class Place extends Equatable {
   final String name;
   final double lat;
   final double lon;
@@ -9,7 +10,7 @@ class Place {
   final DepartureArrival? arrival;
   final Stop? stop;
 
-  Place({
+  const Place({
     required this.name,
     required this.lat,
     required this.lon,
@@ -17,6 +18,15 @@ class Place {
     this.arrival,
     this.stop,
   });
+
+  @override
+  List<Object> get props => [
+        name,
+        lat,
+        lon,
+        departure?.scheduledTime ?? '',
+        arrival?.scheduledTime ?? ''
+      ];
 
   static Future<Place> parse(Map<String, dynamic> placeJson) async {
     return Place(
@@ -40,11 +50,17 @@ class Place {
   }
 }
 
-class DepartureArrival {
+class DepartureArrival extends Equatable {
   final String? scheduledTime;
   final EstimatedTime? estimated;
 
-  DepartureArrival({this.scheduledTime, this.estimated});
+  const DepartureArrival({this.scheduledTime, this.estimated});
+
+  @override
+  List<Object> get props => [
+        scheduledTime ?? '',
+        estimated?.time ?? '',
+      ];
 
   static DepartureArrival parse(Map<String, dynamic> json) {
     return DepartureArrival(

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:otpand/db/crud/plans.dart';
 import 'package:otpand/objects/plan.dart';
 import 'package:otpand/pages/plan.dart';
 import 'package:otpand/utils/extensions.dart';
+import 'package:otpand/widgets/smallroute.dart';
 
 class PlannedWidget extends StatefulWidget {
   const PlannedWidget({super.key});
@@ -43,13 +45,19 @@ class _PlannedWidgetState extends State<PlannedWidget> {
 
     final soonPlanned = plannedPlans.take(5).toList();
 
+    soonPlanned.sort((a, b) {
+      final aDate = a.startDateTime;
+      final bDate = b.startDateTime;
+      return aDate.isBefore(bDate) ? -1 : (aDate.isAfter(bDate) ? 1 : 0);
+    });
+
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Planned journeys',
+            'Upcoming journeys',
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
@@ -78,42 +86,42 @@ class _PlanedCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      child: ListTile(
-        title: Text('${plan.fromName} - ${plan.toName}'),
-        subtitle: Text(_makeSubtitle()),
-        onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (context) => PlanPage(plan: plan),
-            ),
-          );
-        },
+    return Dismissible(
+      key: ValueKey(plan.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        color: Colors.red,
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: const Icon(Icons.delete, color: Colors.white),
+      ),
+      onDismissed: (direction) async {
+        if (plan.id == null) return;
+        await PlanDao().deletePlan(plan.id!);
+        await PlanDao().loadAll();
+      },
+      child: Card(
+        elevation: 0,
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+          side: BorderSide(color: Colors.grey[300]!, width: 1),
+        ),
+        child: SmallRoute(
+          plan: plan,
+          shortestPlan: 0,
+          lowestWalk: 0,
+          lowestEmissions: 0,
+          lowestTransfers: 0,
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (context) => PlanPage(plan: plan),
+              ),
+            );
+          },
+        ),
       ),
     );
-  }
-
-  String _makeSubtitle() {
-    if (plan.startDateTime.daysDifference(plan.endDateTime) == 0) {
-      return '${_makeDayText(plan.startDateTime)}${plan.startDateTime.hour}:${plan.startDateTime.minute} - ${plan.endDateTime.hour}:${plan.endDateTime.minute}';
-    }
-    return '${_makeDayText(plan.startDateTime)}${plan.startDateTime.hour}:${plan.startDateTime.minute} - ${_makeDayText(plan.endDateTime)}${plan.endDateTime.hour}:${plan.endDateTime.minute}';
-  }
-
-  String _makeDayText(DateTime date) {
-    final diff = date.daysDifference(DateTime.now());
-
-    if (diff == 0) {
-      return '';
-    } else if (diff == 1) {
-      return 'Tomorrow, ';
-    } else if (diff == -1) {
-      return 'Yesterday, ';
-    } else if (plan.startDateTime.year == DateTime.now().year) {
-      return DateFormat('d MMM, ').format(plan.startDateTime);
-    } else {
-      return DateFormat('d MMM yyyy, ').format(plan.startDateTime);
-    }
   }
 }

@@ -22,16 +22,23 @@ class JourneyDetailsCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Journey Details',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Journey Details',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
+                if (plan.id != null)
+                  const Icon(
+                    Icons.offline_pin_rounded,
+                    color: Colors.greenAccent,
+                  ),
+              ],
             ),
             const SizedBox(height: 8),
             Container(
@@ -143,4 +150,3 @@ class JourneyDetailsCard extends StatelessWidget {
     );
   }
 }
-

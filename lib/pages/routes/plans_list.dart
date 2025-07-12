@@ -4,7 +4,7 @@ import 'package:otpand/blocs/plans/bloc.dart';
 import 'package:otpand/blocs/plans/events.dart';
 import 'package:otpand/blocs/plans/states.dart';
 import 'package:otpand/objects/plan.dart';
-import 'package:otpand/pages/route.dart';
+import 'package:otpand/pages/plan.dart';
 import 'package:otpand/widgets/smallroute.dart';
 import 'package:intl/intl.dart';
 
@@ -108,8 +108,6 @@ class PlansListWidget extends StatelessWidget {
     return DateFormat('HH:mm').format(localTime);
   }
 
-
-
   Widget _buildTimeIndicator(String time, {bool isEnd = false}) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -165,7 +163,8 @@ class PlansListWidget extends StatelessWidget {
   int _getWalkingDistance(Plan plan) {
     // Sum up distances from walking, biking, and driving legs
     return plan.legs
-        .where((leg) => leg.mode == 'WALK' || leg.mode == 'BICYCLE' || leg.mode == 'CAR')
+        .where((leg) =>
+            leg.mode == 'WALK' || leg.mode == 'BICYCLE' || leg.mode == 'CAR')
         .fold<int>(0, (sum, leg) => sum + leg.distance.round());
   }
 
@@ -176,8 +175,12 @@ class PlansListWidget extends StatelessWidget {
     final double lowestEmissions = plans
         .reduce((p1, p2) => p1.getEmissions() < p2.getEmissions() ? p1 : p2)
         .getEmissions();
-    final int lowestTransfers = plans.map(_getTransferCount).fold<int>(9999, (min, t) => t < min ? t : min);
-    final int lowestWalk = plans.map(_getWalkingDistance).fold<int>(9999999, (min, w) => w < min ? w : min);
+    final int lowestTransfers = plans
+        .map(_getTransferCount)
+        .fold<int>(9999, (min, t) => t < min ? t : min);
+    final int lowestWalk = plans
+        .map(_getWalkingDistance)
+        .fold<int>(9999999, (min, w) => w < min ? w : min);
 
     plans.sort((a, b) {
       if (a.end == null && b.end == null) return 0;
@@ -199,7 +202,7 @@ class PlansListWidget extends StatelessWidget {
         lowestWalk: lowestWalk,
         onTap: () {
           Navigator.of(context).push(
-            MaterialPageRoute<void>(builder: (_) => RoutePage(plan: plan)),
+            MaterialPageRoute<void>(builder: (_) => PlanPage(plan: plan)),
           );
         },
       );

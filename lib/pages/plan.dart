@@ -13,13 +13,13 @@ import 'package:otpand/pages/trip.dart';
 import 'package:otpand/pages/stop.dart';
 import 'package:otpand/api/plan.dart';
 
-class RoutePage extends StatefulWidget {
+class PlanPage extends StatefulWidget {
   final Plan plan;
 
-  const RoutePage({super.key, required this.plan});
+  const PlanPage({super.key, required this.plan});
 
   @override
-  State<RoutePage> createState() => _RoutePageState();
+  State<PlanPage> createState() => _RoutePageState();
 }
 
 class LastUpdateWidget extends StatefulWidget {
@@ -75,7 +75,7 @@ class _LastUpdateWidgetState extends State<LastUpdateWidget> {
   }
 }
 
-class _RoutePageState extends State<RoutePage>
+class _RoutePageState extends State<PlanPage>
     with SingleTickerProviderStateMixin {
   late List<Leg> _legs;
   DateTime? _lastUpdate;
@@ -171,7 +171,7 @@ class _RoutePageState extends State<RoutePage>
   }
 
   @override
-  void didUpdateWidget(RoutePage oldWidget) {
+  void didUpdateWidget(PlanPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.plan != oldWidget.plan) {
       _legs = List<Leg>.from(widget.plan.legs);

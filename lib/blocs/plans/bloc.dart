@@ -20,12 +20,11 @@ class PlansBloc extends Bloc<PlansEvent, PlansState> {
             PlansPageInfo.fromJson(result['pageInfo'] as Map<String, dynamic>);
         final searchDateTime = result['searchDateTime'] as String?;
 
-        // For initial load, overall time range equals current search window
         final timeRange = _calculateOverallTimeRange(
           searchDateTime,
           pageInfo,
-          null, // no existing start time
-          null, // no existing end time
+          null,
+          null,
         );
 
         emit(

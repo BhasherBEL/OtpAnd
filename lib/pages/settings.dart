@@ -248,7 +248,8 @@ class _SettingsPageState extends State<SettingsPage> {
           ListTile(
             leading: const Icon(Icons.upload_file),
             title: const Text('Export Settings & Data'),
-            subtitle: const Text('Export all settings, profiles, and favorites'),
+            subtitle:
+                const Text('Export all settings, profiles, and favorites'),
             onTap: () async {
               try {
                 if (context.mounted) {
@@ -257,13 +258,15 @@ class _SettingsPageState extends State<SettingsPage> {
                   );
                 }
 
-                final filePath = await ImportExportService.exportDataWithFilePicker();
-                
+                final filePath =
+                    await ImportExportService.exportDataWithFilePicker();
+
                 if (context.mounted) {
                   if (filePath != null) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Data exported successfully to: $filePath'),
+                        content:
+                            Text('Data exported successfully to: $filePath'),
                         duration: const Duration(seconds: 4),
                       ),
                     );
@@ -285,15 +288,17 @@ class _SettingsPageState extends State<SettingsPage> {
           ListTile(
             leading: const Icon(Icons.download),
             title: const Text('Import Settings & Data'),
-            subtitle: const Text('Import settings, profiles, and favorites from file'),
+            subtitle: const Text(
+                'Import settings, profiles, and favorites from file'),
             onTap: () async {
               try {
                 final filePath = await ImportExportService.pickImportFile();
-                
+
                 if (filePath != null) {
                   // Show confirmation dialog with import info
-                  final importInfo = await ImportExportService.getExportInfo(filePath);
-                  
+                  final importInfo =
+                      await ImportExportService.getExportInfo(filePath);
+
                   if (context.mounted) {
                     final confirmed = await showDialog<bool>(
                       context: context,
@@ -303,13 +308,17 @@ class _SettingsPageState extends State<SettingsPage> {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('This will replace all current data with:'),
+                            const Text(
+                                'This will replace all current data with:'),
                             const SizedBox(height: 8),
                             Text('• ${importInfo['profilesCount']} profiles'),
-                            Text('• ${importInfo['favouritesCount']} favorites'),
-                            Text('• ${importInfo['historyCount']} search history entries'),
+                            Text(
+                                '• ${importInfo['favouritesCount']} favorites'),
+                            Text(
+                                '• ${importInfo['historyCount']} search history entries'),
                             const SizedBox(height: 8),
-                            Text('Exported: ${DateTime.parse(importInfo['exportedAt']).toLocal()}'),
+                            Text(
+                                'Exported: ${DateTime.parse(importInfo['exportedAt'] as String).toLocal()}'),
                             const SizedBox(height: 12),
                             const Text(
                               'WARNING: This cannot be undone. Consider exporting your current data first.',

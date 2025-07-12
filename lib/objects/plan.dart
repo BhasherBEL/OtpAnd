@@ -10,6 +10,18 @@ class Plan {
 
   Plan({required this.start, required this.end, required this.legs});
 
+  Plan copyWith({
+    String? start,
+    String? end,
+    List<Leg>? legs,
+  }) {
+    return Plan(
+      start: start ?? this.start,
+      end: end ?? this.end,
+      legs: legs ?? this.legs,
+    );
+  }
+
   LatLngBounds getBounds() {
     double minLat = double.infinity;
     double maxLat = double.negativeInfinity;

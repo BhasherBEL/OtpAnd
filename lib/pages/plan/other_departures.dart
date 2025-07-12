@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:otpand/objects/leg.dart';
-import 'package:otpand/pages/route/leg_departure.dart';
+import 'package:otpand/pages/plan/leg_departure.dart';
 
 class OtherDeparturesWidget extends StatefulWidget {
   const OtherDeparturesWidget({

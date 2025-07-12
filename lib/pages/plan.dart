@@ -1,25 +1,30 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:otpand/objects/leg.dart';
 import 'package:otpand/objects/plan.dart';
-import 'package:otpand/pages/route/other_departures.dart';
+import 'package:otpand/pages/plan/journey_details_card.dart';
+import 'package:otpand/pages/plan/auto_update_row.dart';
+import 'package:otpand/pages/plan/plan_timeline.dart';
 import 'package:otpand/utils.dart';
 import 'package:otpand/utils/colors.dart';
-import 'package:otpand/widgets/intermediate_stops.dart';
-import 'package:otpand/widgets/route_icon.dart';
 import 'package:otpand/widgets/route_map.dart';
-import 'package:timelines_plus/timelines_plus.dart';
-import 'package:otpand/pages/trip.dart';
-import 'package:otpand/pages/stop.dart';
-import 'package:otpand/api/plan.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:otpand/blocs/plan/bloc.dart';
+import 'package:otpand/blocs/plan/events.dart';
+import 'package:otpand/blocs/plan/states.dart';
+import 'package:otpand/blocs/plan/repository.dart';
 
-class PlanPage extends StatefulWidget {
+class PlanPage extends StatelessWidget {
   final Plan plan;
 
   const PlanPage({super.key, required this.plan});
 
   @override
-  State<PlanPage> createState() => _RoutePageState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => PlanBloc(PlanRepository())..add(LoadPlan(plan)),
+      child: const _PlanView(),
+    );
+  }
 }
 
 class LastUpdateWidget extends StatefulWidget {
@@ -75,753 +80,129 @@ class _LastUpdateWidgetState extends State<LastUpdateWidget> {
   }
 }
 
-class _RoutePageState extends State<PlanPage>
+class _PlanView extends StatefulWidget {
+  const _PlanView();
+
+  @override
+  State<_PlanView> createState() => _PlanViewState();
+}
+
+class _PlanViewState extends State<_PlanView>
     with SingleTickerProviderStateMixin {
-  late List<Leg> _legs;
-  DateTime? _lastUpdate;
-  bool _updating = false;
-  Timer? _timer;
-  bool _autoUpdateEnabled = false;
   late AnimationController _rotationController;
+  bool fullHeight = false;
 
   @override
   void initState() {
     super.initState();
-    _legs = List<Leg>.from(widget.plan.legs);
-    _lastUpdate = DateTime.now();
-    _autoUpdateEnabled = _legs.any((leg) => leg.realTime == true);
     _rotationController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 1),
     );
-    if (_autoUpdateEnabled) {
-      _startAutoUpdate();
-    }
-  }
-
-  void _startAutoUpdate() {
-    _timer?.cancel();
-    _timer = Timer.periodic(const Duration(minutes: 1), (_) {
-      _updateLegs();
-    });
-  }
-
-  void _stopAutoUpdate() {
-    _timer?.cancel();
-    _timer = null;
-  }
-
-  void _toggleAutoUpdate() {
-    setState(() {
-      _autoUpdateEnabled = !_autoUpdateEnabled;
-      if (_autoUpdateEnabled) {
-        _startAutoUpdate();
-      } else {
-        _stopAutoUpdate();
-      }
-    });
-  }
-
-  Future<void> _updateLegs() async {
-    setState(() {
-      _updating = true;
-    });
-    unawaited(_rotationController.repeat());
-
-    var updatedLegs = _legs;
-
-    try {
-      updatedLegs = await Future.wait(
-        _legs.map((leg) async {
-          if (leg.id != null) {
-            final updated = await fetchLegById(leg.id!);
-            return updated ?? leg;
-          }
-          return leg;
-        }),
-      );
-    } on Exception catch (e) {
-      setState(() {
-        _updating = false;
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error updating legs: $e')));
-      }
-      _rotationController.stop();
-      _rotationController.reset();
-      return;
-    }
-
-    setState(() {
-      _legs = updatedLegs;
-      _lastUpdate = DateTime.now();
-      _updating = false;
-    });
-    _rotationController.stop();
-    _rotationController.reset();
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
     _rotationController.dispose();
     super.dispose();
   }
 
   @override
-  void didUpdateWidget(PlanPage oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.plan != oldWidget.plan) {
-      _legs = List<Leg>.from(widget.plan.legs);
-      _lastUpdate = DateTime.now();
-      _autoUpdateEnabled = _legs.any((leg) => leg.realTime == true);
-      if (_autoUpdateEnabled) {
-        _startAutoUpdate();
-      } else {
-        _stopAutoUpdate();
-      }
-    }
-  }
-
-  bool fullHeight = false;
-
-  @override
   Widget build(BuildContext context) {
-    final legs = _legs;
-
-    return Scaffold(
-      backgroundColor: primary50,
-      body: SafeArea(
-        child: NotificationListener<DraggableScrollableNotification>(
-          onNotification: (notification) {
-            final newValue = notification.extent >= 1;
-            if (newValue != fullHeight) {
-              setState(() {
-                fullHeight = newValue;
-              });
-            }
-            return false;
-          },
-          child: Stack(
-            children: [
-              RouteMapWidget(plan: widget.plan),
-              DraggableScrollableSheet(
-                initialChildSize: 0.55,
-                minChildSize: 0.16,
-                maxChildSize: 1.0,
-                snap: true,
-                snapSizes: const [0.16, 0.55, 1.0],
-                builder: (context, scrollController) {
-                  return ClipRRect(
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(fullHeight ? 0 : 18),
-                    ),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 8,
-                            offset: const Offset(0, -2),
-                          ),
-                        ],
-                      ),
-                      child: ListView(
-                        controller: scrollController,
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(color: primary500),
-                            child: Padding(
-                              padding: const EdgeInsets.only(
-                                top: 8,
-                                left: 8,
-                                right: 8,
-                                bottom: 24,
+    return BlocConsumer<PlanBloc, PlanState>(
+      listener: (context, state) {
+        if (state is PlanLoaded && state.updating) {
+          _rotationController.repeat();
+        } else {
+          _rotationController.stop();
+          _rotationController.reset();
+        }
+        if (state is PlanError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.message)),
+          );
+        }
+      },
+      builder: (context, state) {
+        if (state is! PlanLoaded) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        return Scaffold(
+          backgroundColor: primary50,
+          body: SafeArea(
+            child: NotificationListener<DraggableScrollableNotification>(
+              onNotification: (notification) {
+                final newValue = notification.extent >= 1;
+                if (newValue != fullHeight) {
+                  setState(() {
+                    fullHeight = newValue;
+                  });
+                }
+                return false;
+              },
+              child: Stack(
+                children: [
+                  RouteMapWidget(plan: state.plan),
+                  DraggableScrollableSheet(
+                    initialChildSize: 0.55,
+                    minChildSize: 0.16,
+                    maxChildSize: 1.0,
+                    snap: true,
+                    snapSizes: const [0.16, 0.55, 1.0],
+                    builder: (context, scrollController) {
+                      return ClipRRect(
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(fullHeight ? 0 : 18),
+                        ),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.08),
+                                blurRadius: 8,
+                                offset: const Offset(0, -2),
                               ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(
-                                      'Journey Details',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
+                            ],
+                          ),
+                          child: ListView(
+                            controller: scrollController,
+                            children: [
+                              JourneyDetailsCard(plan: state.plan),
+                              Center(
+                                child: Container(
+                                  width: 40,
+                                  height: 4,
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade300,
+                                    borderRadius: BorderRadius.circular(2),
                                   ),
-                                  const SizedBox(height: 8),
-                                  Container(
-                                    margin: const EdgeInsets.only(top: 5),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(10),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.18),
-                                          offset: Offset(0, 4),
-                                          blurRadius: 4,
-                                          spreadRadius: 0,
-                                        ),
-                                      ],
-                                    ),
-                                    child: Card(
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      elevation: 0,
-                                      margin: EdgeInsets.zero,
-                                      clipBehavior: Clip.hardEdge,
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 12,
-                                          horizontal: 14,
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              Icons.location_on,
-                                              color: Colors.blue,
-                                              size: 28,
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    legs.first.from.name,
-                                                    overflow: TextOverflow.clip,
-                                                    style: Theme.of(
-                                                      context,
-                                                    ).textTheme.bodyMedium,
-                                                  ),
-                                                  const SizedBox(height: 2),
-                                                  Row(
-                                                    children: [
-                                                      Icon(
-                                                        Icons.arrow_right_alt,
-                                                        size: 16,
-                                                      ),
-                                                      const SizedBox(width: 4),
-                                                      Expanded(
-                                                        child: Text(
-                                                          legs.last.to.name,
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
-                                                          style: Theme.of(
-                                                            context,
-                                                          )
-                                                              .textTheme
-                                                              .titleMedium
-                                                              ?.copyWith(
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                              ),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.center,
-                                              children: [
-                                                Text(
-                                                  formatTime(
-                                                        legs
-                                                                .first
-                                                                .from
-                                                                .departure
-                                                                ?.estimated
-                                                                ?.time ??
-                                                            legs
-                                                                .first
-                                                                .from
-                                                                .departure
-                                                                ?.scheduledTime,
-                                                      ) ??
-                                                      '',
-                                                  style: TextStyle(
-                                                    color: Colors.grey.shade700,
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 2),
-                                                Icon(
-                                                  Icons.arrow_downward,
-                                                  size: 12,
-                                                  color: Colors.grey.shade700,
-                                                ),
-                                                const SizedBox(height: 2),
-                                                Text(
-                                                  formatTime(
-                                                        legs
-                                                                .last
-                                                                .to
-                                                                .arrival
-                                                                ?.estimated
-                                                                ?.time ??
-                                                            legs.last.to.arrival
-                                                                ?.scheduledTime,
-                                                      ) ??
-                                                      '',
-                                                  style: TextStyle(
-                                                    color: Colors.grey.shade700,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          Center(
-                            child: Container(
-                              width: 40,
-                              height: 4,
-                              margin: const EdgeInsets.only(bottom: 12),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade300,
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 2),
-                            child: Row(
-                              children: [
-                                AnimatedBuilder(
-                                  animation: _rotationController,
-                                  builder: (context, child) {
-                                    return Transform.rotate(
-                                      angle: _updating
-                                          ? _rotationController.value *
-                                              6.28319 *
-                                              2
-                                          : 0,
-                                      child: IconButton(
-                                        icon: Icon(
-                                          _autoUpdateEnabled
-                                              ? Icons.autorenew
-                                              : Icons.autorenew_outlined,
-                                          color: _autoUpdateEnabled
-                                              ? Colors.blue
-                                              : Colors.grey,
-                                        ),
-                                        tooltip: _autoUpdateEnabled
-                                            ? (_updating
-                                                ? 'Updating...'
-                                                : 'Disable automatic update')
-                                            : 'Enable automatic update',
-                                        onPressed: _updating
-                                            ? null
-                                            : _toggleAutoUpdate,
-                                      ),
-                                    );
-                                  },
                                 ),
-                                if (_autoUpdateEnabled)
-                                  GestureDetector(
-                                    onTap: _updating ? null : _updateLegs,
-                                    child: LastUpdateWidget(
-                                      lastUpdate: _lastUpdate,
-                                      updating: _updating,
-                                    ),
-                                  ),
-                                if (!_autoUpdateEnabled)
-                                  TextButton(
-                                    onPressed:
-                                        _updating ? null : _toggleAutoUpdate,
-                                    child: Text(
-                                      'No live update',
-                                      style: TextStyle(
-                                        color: Colors.grey.shade500,
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          FixedTimeline.tileBuilder(
-                            theme: TimelineThemeData(
-                              nodePosition: 0,
-                              color: Colors.blueAccent,
-                              indicatorTheme: IndicatorThemeData(
-                                size: 26,
-                                position: 0,
                               ),
-                              connectorTheme: ConnectorThemeData(
-                                thickness: 2.0,
-                                color: Colors.blueAccent,
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 2),
+                                child: AutoUpdateRow(
+                                  autoUpdateEnabled: state.autoUpdateEnabled,
+                                  updating: state.updating,
+                                  lastUpdate: state.lastUpdate,
+                                  rotationController: _rotationController,
+                                ),
                               ),
-                            ),
-                            builder: TimelineTileBuilder.connected(
-                              connectionDirection: ConnectionDirection.before,
-                              itemCount: legs.length + 1,
-                              contentsBuilder: (context, index) {
-                                final leg =
-                                    index < legs.length ? legs[index] : null;
-                                final previousLeg =
-                                    index > 0 ? legs[index - 1] : null;
-
-                                final place = leg?.from ?? previousLeg!.to;
-
-                                final departureTimeRt =
-                                    leg?.from.departure?.estimated?.time;
-                                final departureTimeTheory =
-                                    leg?.from.departure?.scheduledTime;
-                                final departureTime =
-                                    departureTimeRt ?? departureTimeTheory;
-                                final departureDelayed =
-                                    departureTimeRt != null &&
-                                        departureTimeRt != departureTimeTheory;
-
-                                final arrivalTimeRt =
-                                    previousLeg?.to.arrival?.estimated?.time;
-                                final arrivalTimeTheory =
-                                    previousLeg?.to.arrival?.scheduledTime;
-                                final arrivalTime =
-                                    arrivalTimeRt ?? arrivalTimeTheory;
-                                final arrivalDelayed = arrivalTimeRt != null &&
-                                    arrivalTimeRt != arrivalTimeTheory;
-
-                                final transferTime = arrivalTime != null
-                                    ? parseTime(departureTime)
-                                        ?.difference(
-                                          parseTime(arrivalTime)!,
-                                        )
-                                        .inSeconds
-                                    : null;
-                                final hasTransfer =
-                                    transferTime != null && transferTime > 0;
-
-                                return Padding(
-                                  padding: const EdgeInsets.only(
-                                    left: 8.0,
-                                    bottom: 4.0,
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: (leg?.transitLeg == true ||
-                                                    (leg == null &&
-                                                        previousLeg
-                                                                ?.transitLeg ==
-                                                            true))
-                                                ? GestureDetector(
-                                                    onTap: () {
-                                                      if (place.stop != null) {
-                                                        Navigator.of(
-                                                          context,
-                                                        ).push(
-                                                          MaterialPageRoute<
-                                                              void>(
-                                                            builder: (
-                                                              context,
-                                                            ) =>
-                                                                StopPage(
-                                                              stop: place.stop!,
-                                                            ),
-                                                          ),
-                                                        );
-                                                      }
-                                                    },
-                                                    child: Text(
-                                                      place.stop != null &&
-                                                              place.stop!
-                                                                      .platformCode !=
-                                                                  null
-                                                          ? '${place.name} (Platform ${place.stop!.platformCode})'
-                                                          : place.name,
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .bodyMedium
-                                                          ?.copyWith(
-                                                            fontWeight:
-                                                                FontWeight.w500,
-                                                            decoration:
-                                                                TextDecoration
-                                                                    .underline,
-                                                            decorationColor:
-                                                                Colors.grey,
-                                                          ),
-                                                    ),
-                                                  )
-                                                : Text(
-                                                    place.stop != null &&
-                                                            place.stop!
-                                                                    .platformCode !=
-                                                                null
-                                                        ? '${place.name} (Platform ${place.stop!.platformCode})'
-                                                        : place.name,
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .bodyMedium
-                                                        ?.copyWith(
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                        ),
-                                                  ),
-                                          ),
-                                          if (hasTransfer)
-                                            Text(
-                                              displayTime(transferTime),
-                                              style: TextStyle(
-                                                color: Colors.grey.shade700,
-                                                fontStyle: FontStyle.italic,
-                                                fontSize: 12,
-                                              ),
-                                            ),
-                                          const SizedBox(width: 8),
-                                          Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.end,
-                                            children: [
-                                              if (hasTransfer ||
-                                                  leg == null ||
-                                                  previousLeg != null &&
-                                                      previousLeg.transitLeg)
-                                                Row(
-                                                  children: [
-                                                    if (arrivalDelayed)
-                                                      Padding(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .only(
-                                                          right: 4,
-                                                        ),
-                                                        child: Text(
-                                                          formatTime(
-                                                            arrivalTimeRt,
-                                                          )!,
-                                                          style: TextStyle(
-                                                            color: Colors.red,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    Text(
-                                                      formatTime(
-                                                            arrivalTimeTheory,
-                                                          ) ??
-                                                          '??:??',
-                                                      style: TextStyle(
-                                                        color: arrivalTimeRt ==
-                                                                null
-                                                            ? Colors
-                                                                .grey.shade700
-                                                            : Colors.green,
-                                                        decoration:
-                                                            arrivalDelayed
-                                                                ? TextDecoration
-                                                                    .lineThrough
-                                                                : null,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              if (hasTransfer)
-                                                Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                    right: 12,
-                                                  ),
-                                                  child: Icon(
-                                                    Icons.arrow_downward,
-                                                    size: 12,
-                                                  ),
-                                                ),
-                                              if (hasTransfer ||
-                                                  leg != null &&
-                                                      leg.transitLeg ||
-                                                  previousLeg == null)
-                                                Row(
-                                                  children: [
-                                                    if (departureDelayed)
-                                                      Padding(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .only(
-                                                          right: 4,
-                                                        ),
-                                                        child: Text(
-                                                          formatTime(
-                                                            departureTimeRt,
-                                                          )!,
-                                                          style: TextStyle(
-                                                            color: Colors.red,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    Text(
-                                                      formatTime(
-                                                            departureTimeTheory,
-                                                          ) ??
-                                                          '??:??',
-                                                      style: TextStyle(
-                                                        color:
-                                                            departureTimeRt ==
-                                                                    null
-                                                                ? Colors.grey
-                                                                    .shade700
-                                                                : Colors.green,
-                                                        decoration:
-                                                            departureDelayed
-                                                                ? TextDecoration
-                                                                    .lineThrough
-                                                                : null,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                      if (leg != null)
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            vertical: 8.0,
-                                          ),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              GestureDetector(
-                                                onTap: leg.trip != null &&
-                                                        leg.serviceDate != null
-                                                    ? () {
-                                                        Navigator.of(
-                                                          context,
-                                                        ).push(
-                                                          MaterialPageRoute<
-                                                              void>(
-                                                            builder: (
-                                                              context,
-                                                            ) =>
-                                                                TripPage(
-                                                              trip: leg.trip!,
-                                                              serviceDate: leg
-                                                                  .serviceDate!,
-                                                            ),
-                                                          ),
-                                                        );
-                                                      }
-                                                    : null,
-                                                child: Row(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.center,
-                                                  children: [
-                                                    if (leg.route != null)
-                                                      RouteIconWidget(
-                                                        route: leg.route!,
-                                                      ),
-                                                    Expanded(
-                                                      child: Text(
-                                                        leg.transitLeg
-                                                            ? leg.headsign ??
-                                                                leg.route
-                                                                    ?.longName ??
-                                                                'Unknown'
-                                                            : '${displayDistance(leg.distance)} - ${displayTime(leg.duration)}',
-                                                        style: TextStyle(
-                                                          fontSize: 16,
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                          decoration: leg
-                                                                      .trip !=
-                                                                  null
-                                                              ? TextDecoration
-                                                                  .underline
-                                                              : null,
-                                                          decorationColor:
-                                                              Colors.grey,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                              if (leg
-                                                  .otherDepartures.isNotEmpty)
-                                                OtherDeparturesWidget(leg: leg),
-                                              if (leg.transitLeg)
-                                                IntermediateStopsWidget(
-                                                  stops: leg.intermediateStops,
-                                                  leg: leg,
-                                                ),
-                                            ],
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                );
-                              },
-                              indicatorBuilder: (context, index) {
-                                if (index == 0) {
-                                  return const DotIndicator(
-                                    size: 24,
-                                    color: Colors.green,
-                                    child: Icon(
-                                      Icons.location_pin,
-                                      color: Colors.white,
-                                      size: 16,
-                                    ),
-                                  );
-                                } else if (index == legs.length) {
-                                  return const DotIndicator(
-                                    size: 24,
-                                    color: Colors.red,
-                                    child: Icon(
-                                      Icons.flag,
-                                      color: Colors.white,
-                                      size: 16,
-                                    ),
-                                  );
-                                } else {
-                                  return const OutlinedDotIndicator(
-                                    size: 20,
-                                    color: Colors.blue,
-                                    backgroundColor: Colors.white,
-                                    borderWidth: 2.0,
-                                  );
-                                }
-                              },
-                              connectorBuilder: (context, index, type) {
-                                if (index == 0) {
-                                  return null;
-                                }
-                                return const SolidLineConnector();
-                              },
-                            ),
+                              PlanTimeline(plan: state.plan),
+                            ],
                           ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
+                        ),
+                      );
+                    },
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:otpand/blocs/plan/events.dart';
 import 'package:otpand/blocs/plan/repository.dart';
 import 'package:otpand/blocs/plan/states.dart';
+import 'package:otpand/db/crud/plans.dart';
 
 class PlanBloc extends Bloc<PlanEvent, PlanState> {
   final PlanRepository repository;
@@ -20,6 +21,22 @@ class PlanBloc extends Bloc<PlanEvent, PlanState> {
 
       if (hasRealTime) {
         _startAutoUpdate();
+      }
+    });
+
+    on<StorePlan>((event, emit) async {
+      try {
+        final id = await repository.savePlannedPlan(event.plan);
+        unawaited(PlanDao().loadAll());
+        if (state is PlanLoaded) {
+          final currentState = state as PlanLoaded;
+          emit(currentState.copyWith(
+              plan: event.plan.copyWith(
+            id: id,
+          )));
+        }
+      } catch (e, st) {
+        emit(PlanError(e.toString(), st));
       }
     });
 
@@ -57,6 +74,19 @@ class PlanBloc extends Bloc<PlanEvent, PlanState> {
         } else {
           _stopAutoUpdate();
         }
+      }
+    });
+
+    on<DeletePlan>((event, emit) async {
+      try {
+        await repository.deletePlannedPlan(event.plan);
+        unawaited(PlanDao().loadAll());
+        if (state is PlanLoaded) {
+          final currentState = state as PlanLoaded;
+          emit(currentState.copyWith(plan: event.plan.copyWithoutId()));
+        }
+      } on Exception catch (e, st) {
+        emit(PlanError(e.toString(), st));
       }
     });
   }

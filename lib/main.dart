@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:otpand/api/gtfs.dart';
 import 'package:otpand/db/crud/agencies.dart';
 import 'package:otpand/db/crud/favourites.dart';
+import 'package:otpand/db/crud/plans.dart';
 import 'package:otpand/db/crud/search_history.dart';
 import 'package:otpand/db/crud/stops.dart';
 import 'package:otpand/objects/config.dart';
@@ -16,6 +17,7 @@ void main() async {
   unawaited(FavouriteDao().loadAll());
   unawaited(SearchHistoryDao().loadAll());
   unawaited(AgencyDao().loadAll());
+  unawaited(PlanDao().loadAll());
   runApp(OTPApp());
 }
 

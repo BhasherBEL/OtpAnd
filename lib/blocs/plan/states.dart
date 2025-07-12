@@ -11,6 +11,10 @@ class PlanInitial extends PlanState {
   const PlanInitial();
 }
 
+class PlanLoadingLegs extends PlanState {
+  const PlanLoadingLegs();
+}
+
 class PlanLoaded extends PlanState {
   final Plan plan;
   final DateTime? lastUpdate;

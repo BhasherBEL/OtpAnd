@@ -6,3 +6,11 @@ extension ListExtensions<T> on List<T> {
     return null;
   }
 }
+
+extension DateTimeExtensions on DateTime {
+  int daysDifference(DateTime to) {
+    final from = DateTime(year, month, day);
+    to = DateTime(to.year, to.month, to.day);
+    return (to.difference(from).inHours / 24).round();
+  }
+}

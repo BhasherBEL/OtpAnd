@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
@@ -21,13 +22,19 @@ class DatabaseHelper {
     final path = join(documentsDirectory!.path, 'app.db');
     return await openDatabase(
       path,
-      version: 7,
+      version: 10,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
   }
 
   Future<void> _onCreate(Database db, int version) async {
+    await db.execute('''
+      CREATE TABLE planned_plans (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        raw TEXT NOT NULL,
+      )
+    ''');
     await db.execute('''
       CREATE TABLE profiles (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -161,7 +168,7 @@ class DatabaseHelper {
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    print('Upgrading database from version $oldVersion to $newVersion');
+    debugPrint('Upgrading database from version $oldVersion to $newVersion');
 
     if (oldVersion < 2) {
       await db.execute(
@@ -249,6 +256,17 @@ class DatabaseHelper {
 			''');
       await db.execute('''
 			ALTER TABLE profiles ADD COLUMN preferenceModeFerry REAL NOT NULL DEFAULT 1.0
+			''');
+    }
+    if (oldVersion < 10) {
+      await db.execute('''
+			DROP TABLE IF EXISTS planned_plans
+			''');
+      await db.execute('''
+      CREATE TABLE planned_plans (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        raw TEXT NOT NULL
+      )
 			''');
     }
   }

@@ -21,7 +21,10 @@ class PlanPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => PlanBloc(PlanRepository())..add(LoadPlan(plan)),
+      create: (_) => PlanBloc(PlanRepository())
+        ..add(plan.legs.isEmpty && plan.id != null
+            ? LoadPlanLegs(plan)
+            : LoadPlan(plan)),
       child: const _PlanView(),
     );
   }
@@ -124,9 +127,53 @@ class _PlanViewState extends State<_PlanView>
         }
       },
       builder: (context, state) {
-        if (state is! PlanLoaded) {
-          return const Center(child: CircularProgressIndicator());
+        if (state is PlanInitial) {
+          return Scaffold(
+            backgroundColor: primary50,
+            body: Center(
+              child: Text(
+                'Plan should appear here soon',
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 18),
+              ),
+            ),
+          );
         }
+        if (state is PlanError) {
+          return Scaffold(
+            backgroundColor: primary50,
+            body: Center(
+              child: Text(
+                state.message,
+                style: TextStyle(color: Colors.red, fontSize: 18),
+              ),
+            ),
+          );
+        }
+
+        if (state is PlanLoadingLegs) {
+          return Scaffold(
+            backgroundColor: primary50,
+            body: Center(
+              child: Text(
+                'Loading plan legs...',
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 18),
+              ),
+            ),
+          );
+        }
+
+        if (state is! PlanLoaded) {
+          return Scaffold(
+            backgroundColor: primary50,
+            body: Center(
+              child: Text(
+                'Unexpected state: ${state.runtimeType}',
+                style: TextStyle(color: Colors.red, fontSize: 18),
+              ),
+            ),
+          );
+        }
+
         return Scaffold(
           backgroundColor: primary50,
           body: SafeArea(
@@ -191,6 +238,23 @@ class _PlanViewState extends State<_PlanView>
                                 ),
                               ),
                               PlanTimeline(plan: state.plan),
+                              SizedBox(height: 8),
+                              if (state.plan.id == null)
+                                TextButton(
+                                  onPressed: () => context
+                                      .read<PlanBloc>()
+                                      .add(StorePlan(state.plan)),
+                                  child: const Text(
+                                      'Mark this journey as planned'),
+                                )
+                              else
+                                TextButton(
+                                  onPressed: () => context
+                                      .read<PlanBloc>()
+                                      .add(DeletePlan(state.plan)),
+                                  child: const Text('Unplan this journey'),
+                                ),
+                              SizedBox(height: 8),
                             ],
                           ),
                         ),

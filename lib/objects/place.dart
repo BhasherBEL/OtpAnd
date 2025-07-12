@@ -28,6 +28,17 @@ class Place extends Equatable {
         arrival?.scheduledTime ?? ''
       ];
 
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'lat': lat,
+      'lon': lon,
+      'departure': departure?.toMap(),
+      'arrival': arrival?.toMap(),
+      'stop': stop != null ? {'gtfsId': stop!.gtfsId} : null,
+    };
+  }
+
   static Future<Place> parse(Map<String, dynamic> placeJson) async {
     return Place(
       name: placeJson['name'] as String? ?? 'Unknown',
@@ -61,6 +72,13 @@ class DepartureArrival extends Equatable {
         scheduledTime ?? '',
         estimated?.time ?? '',
       ];
+
+  Map<String, dynamic> toMap() {
+    return {
+      'scheduledTime': scheduledTime,
+      'estimated': estimated?.toMap(),
+    };
+  }
 
   static DepartureArrival parse(Map<String, dynamic> json) {
     return DepartureArrival(
@@ -118,6 +136,13 @@ class EstimatedTime {
   final String? delay;
 
   EstimatedTime({this.time, this.delay});
+
+  Map<String, dynamic> toMap() {
+    return {
+      'time': time,
+      'delay': delay,
+    };
+  }
 
   static EstimatedTime parse(Map<String, dynamic> json) {
     return EstimatedTime(

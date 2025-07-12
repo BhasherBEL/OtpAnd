@@ -8,6 +8,7 @@ import 'package:otpand/objects/location.dart';
 import 'package:otpand/pages/journeys/events.dart';
 import 'package:otpand/pages/journeys/favourites.dart';
 import 'package:otpand/pages/journeys/history.dart';
+import 'package:otpand/pages/journeys/planned.dart';
 import 'package:otpand/pages/routes.dart';
 import 'package:otpand/db/crud/search_history.dart';
 import 'package:otpand/utils/extensions.dart';
@@ -217,19 +218,23 @@ class _JourneysState extends State<Journeys> {
                                                   return DropdownMenuItem(
                                                     value: p,
                                                     child: Row(
-                                                      mainAxisSize: MainAxisSize.min,
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
                                                       children: [
                                                         CircleAvatar(
                                                           backgroundColor:
                                                               p.color,
                                                           radius: 10,
-                                                          child: p.hasTemporaryEdits
-                                                              ? Icon(
-                                                                  Icons.edit,
-                                                                  size: 12,
-                                                                  color: Colors.white,
-                                                                )
-                                                              : null,
+                                                          child:
+                                                              p.hasTemporaryEdits
+                                                                  ? Icon(
+                                                                      Icons
+                                                                          .edit,
+                                                                      size: 12,
+                                                                      color: Colors
+                                                                          .white,
+                                                                    )
+                                                                  : null,
                                                         ),
                                                         const SizedBox(
                                                           width: 8,
@@ -239,16 +244,22 @@ class _JourneysState extends State<Journeys> {
                                                             p.name.isNotEmpty
                                                                 ? p.name
                                                                 : 'Profile ${p.id}',
-                                                            overflow: TextOverflow.ellipsis,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
                                                           ),
                                                         ),
                                                         if (p.hasTemporaryEdits)
                                                           Padding(
-                                                            padding: const EdgeInsets.only(left: 4),
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .only(
+                                                                    left: 4),
                                                             child: Icon(
                                                               Icons.access_time,
                                                               size: 16,
-                                                              color: Colors.grey[600],
+                                                              color: Colors
+                                                                  .grey[600],
                                                             ),
                                                           ),
                                                       ],
@@ -304,7 +315,10 @@ class _JourneysState extends State<Journeys> {
                                                       // Update existing profile in the list
                                                       profiles = profiles
                                                           .map(
-                                                            (p) => p.id == updated.id ? updated : p,
+                                                            (p) => p.id ==
+                                                                    updated.id
+                                                                ? updated
+                                                                : p,
                                                           )
                                                           .toList();
                                                     });
@@ -422,6 +436,7 @@ class _JourneysState extends State<Journeys> {
                     ),
                   ],
                 ),
+                PlannedWidget(),
                 FavouritesWidget(
                   onDragComplete: () {
                     if (fromLocation != null &&

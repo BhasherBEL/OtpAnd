@@ -1,5 +1,9 @@
+import 'package:otpand/db/crud/plans.dart';
 import 'package:otpand/objects/leg.dart';
 import 'package:otpand/api/plan.dart' as plan_api;
+import 'package:otpand/objects/plan.dart';
+
+final _planDao = PlanDao();
 
 class PlanRepository {
   Future<Leg?> fetchLegById(String legId) async {
@@ -17,5 +21,13 @@ class PlanRepository {
       }),
     );
   }
-}
 
+  Future<int> savePlannedPlan(Plan plan) async {
+    return await _planDao.insertPlan(plan);
+  }
+
+  Future<void> deletePlannedPlan(Plan plan) async {
+    if (plan.id == null) return;
+    await _planDao.deletePlan(plan.id!);
+  }
+}

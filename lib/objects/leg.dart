@@ -1,5 +1,3 @@
-import 'dart:ffi';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -191,6 +189,32 @@ class Leg {
       default:
         return 0;
     }
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'mode': mode,
+      'headsign': headsign,
+      'transitLeg': transitLeg,
+      'realTime': realTime,
+      'from': from.toMap(),
+      'to': to.toMap(),
+      'route': route != null
+          ? {
+              ['gtfsId']: route!.gtfsId,
+            }
+          : null,
+      'duration': duration,
+      'distance': distance,
+      'tripStops':
+          tripStops != null ? tripStops!.map((s) => s.toMap()).toList() : null,
+      'interlineWithPreviousLeg': interlineWithPreviousLeg,
+      'otherDepartures': otherDepartures.map((d) => d.toMap()).toList(),
+      'trip': trip?.toMap(),
+      'serviceDate': serviceDate,
+      'legGeometry': geometry != null ? {'points': geometry} : null,
+    };
   }
 
   static Future<Leg> parse(Map<String, dynamic> legJson) async {

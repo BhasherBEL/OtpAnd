@@ -13,8 +13,10 @@ import 'package:otpand/widgets/search/searchmodal.dart';
 
 class FavouritesWidget extends StatefulWidget {
   final void Function()? onDragComplete;
+  final void Function()? onDragStart;
+  final void Function()? onDragEnd;
 
-  const FavouritesWidget({super.key, this.onDragComplete});
+  const FavouritesWidget({super.key, this.onDragComplete, this.onDragStart, this.onDragEnd});
 
   @override
   State<FavouritesWidget> createState() => _FavouritesWidgetState();
@@ -79,6 +81,7 @@ class _FavouritesWidgetState extends State<FavouritesWidget> {
   }
 
   void _onDragStarted(Favourite fav, Offset globalPosition) {
+    widget.onDragStart?.call();
     setState(() {
       _dragSource = fav;
       _dragTarget = null;
@@ -94,6 +97,7 @@ class _FavouritesWidgetState extends State<FavouritesWidget> {
   }
 
   void _onDragEnd() {
+    widget.onDragEnd?.call();
     setState(() {
       _dragSource = null;
       _dragTarget = null;
@@ -222,10 +226,9 @@ class _FavouritesWidgetState extends State<FavouritesWidget> {
                   width: double.infinity,
                   alignment: Alignment.centerLeft,
                   decoration: BoxDecoration(
-                    color:
-                        _dragTarget == currentLocation
-                            ? Colors.green
-                            : _dragSource == currentLocation
+                    color: _dragTarget == currentLocation
+                        ? Colors.green
+                        : _dragSource == currentLocation
                             ? Colors.blue
                             : null,
                     borderRadius: BorderRadius.circular(8),
@@ -256,11 +259,11 @@ class _FavouritesWidgetState extends State<FavouritesWidget> {
                     itemCount: items.length,
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 10,
-                          mainAxisSpacing: 10,
-                          mainAxisExtent: 50,
-                        ),
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                      mainAxisExtent: 50,
+                    ),
                     itemBuilder: (context, index) {
                       final fav = items[index];
                       if (fav == null) {
@@ -326,12 +329,9 @@ class _FavouritesWidgetState extends State<FavouritesWidget> {
                             child: FavouriteWidget(
                               favourite: fav,
                               onChanged: FavouriteDao().loadAll,
-                              color:
-                                  _dragSource == fav
-                                      ? Colors.blue
-                                      : (_dragTarget == fav
-                                          ? Colors.green
-                                          : null),
+                              color: _dragSource == fav
+                                  ? Colors.blue
+                                  : (_dragTarget == fav ? Colors.green : null),
                             ),
                           ),
                         );
@@ -367,16 +367,14 @@ class _LinePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final Paint linePaint =
-        Paint()
-          ..color = Colors.grey[800]!
-          ..strokeWidth = 1
-          ..style = PaintingStyle.stroke;
+    final Paint linePaint = Paint()
+      ..color = Colors.grey[800]!
+      ..strokeWidth = 1
+      ..style = PaintingStyle.stroke;
 
-    final Paint circlePaint =
-        Paint()
-          ..color = Colors.grey[800]!
-          ..style = PaintingStyle.fill;
+    final Paint circlePaint = Paint()
+      ..color = Colors.grey[800]!
+      ..style = PaintingStyle.fill;
 
     const double dashWidth = 1;
     const double dashSpace = 1;

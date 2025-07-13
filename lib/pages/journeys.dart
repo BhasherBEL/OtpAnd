@@ -80,6 +80,8 @@ class _JourneysState extends State<Journeys> {
     });
   }
 
+  bool _blockScroll = false;
+
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -88,6 +90,7 @@ class _JourneysState extends State<Journeys> {
         backgroundColor: primary50,
         body: SafeArea(
           child: SingleChildScrollView(
+            physics: _blockScroll ? const NeverScrollableScrollPhysics() : null,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -453,6 +456,16 @@ class _JourneysState extends State<Journeys> {
                         ),
                       );
                     }
+                  },
+                  onDragStart: () {
+                    setState(() {
+                      _blockScroll = true;
+                    });
+                  },
+                  onDragEnd: () {
+                    setState(() {
+                      _blockScroll = false;
+                    });
                   },
                 ),
                 EventsWidget(),

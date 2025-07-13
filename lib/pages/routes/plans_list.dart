@@ -87,11 +87,9 @@ class PlansListWidget extends StatelessWidget {
   String? _getSearchStartTime(PlansLoaded state) {
     if (state.overallSearchStartTime == null) return null;
 
-    // Parse the ISO 8601 datetime with timezone info
     final searchTime = DateTime.tryParse(state.overallSearchStartTime!);
     if (searchTime == null) return null;
 
-    // Convert to local time for display
     final localTime = searchTime.toLocal();
     return DateFormat('HH:mm').format(localTime);
   }
@@ -99,11 +97,9 @@ class PlansListWidget extends StatelessWidget {
   String? _getSearchEndTime(PlansLoaded state) {
     if (state.overallSearchEndTime == null) return null;
 
-    // Parse the ISO 8601 datetime with timezone info
     final searchTime = DateTime.tryParse(state.overallSearchEndTime!);
     if (searchTime == null) return null;
 
-    // Convert to local time for display
     final localTime = searchTime.toLocal();
     return DateFormat('HH:mm').format(localTime);
   }
@@ -161,7 +157,6 @@ class PlansListWidget extends StatelessWidget {
   }
 
   int _getWalkingDistance(Plan plan) {
-    // Sum up distances from walking, biking, and driving legs
     return plan.legs
         .where((leg) =>
             leg.mode == 'WALK' || leg.mode == 'BICYCLE' || leg.mode == 'CAR')
@@ -175,21 +170,15 @@ class PlansListWidget extends StatelessWidget {
     final double lowestEmissions = plans
         .reduce((p1, p2) => p1.getEmissions() < p2.getEmissions() ? p1 : p2)
         .getEmissions();
-    final int lowestTransfers = plans
-        .map(_getTransferCount)
-        .fold<int>(9999, (min, t) => t < min ? t : min);
     final int lowestWalk = plans
         .map(_getWalkingDistance)
         .fold<int>(9999999, (min, w) => w < min ? w : min);
 
     plans.sort((a, b) {
-      if (a.end == null && b.end == null) return 0;
-      if (a.end == null) return 1;
-      if (b.end == null) return -1;
       if (a.end == b.end) return 0;
 
-      final aTime = DateTime.tryParse(a.end!) ?? DateTime.now();
-      final bTime = DateTime.tryParse(b.end!) ?? DateTime.now();
+      final aTime = DateTime.tryParse(a.end) ?? DateTime.now();
+      final bTime = DateTime.tryParse(b.end) ?? DateTime.now();
       return aTime.compareTo(bTime);
     });
 
@@ -198,7 +187,6 @@ class PlansListWidget extends StatelessWidget {
         plan: plan,
         shortestPlan: shortestPlan,
         lowestEmissions: lowestEmissions,
-        lowestTransfers: lowestTransfers,
         lowestWalk: lowestWalk,
         onTap: () {
           Navigator.of(context).push(

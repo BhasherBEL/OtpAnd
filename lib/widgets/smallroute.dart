@@ -8,22 +8,19 @@ import 'package:otpand/utils.dart';
 class SmallRoute extends StatelessWidget {
   final Plan plan;
   final VoidCallback? onTap;
-  final int shortestPlan;
-  final double lowestEmissions;
-  final int lowestTransfers;
-  final int lowestWalk;
+  final int? shortestPlan;
+  final double? lowestEmissions;
+  final int? lowestWalk;
   const SmallRoute({
     super.key,
     required this.plan,
     this.onTap,
-    required this.shortestPlan,
-    required this.lowestEmissions,
-    required this.lowestTransfers,
-    required this.lowestWalk,
+    this.shortestPlan,
+    this.lowestEmissions,
+    this.lowestWalk,
   });
 
   bool _isFirstOfDay() {
-    // Find the first transit leg with other departures
     final transitLegs = plan.legs
         .where((leg) =>
             leg.transitLeg &&
@@ -38,7 +35,6 @@ class SmallRoute extends StatelessWidget {
     final currentDeparture = firstTransitLeg.from.departure!.scheduledTime!;
     final currentServiceDate = firstTransitLeg.serviceDate!;
 
-    // Check if current departure is earlier than all other departures on the same service date
     for (final otherLeg in firstTransitLeg.otherDepartures) {
       if (otherLeg.from.departure?.scheduledTime != null &&
           otherLeg.serviceDate == currentServiceDate) {
@@ -54,7 +50,6 @@ class SmallRoute extends StatelessWidget {
   }
 
   bool _isLastOfDay() {
-    // Find the first transit leg with other departures
     final transitLegs = plan.legs
         .where((leg) =>
             leg.transitLeg &&
@@ -69,7 +64,6 @@ class SmallRoute extends StatelessWidget {
     final currentDeparture = firstTransitLeg.from.departure!.scheduledTime!;
     final currentServiceDate = firstTransitLeg.serviceDate!;
 
-    // Check if current departure is later than all other departures on the same service date
     for (final otherLeg in firstTransitLeg.otherDepartures) {
       if (otherLeg.from.departure?.scheduledTime != null &&
           otherLeg.serviceDate == currentServiceDate) {
@@ -84,27 +78,7 @@ class SmallRoute extends StatelessWidget {
     return true;
   }
 
-  int _getTransferCount() {
-    // Count the number of transfers (transitions between different transit routes)
-    final transitLegs = plan.legs.where((leg) => leg.transitLeg).toList();
-
-    if (transitLegs.length <= 1) return 0;
-
-    int transfers = 0;
-    for (int i = 1; i < transitLegs.length; i++) {
-      // Check if this is a different route from the previous one
-      final prevRoute = transitLegs[i - 1].route?.shortName ?? '';
-      final currentRoute = transitLegs[i].route?.shortName ?? '';
-      if (prevRoute != currentRoute) {
-        transfers++;
-      }
-    }
-
-    return transfers;
-  }
-
   int _getWalkingDistance() {
-    // Sum up distances from walking, biking, and driving legs
     return plan.legs
         .where((leg) =>
             leg.mode == 'WALK' || leg.mode == 'BICYCLE' || leg.mode == 'CAR')
@@ -141,23 +115,29 @@ class SmallRoute extends StatelessWidget {
       ),
     );
 
-    final bool isEcofriendliest =
-        plan.getEmissions() < lowestEmissions * 1.05 ||
-            round(plan.getEmissions(), 1) == round(lowestEmissions, 1);
-    final ecoRelative = lowestEmissions / plan.getEmissions() / 2;
-    final ecoAbsolute = plan.getFlightDistance() / plan.getEmissions() / 20000;
-    final ecoScore = min(ecoRelative, 0.5) + min(ecoAbsolute, 0.5);
-    final ecoColor =
-        Color.lerp(Colors.red.shade500, Colors.green.shade500, ecoScore);
+    final bool isEcofriendliest = lowestEmissions != null &&
+        (plan.getEmissions() < lowestEmissions! * 1.05 ||
+            round(plan.getEmissions(), 1) == round(lowestEmissions!, 1));
 
-    final bool isShortest = plan.getDuration() < shortestPlan * 1.05 ||
-        round(plan.getDuration(), 1) == round(shortestPlan, 1);
+    final ecoColor = lowestEmissions == null
+        ? Colors.green.shade500
+        : (() {
+            final ecoRelative = lowestEmissions! / plan.getEmissions() / 2;
+            final ecoAbsolute =
+                plan.getFlightDistance() / plan.getEmissions() / 20000;
+            final ecoScore = min(ecoRelative, 0.5) + min(ecoAbsolute, 0.5);
+            return Color.lerp(
+                Colors.red.shade500, Colors.green.shade500, ecoScore);
+          })();
 
-    final int transferCount = _getTransferCount();
-    final bool isLowestTransfer = transferCount == lowestTransfers;
+    final bool isShortest = shortestPlan != null &&
+        (plan.getDuration() < shortestPlan! * 1.05 ||
+            round(plan.getDuration(), 1) == round(shortestPlan!, 1));
+
     final int walkingDistance = _getWalkingDistance();
-    final bool isLowestWalk = walkingDistance < lowestWalk * 1.05 ||
-        round(walkingDistance, 1) == round(lowestWalk, 1);
+    final bool isLowestWalk = lowestWalk != null &&
+        (walkingDistance < lowestWalk! * 1.05 ||
+            round(walkingDistance, 1) == round(lowestWalk!, 1));
 
     final bool isFirstOfDay = _isFirstOfDay();
     final bool isLastOfDay = _isLastOfDay();
@@ -389,7 +369,6 @@ class SmallRoute extends StatelessWidget {
                   );
                 },
               ),
-              // Insert transit departure row if applicable
               Builder(
                 builder: (context) {
                   Leg? firstTransitLeg;
@@ -469,27 +448,6 @@ class SmallRoute extends StatelessWidget {
                           duration,
                           style: TextStyle(
                             color: Colors.blue.shade800,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 4),
-                    decoration: BoxDecoration(
-                      color: isLowestTransfer ? Colors.orange.shade100 : null,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.swap_horiz_sharp,
-                            color: Colors.orange.shade500),
-                        const SizedBox(width: 2),
-                        Text(
-                          transferCount.toString(),
-                          style: TextStyle(
-                            color: Colors.orange.shade800,
                           ),
                         ),
                       ],

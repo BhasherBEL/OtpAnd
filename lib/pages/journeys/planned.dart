@@ -53,28 +53,30 @@ class _PlannedWidgetState extends State<PlannedWidget> {
 
     return Padding(
       padding: const EdgeInsets.all(8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          title: Text(
             'Upcoming journeys',
             style: Theme.of(context).textTheme.titleMedium,
           ),
-          const SizedBox(height: 8),
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: soonPlanned.length,
-            padding: EdgeInsets.zero,
-            separatorBuilder: (_, __) => const SizedBox(height: 8),
-            itemBuilder: (context, index) {
-              final plan = soonPlanned[index];
-              return _PlanedCard(
-                plan: plan,
-              );
-            },
-          ),
-        ],
+          initiallyExpanded: true,
+          children: [
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: soonPlanned.length,
+              padding: EdgeInsets.zero,
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemBuilder: (context, index) {
+                final plan = soonPlanned[index];
+                return _PlanedCard(
+                  plan: plan,
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -109,10 +111,6 @@ class _PlanedCard extends StatelessWidget {
         ),
         child: SmallRoute(
           plan: plan,
-          shortestPlan: 0,
-          lowestWalk: 0,
-          lowestEmissions: 0,
-          lowestTransfers: 0,
           onTap: () {
             Navigator.of(context).push(
               MaterialPageRoute<void>(

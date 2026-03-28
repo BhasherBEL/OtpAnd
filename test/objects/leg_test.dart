@@ -258,6 +258,138 @@ void main() {
     });
   });
 
+  group('Leg.soonestNextDepartureLeg', () {
+    test('returns null when no otherDepartures', () {
+      final leg = makeLeg(
+        from: makePlace(departure: const DepartureArrival(scheduledTime: '2024-01-01T10:00:00')),
+      );
+      expect(leg.soonestNextDepartureLeg, isNull);
+    });
+
+    test('returns null when from.departure has no scheduledTime', () {
+      final other = makeLeg(
+        from: makePlace(departure: const DepartureArrival(scheduledTime: '2024-01-01T10:10:00')),
+      );
+      final leg = makeLeg(
+        from: makePlace(departure: null),
+        otherDepartures: [other],
+      );
+      expect(leg.soonestNextDepartureLeg, isNull);
+    });
+
+    test('returns the leg with the nearest next departure', () {
+      const dep10 = DepartureArrival(scheduledTime: '2024-01-01T10:00:00');
+      final other5 = makeLeg(
+        from: makePlace(departure: const DepartureArrival(scheduledTime: '2024-01-01T10:05:00')),
+      );
+      final other20 = makeLeg(
+        from: makePlace(departure: const DepartureArrival(scheduledTime: '2024-01-01T10:20:00')),
+      );
+      final leg = makeLeg(
+        from: makePlace(departure: dep10),
+        otherDepartures: [other20, other5],
+      );
+      expect(leg.soonestNextDepartureLeg, same(other5));
+    });
+
+    test('ignores departures at or before current departure', () {
+      const dep10 = DepartureArrival(scheduledTime: '2024-01-01T10:00:00');
+      final earlier = makeLeg(
+        from: makePlace(departure: const DepartureArrival(scheduledTime: '2024-01-01T09:50:00')),
+      );
+      final sameTime = makeLeg(from: makePlace(departure: dep10));
+      final leg = makeLeg(
+        from: makePlace(departure: dep10),
+        otherDepartures: [earlier, sameTime],
+      );
+      expect(leg.soonestNextDepartureLeg, isNull);
+    });
+
+    test('ignores other legs with no departure scheduledTime', () {
+      const dep10 = DepartureArrival(scheduledTime: '2024-01-01T10:00:00');
+      final noTime = makeLeg(from: makePlace(departure: null));
+      final leg = makeLeg(
+        from: makePlace(departure: dep10),
+        otherDepartures: [noTime],
+      );
+      expect(leg.soonestNextDepartureLeg, isNull);
+    });
+  });
+
+  group('Leg.soonestNextDepartureWaitSecs', () {
+    test('returns null when no otherDepartures', () {
+      final leg = makeLeg(
+        from: makePlace(departure: const DepartureArrival(scheduledTime: '2024-01-01T10:00:00')),
+      );
+      expect(leg.soonestNextDepartureWaitSecs, isNull);
+    });
+
+    test('returns null when from.departure has no scheduledTime', () {
+      final other = makeLeg(
+        from: makePlace(departure: const DepartureArrival(scheduledTime: '2024-01-01T10:10:00')),
+      );
+      final leg = makeLeg(
+        from: makePlace(departure: null),
+        otherDepartures: [other],
+      );
+      expect(leg.soonestNextDepartureWaitSecs, isNull);
+    });
+
+    test('returns seconds to nearest next departure', () {
+      const dep10 = DepartureArrival(scheduledTime: '2024-01-01T10:00:00');
+      final other5 = makeLeg(
+        from: makePlace(departure: const DepartureArrival(scheduledTime: '2024-01-01T10:05:00')),
+      );
+      final other20 = makeLeg(
+        from: makePlace(departure: const DepartureArrival(scheduledTime: '2024-01-01T10:20:00')),
+      );
+      final leg = makeLeg(
+        from: makePlace(departure: dep10),
+        otherDepartures: [other20, other5],
+      );
+      expect(leg.soonestNextDepartureWaitSecs, 5 * 60);
+    });
+
+    test('is consistent with soonestNextDepartureLeg', () {
+      const dep10 = DepartureArrival(scheduledTime: '2024-01-01T10:00:00');
+      final other5 = makeLeg(
+        from: makePlace(departure: const DepartureArrival(scheduledTime: '2024-01-01T10:05:00')),
+      );
+      final leg = makeLeg(
+        from: makePlace(departure: dep10),
+        otherDepartures: [other5],
+      );
+      final soonestLeg = leg.soonestNextDepartureLeg!;
+      final expectedWait = soonestLeg.from.departure!.scheduledDateTime!
+          .difference(leg.from.departure!.scheduledDateTime!)
+          .inSeconds;
+      expect(leg.soonestNextDepartureWaitSecs, expectedWait);
+    });
+
+    test('ignores departures that are not after current departure', () {
+      const dep10 = DepartureArrival(scheduledTime: '2024-01-01T10:00:00');
+      final earlier = makeLeg(
+        from: makePlace(departure: const DepartureArrival(scheduledTime: '2024-01-01T09:50:00')),
+      );
+      final same = makeLeg(from: makePlace(departure: dep10));
+      final leg = makeLeg(
+        from: makePlace(departure: dep10),
+        otherDepartures: [earlier, same],
+      );
+      expect(leg.soonestNextDepartureWaitSecs, isNull);
+    });
+
+    test('ignores other legs with no departure scheduledTime', () {
+      const dep10 = DepartureArrival(scheduledTime: '2024-01-01T10:00:00');
+      final noTime = makeLeg(from: makePlace(departure: null));
+      final leg = makeLeg(
+        from: makePlace(departure: dep10),
+        otherDepartures: [noTime],
+      );
+      expect(leg.soonestNextDepartureWaitSecs, isNull);
+    });
+  });
+
   group('Leg equality', () {
     test('same id → equal regardless of other fields', () {
       final l1 = makeLeg(id: 'leg-1', mode: 'WALK', distance: 100);

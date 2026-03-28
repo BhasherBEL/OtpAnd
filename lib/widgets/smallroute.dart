@@ -24,11 +24,23 @@ Color _nextFg(double r) {
   return _transferFg(r);
 }
 
+/// Effective minimum wait if a connection is missed: lesser of same-route
+/// next departure and any cross-route alternative in [leg.otherDepartures].
+int? _effectiveWaitSecs(TransferRisk risk, Leg leg) {
+  final sameRoute = risk.waitIfMissedSecs;
+  final crossRoute = leg.soonestNextDepartureWaitSecs;
+  if (sameRoute == null) return crossRoute;
+  if (crossRoute == null) return sameRoute;
+  return sameRoute < crossRoute ? sameRoute : crossRoute;
+}
+
 /// Mirrors the same predicate in plan_timeline.dart.
-bool _isTransferRisky(TransferRisk risk) =>
-    risk.reliability < 0.95 ||
-    risk.waitIfMissedSecs == null ||
-    risk.waitIfMissedSecs! > 20 * 60;
+bool _isTransferRisky(TransferRisk risk, Leg leg) {
+  final effectiveWait = _effectiveWaitSecs(risk, leg);
+  return risk.reliability < 0.95 ||
+      effectiveWait == null ||
+      effectiveWait > 20 * 60;
+}
 
 class SmallRoute extends StatelessWidget {
   final Plan plan;
@@ -126,7 +138,7 @@ class SmallRoute extends StatelessWidget {
 
   /// Whether any transit leg in this plan has a risky transfer.
   bool _hasRiskyTransfer() => plan.legs.any(
-      (l) => l.transitLeg && l.transferRisk != null && _isTransferRisky(l.transferRisk!));
+      (l) => l.transitLeg && l.transferRisk != null && _isTransferRisky(l.transferRisk!, l));
 
   /// Whether the plan contains at least one transfer between transit legs
   /// (i.e. two or more transit legs, possibly separated by a walk).
@@ -137,7 +149,7 @@ class SmallRoute extends StatelessWidget {
         .where((l) =>
             l.transitLeg &&
             l.transferRisk != null &&
-            _isTransferRisky(l.transferRisk!))
+            _isTransferRisky(l.transferRisk!, l))
         .toList();
     final pct = (planReliability * 100).round();
     final barColor = _transferFg(planReliability);
@@ -206,9 +218,17 @@ class SmallRoute extends StatelessWidget {
                 final risk = leg.transferRisk!;
                 final legPct = (risk.reliability * 100).round();
                 final legColor = _transferFg(risk.reliability);
-                final waitSecs = risk.waitIfMissedSecs;
+                final waitSecs = _effectiveWaitSecs(risk, leg);
                 final prev = prevTransit[leg];
                 final nextClockTime = _nextDepartureClockTime(risk, leg);
+                final sameRouteIsSoonest =
+                    leg.soonestNextDepartureWaitSecs == null ||
+                    (risk.waitIfMissedSecs != null &&
+                        risk.waitIfMissedSecs! <=
+                            leg.soonestNextDepartureWaitSecs!);
+                final nextLeg = sameRouteIsSoonest
+                    ? leg
+                    : (leg.soonestNextDepartureLeg ?? leg);
 
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
@@ -274,7 +294,7 @@ class SmallRoute extends StatelessWidget {
                                           fontSize: 12, color: Colors.grey)),
                                   const Text('next',
                                       style: TextStyle(fontSize: 12)),
-                                  _SmallRoutePill(leg: leg),
+                                  _SmallRoutePill(leg: nextLeg),
                                   Text('${displayTime(waitSecs)} later',
                                       style:
                                           const TextStyle(fontSize: 12)),
@@ -317,7 +337,7 @@ class SmallRoute extends StatelessWidget {
                                   color: legColor,
                                   fontSize: 15),
                             ),
-                            if (risk.nextReliability != null)
+                            if (risk.nextReliability != null && sameRouteIsSoonest)
                               Text(
                                 '${(risk.nextReliability! * 100).round()}%',
                                 style: TextStyle(
@@ -340,9 +360,10 @@ class SmallRoute extends StatelessWidget {
     );
   }
 
-  /// Clock time of the next departure after a missed connection.
+  /// Clock time of the next departure after a missed connection, using the
+  /// effective minimum wait (same-route or cross-route alternative).
   String? _nextDepartureClockTime(TransferRisk risk, Leg leg) {
-    final waitSecs = risk.waitIfMissedSecs;
+    final waitSecs = _effectiveWaitSecs(risk, leg);
     if (waitSecs == null) return null;
     final isoStr = leg.from.departure?.scheduledTime;
     if (isoStr == null) return null;
@@ -570,7 +591,7 @@ class SmallRoute extends StatelessWidget {
                                         }
                                         final risk = leg.transferRisk;
                                         final isRisky = risk != null &&
-                                            _isTransferRisky(risk);
+                                            _isTransferRisky(risk, leg);
                                         final chipBg = isRisky
                                             ? _transferFg(risk.reliability)
                                             : Colors.grey.withValues(alpha: 0.7);

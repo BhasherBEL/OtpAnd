@@ -64,7 +64,8 @@ class _OtherDeparturesWidgetState extends State<OtherDeparturesWidget> {
                       padding: const EdgeInsets.symmetric(vertical: 2),
                       child: LegDepartureWidget(
                         leg: e.value,
-                        isCurrent: e.value.id == widget.leg.id,
+                        isCurrent: e.value.from.departure?.scheduledTime ==
+                            widget.leg.from.departure?.scheduledTime,
                         isSlower: isSlower,
                       ));
                 }).toList(),

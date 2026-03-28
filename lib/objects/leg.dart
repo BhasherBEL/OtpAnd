@@ -356,6 +356,32 @@ class Leg {
     );
   }
 
+  /// The leg from [otherDepartures] whose scheduled departure is the soonest
+  /// strictly after this leg's own scheduled departure. Returns null if none.
+  Leg? get soonestNextDepartureLeg {
+    final currentDt = from.departure?.scheduledDateTime;
+    if (currentDt == null) return null;
+    Leg? best;
+    int? minWait;
+    for (final other in otherDepartures) {
+      final otherDt = other.from.departure?.scheduledDateTime;
+      if (otherDt == null) continue;
+      final diff = otherDt.difference(currentDt).inSeconds;
+      if (diff > 0 && (minWait == null || diff < minWait)) {
+        minWait = diff;
+        best = other;
+      }
+    }
+    return best;
+  }
+
+  /// Wait in seconds to the soonest departure in [otherDepartures] that departs
+  /// strictly after this leg's scheduled departure. Returns null if none.
+  int? get soonestNextDepartureWaitSecs => soonestNextDepartureLeg
+      ?.from.departure?.scheduledDateTime
+      ?.difference(from.departure!.scheduledDateTime!)
+      .inSeconds;
+
   int? get frequency {
     if (from.departure == null ||
         from.departure!.scheduledDateTime == null ||
@@ -383,6 +409,7 @@ class Leg {
       currentFreqency = diff;
     }
 
+    if (currentFreqency == 0) return null;
     return currentFreqency;
   }
 

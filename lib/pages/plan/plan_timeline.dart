@@ -276,11 +276,23 @@ String _legLabel(Leg leg) {
   return m[0] + m.substring(1).toLowerCase();
 }
 
-/// Computes the clock time of the next departure after a missed connection.
+/// Returns the effective minimum wait in seconds if a connection is missed:
+/// the lesser of the same-route next departure and any cross-route alternative
+/// in [leg.otherDepartures] that departs after this leg.
+int? _effectiveWaitSecs(TransferRisk risk, Leg leg) {
+  final sameRoute = risk.waitIfMissedSecs;
+  final crossRoute = leg.soonestNextDepartureWaitSecs;
+  if (sameRoute == null) return crossRoute;
+  if (crossRoute == null) return sameRoute;
+  return sameRoute < crossRoute ? sameRoute : crossRoute;
+}
+
+/// Computes the clock time of the next departure after a missed connection,
+/// using the effective minimum wait (same-route or cross-route alternative).
 /// Returns null when there is no next departure or the scheduled time is
 /// unavailable.
 String? _nextDepartureTime(TransferRisk risk, Leg leg) {
-  final waitSecs = risk.waitIfMissedSecs;
+  final waitSecs = _effectiveWaitSecs(risk, leg);
   if (waitSecs == null) return null;
   final isoStr = leg.from.departure?.scheduledTime;
   if (isoStr == null) return null;
@@ -300,10 +312,12 @@ const int _tightTransferSecs = 5 * 60;
 /// The second condition matters even for high-reliability connections: a 95 %
 /// chance is fine in isolation, but if the fallback is 45 min away the stakes
 /// are high enough to show the score.
-bool _isTransferRisky(TransferRisk risk) =>
-    risk.reliability < 0.95 ||
-    risk.waitIfMissedSecs == null ||
-    risk.waitIfMissedSecs! > 20 * 60;
+bool _isTransferRisky(TransferRisk risk, Leg leg) {
+  final effectiveWait = _effectiveWaitSecs(risk, leg);
+  return risk.reliability < 0.95 ||
+      effectiveWait == null ||
+      effectiveWait > 20 * 60;
+}
 
 /// Inline transfer time indicator.
 /// - Gray italic text: no risk data + ≥ 5 min gap, or backend says not risky.
@@ -327,7 +341,7 @@ Widget _buildTransferBadge(
   }
 
   // Backend data present but not risky: plain text.
-  if (risk != null && !_isTransferRisky(risk)) {
+  if (risk != null && leg != null && !_isTransferRisky(risk, leg)) {
     return Text(
       timeStr,
       style: TextStyle(
@@ -367,8 +381,13 @@ Widget _buildTransferBadge(
 
   final fg = _transferFg(risk.reliability);
   final bg = _transferBg(risk.reliability);
-  final waitSecs = risk.waitIfMissedSecs;
-  final nextR = risk.nextReliability;
+  final waitSecs = leg != null ? _effectiveWaitSecs(risk, leg) : risk.waitIfMissedSecs;
+  // Only show same-route next-reliability when same-route is the soonest option.
+  final sameRouteIsSoonest = leg == null ||
+      leg.soonestNextDepartureWaitSecs == null ||
+      (risk.waitIfMissedSecs != null &&
+          risk.waitIfMissedSecs! <= leg.soonestNextDepartureWaitSecs!);
+  final nextR = sameRouteIsSoonest ? risk.nextReliability : null;
 
   // Build the top (current) row — always present in the risky branch.
   Widget topRow = Row(
@@ -456,8 +475,13 @@ void _showTransferRiskSheet(
     BuildContext context, TransferRisk risk, Leg leg, Leg? previousLeg) {
   final pct = (risk.reliability * 100).round();
   final barColor = _transferFg(risk.reliability);
-  final waitSecs = risk.waitIfMissedSecs;
+  final waitSecs = _effectiveWaitSecs(risk, leg);
   final nextClockTime = _nextDepartureTime(risk, leg);
+  final sameRouteIsSoonest = leg.soonestNextDepartureWaitSecs == null ||
+      (risk.waitIfMissedSecs != null &&
+          risk.waitIfMissedSecs! <= leg.soonestNextDepartureWaitSecs!);
+  // Show the route of whichever departure is actually soonest.
+  final nextLeg = sameRouteIsSoonest ? leg : (leg.soonestNextDepartureLeg ?? leg);
 
   showModalBottomSheet<void>(
     context: context,
@@ -554,7 +578,7 @@ void _showTransferRiskSheet(
                   const Text('If missed:',
                       style: TextStyle(fontSize: 13, color: Colors.grey)),
                   const Text('next', style: TextStyle(fontSize: 13)),
-                  _RoutePill(leg: leg),
+                  _RoutePill(leg: nextLeg),
                   Text('${displayTime(waitSecs)} later',
                       style: const TextStyle(fontSize: 13)),
                   if (nextClockTime != null)
@@ -562,7 +586,7 @@ void _showTransferRiskSheet(
                         style: const TextStyle(fontSize: 13, color: Colors.grey)),
                 ],
               ),
-              if (risk.nextReliability != null) ...[
+              if (risk.nextReliability != null && sameRouteIsSoonest) ...[
                 const SizedBox(height: 10),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.end,

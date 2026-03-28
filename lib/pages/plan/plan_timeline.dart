@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:timelines_plus/timelines_plus.dart';
+import 'package:otpand/objects/leg.dart';
 import 'package:otpand/objects/plan.dart';
 import 'package:otpand/utils.dart';
 import 'package:otpand/pages/trip.dart';
@@ -84,14 +85,7 @@ class PlanTimeline extends StatelessWidget {
                             ),
                     ),
                     if (hasTransfer)
-                      Text(
-                        displayTime(transferTime),
-                        style: TextStyle(
-                          color: Colors.grey.shade700,
-                          fontStyle: FontStyle.italic,
-                          fontSize: 12,
-                        ),
-                      ),
+                      _buildTransferBadge(context, transferTime, leg, previousLeg),
                     const SizedBox(width: 8),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
@@ -238,3 +232,314 @@ class PlanTimeline extends StatelessWidget {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Transfer risk helpers — used by PlanTimeline
+// ---------------------------------------------------------------------------
+
+/// Color tier for a given reliability value.
+/// 90–95 %: amber  (caution)
+/// 70–90 %: orange (warning)
+/// 50–70 %: deep-orange (serious)
+/// < 50 %:  red    (critical)
+Color _transferFg(double r) {
+  if (r >= 0.9) return Colors.amber.shade800;
+  if (r >= 0.7) return Colors.orange.shade800;
+  if (r >= 0.5) return Colors.deepOrange.shade800;
+  return Colors.red.shade800;
+}
+
+Color _transferBg(double r) {
+  if (r >= 0.9) return Colors.amber.shade50;
+  if (r >= 0.7) return Colors.orange.shade50;
+  if (r >= 0.5) return Colors.deepOrange.shade50;
+  return Colors.red.shade50;
+}
+
+/// Human-readable label for a transit leg: short name when available,
+/// otherwise the mode capitalized (e.g. "Bus", "Tram").
+String _legLabel(Leg leg) {
+  final short = leg.route?.shortName;
+  if (short != null && short.isNotEmpty) return short;
+  final m = leg.mode;
+  return m[0] + m.substring(1).toLowerCase();
+}
+
+/// Computes the clock time of the next departure after a missed connection.
+/// Returns null when there is no next departure or the scheduled time is
+/// unavailable.
+String? _nextDepartureTime(TransferRisk risk, Leg leg) {
+  final waitSecs = risk.waitIfMissedSecs;
+  if (waitSecs == null) return null;
+  final isoStr = leg.from.departure?.scheduledTime;
+  if (isoStr == null) return null;
+  final dt = DateTime.tryParse(isoStr);
+  if (dt == null) return null;
+  return formatTime(dt.add(Duration(seconds: waitSecs)).toIso8601String());
+}
+
+/// Transfers under this threshold are flagged even when the backend provides
+/// no reliability data.
+const int _tightTransferSecs = 5 * 60;
+
+/// A transfer is worth flagging when either:
+/// - reliability < 90 %, OR
+/// - missing it means a wait > 20 min or no more service today.
+///
+/// The second condition matters even for high-reliability connections: a 95 %
+/// chance is fine in isolation, but if the fallback is 45 min away the stakes
+/// are high enough to show the score.
+bool _isTransferRisky(TransferRisk risk) =>
+    risk.reliability < 0.95 ||
+    risk.waitIfMissedSecs == null ||
+    risk.waitIfMissedSecs! > 20 * 60;
+
+/// Inline transfer time indicator.
+/// - Gray italic text: no risk data + ≥ 5 min gap, or backend says not risky.
+/// - Plain amber chip (⚠ time): tight gap but no backend data.
+/// - Colored chip (⚠ NN%  time): backend reports a risky transfer.
+Widget _buildTransferBadge(
+    BuildContext context, int transferSecs, Leg? leg, Leg? previousLeg) {
+  final risk = leg?.transferRisk;
+  final timeStr = displayTime(transferSecs);
+
+  // No backend data and comfortable gap: plain text.
+  if (risk == null && transferSecs >= _tightTransferSecs) {
+    return Text(
+      timeStr,
+      style: TextStyle(
+        color: Colors.grey.shade700,
+        fontStyle: FontStyle.italic,
+        fontSize: 12,
+      ),
+    );
+  }
+
+  // Backend data present but not risky: plain text.
+  if (risk != null && !_isTransferRisky(risk)) {
+    return Text(
+      timeStr,
+      style: TextStyle(
+        color: Colors.grey.shade700,
+        fontStyle: FontStyle.italic,
+        fontSize: 12,
+      ),
+    );
+  }
+
+  // No backend data but transfer is tight: amber chip, time only, no tap.
+  if (risk == null) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.amber.shade50,
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(
+            color: Colors.amber.shade800.withValues(alpha: 0.4), width: 0.5),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.warning_amber_rounded, size: 11, color: Colors.amber.shade800),
+          const SizedBox(width: 3),
+          Text(
+            timeStr,
+            style: TextStyle(
+                fontSize: 12,
+                color: Colors.amber.shade800,
+                fontWeight: FontWeight.w500),
+          ),
+        ],
+      ),
+    );
+  }
+
+  final fg = _transferFg(risk.reliability);
+  final bg = _transferBg(risk.reliability);
+
+  return GestureDetector(
+    onTap: () => _showTransferRiskSheet(context, risk, leg!, previousLeg),
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: fg.withValues(alpha: 0.4), width: 0.5),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.warning_amber_rounded, size: 11, color: fg),
+          const SizedBox(width: 3),
+          Text(
+            '${(risk.reliability * 100).round()}%',
+            style: TextStyle(fontSize: 12, color: fg, fontWeight: FontWeight.bold),
+          ),
+          Text(
+            '  $timeStr',
+            style: TextStyle(fontSize: 11, color: fg.withValues(alpha: 0.8)),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+/// Modal bottom sheet with full connection-risk detail.
+void _showTransferRiskSheet(
+    BuildContext context, TransferRisk risk, Leg leg, Leg? previousLeg) {
+  final pct = (risk.reliability * 100).round();
+  final barColor = _transferFg(risk.reliability);
+  final waitSecs = risk.waitIfMissedSecs;
+  final departingLabel = _legLabel(leg);
+  final nextClockTime = _nextDepartureTime(risk, leg);
+
+  showModalBottomSheet<void>(
+    context: context,
+    builder: (_) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Header ───────────────────────────────────────────────────
+            Text(
+              'Transfer at ${leg.from.name}',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const SizedBox(height: 12),
+
+            // ── From → To with scheduled times ───────────────────────────
+            if (previousLeg != null) ...[
+              Row(
+                children: [
+                  _RoutePill(leg: previousLeg),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8),
+                    child: Icon(Icons.arrow_forward, size: 14, color: Colors.grey),
+                  ),
+                  _RoutePill(leg: leg),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Text(
+                    'arrives ${formatTime(previousLeg.to.arrival?.scheduledTime) ?? '??:??'}',
+                    style:
+                        const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                  const Text(
+                    '  ·  ',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                  Text(
+                    'departs ${formatTime(leg.from.departure?.scheduledTime) ?? '??:??'}',
+                    style:
+                        const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
+
+            // ── Reliability ───────────────────────────────────────────────
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  '$pct%',
+                  style: TextStyle(
+                    fontSize: 36,
+                    fontWeight: FontWeight.bold,
+                    color: barColor,
+                    height: 1,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 4),
+                  child: Text(
+                    'chance of making this connection',
+                    style: TextStyle(color: Colors.grey, fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            LinearProgressIndicator(
+              value: risk.reliability,
+              color: barColor,
+              backgroundColor: Colors.grey.shade200,
+              minHeight: 6,
+              borderRadius: BorderRadius.circular(3),
+            ),
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 8),
+
+            // ── Fallback ──────────────────────────────────────────────────
+            if (waitSecs != null)
+              RichText(
+                text: TextSpan(
+                  style: const TextStyle(fontSize: 13, color: Colors.black87),
+                  children: [
+                    const TextSpan(
+                        text: 'If missed: ',
+                        style: TextStyle(color: Colors.grey)),
+                    TextSpan(text: 'next $departingLabel in ${displayTime(waitSecs)}'),
+                    if (nextClockTime != null)
+                      TextSpan(
+                        text: '  (at $nextClockTime)',
+                        style: const TextStyle(color: Colors.grey),
+                      ),
+                  ],
+                ),
+              )
+            else
+              RichText(
+                text: TextSpan(
+                  style: const TextStyle(fontSize: 13),
+                  children: [
+                    const TextSpan(
+                        text: 'If missed: ',
+                        style: TextStyle(color: Colors.grey)),
+                    TextSpan(
+                      text: 'no more $departingLabel departures today',
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+/// Small colored pill showing the route short name (or mode) for a leg.
+class _RoutePill extends StatelessWidget {
+  final Leg leg;
+  const _RoutePill({required this.leg});
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = leg.color;
+    final fg = ThemeData.estimateBrightnessForColor(bg) == Brightness.dark
+        ? Colors.white
+        : Colors.black87;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        _legLabel(leg),
+        style: TextStyle(
+            fontSize: 13, fontWeight: FontWeight.bold, color: fg),
+      ),
+    );
+  }
+}

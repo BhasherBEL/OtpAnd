@@ -32,7 +32,7 @@ class DatabaseHelper {
     await db.execute('''
       CREATE TABLE planned_plans (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        raw TEXT NOT NULL,
+        raw TEXT NOT NULL
       )
     ''');
     await db.execute('''

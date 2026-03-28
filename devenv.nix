@@ -1,15 +1,14 @@
-{ pkgs, ... }:
-
+{ ... }:
 {
-
   android = {
     enable = true;
     flutter.enable = true;
-    buildTools.version = [ "33.0.1" ];
+    buildTools.version = [ "35.0.0" ];
     platforms.version = [
       "33"
       "34"
       "35"
+      "36"
     ];
   };
 }

@@ -5,6 +5,26 @@ import 'package:otpand/objects/leg.dart';
 import 'package:otpand/objects/plan.dart';
 import 'package:otpand/utils.dart';
 
+Color _transferFg(double r) {
+  if (r >= 0.9) return Colors.amber.shade800;
+  if (r >= 0.7) return Colors.orange.shade800;
+  if (r >= 0.5) return Colors.deepOrange.shade800;
+  return Colors.red.shade800;
+}
+
+Color _transferBg(double r) {
+  if (r >= 0.9) return Colors.amber.shade50;
+  if (r >= 0.7) return Colors.orange.shade50;
+  if (r >= 0.5) return Colors.deepOrange.shade50;
+  return Colors.red.shade50;
+}
+
+/// Mirrors the same predicate in plan_timeline.dart.
+bool _isTransferRisky(TransferRisk risk) =>
+    risk.reliability < 0.95 ||
+    risk.waitIfMissedSecs == null ||
+    risk.waitIfMissedSecs! > 20 * 60;
+
 class SmallRoute extends StatelessWidget {
   final Plan plan;
   final VoidCallback? onTap;
@@ -83,6 +103,241 @@ class SmallRoute extends StatelessWidget {
         .where((leg) =>
             leg.mode == 'WALK' || leg.mode == 'BICYCLE' || leg.mode == 'CAR')
         .fold<int>(0, (sum, leg) => sum + leg.distance.round());
+  }
+
+  /// Frontend approximation of joint journey reliability: product of per-leg
+  /// reliabilities. Returns null when no leg carries risk data.
+  ///
+  /// TODO(backend): maas-rs should compute and expose the true joint
+  /// reliability so the frontend does not have to approximate it.
+  double? _planReliability() {
+    final risks = plan.legs
+        .where((l) => l.transitLeg && l.transferRisk != null)
+        .map((l) => l.transferRisk!.reliability)
+        .toList();
+    if (risks.isEmpty) return null;
+    return risks.fold<double>(1.0, (acc, r) => acc * r);
+  }
+
+  /// Whether any transit leg in this plan has a risky transfer.
+  bool _hasRiskyTransfer() => plan.legs.any(
+      (l) => l.transitLeg && l.transferRisk != null && _isTransferRisky(l.transferRisk!));
+
+  /// Whether the plan contains at least one transfer between transit legs
+  /// (i.e. two or more transit legs, possibly separated by a walk).
+  bool _hasTransfers() => plan.legs.where((l) => l.transitLeg).length > 1;
+
+  void _showPlanRiskSheet(BuildContext context, double planReliability) {
+    final riskyLegs = plan.legs
+        .where((l) =>
+            l.transitLeg &&
+            l.transferRisk != null &&
+            _isTransferRisky(l.transferRisk!))
+        .toList();
+    final pct = (planReliability * 100).round();
+    final barColor = _transferFg(planReliability);
+
+    // Build a map from each transit leg to the previous transit leg so we can
+    // show "Route A → Route B" in each row.
+    final Map<Leg, Leg?> prevTransit = {};
+    Leg? lastTransit;
+    for (final l in plan.legs) {
+      if (l.transitLeg) {
+        prevTransit[l] = lastTransit;
+        lastTransit = l;
+      }
+    }
+
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (_) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Header ─────────────────────────────────────────────────
+              const Text(
+                'Journey reliability',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '$pct%',
+                    style: TextStyle(
+                      fontSize: 36,
+                      fontWeight: FontWeight.bold,
+                      color: barColor,
+                      height: 1,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 4),
+                    child: Text(
+                      'chance of completing as planned',
+                      style: TextStyle(color: Colors.grey, fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              LinearProgressIndicator(
+                value: planReliability,
+                color: barColor,
+                backgroundColor: Colors.grey.shade200,
+                minHeight: 6,
+                borderRadius: BorderRadius.circular(3),
+              ),
+              const SizedBox(height: 16),
+              const Divider(),
+
+              // ── Per-transfer rows ───────────────────────────────────────
+              ...riskyLegs.map((leg) {
+                final risk = leg.transferRisk!;
+                final legPct = (risk.reliability * 100).round();
+                final legColor = _transferFg(risk.reliability);
+                final waitSecs = risk.waitIfMissedSecs;
+                final prev = prevTransit[leg];
+                final departingLabel = _routeLabel(leg);
+                final nextClockTime = _nextDepartureClockTime(risk, leg);
+
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Route A → Route B
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // "Route A → Route B  at Stop"
+                            Row(
+                              children: [
+                                if (prev != null) ...[
+                                  _SmallRoutePill(leg: prev),
+                                  const Padding(
+                                    padding:
+                                        EdgeInsets.symmetric(horizontal: 4),
+                                    child: Icon(Icons.arrow_forward,
+                                        size: 12, color: Colors.grey),
+                                  ),
+                                ],
+                                _SmallRoutePill(leg: leg),
+                                const SizedBox(width: 6),
+                                Flexible(
+                                  child: Text(
+                                    'at ${leg.from.name}',
+                                    style: const TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 3),
+                            // "arrives HH:MM  ·  departs HH:MM"
+                            if (prev?.to.arrival?.scheduledTime != null ||
+                                leg.from.departure?.scheduledTime != null)
+                              Text(
+                                [
+                                  if (prev?.to.arrival?.scheduledTime != null)
+                                    'arrives ${formatTime(prev!.to.arrival!.scheduledTime)}',
+                                  if (leg.from.departure?.scheduledTime !=
+                                      null)
+                                    'departs ${formatTime(leg.from.departure!.scheduledTime)}',
+                                ].join('  ·  '),
+                                style: const TextStyle(
+                                    fontSize: 11, color: Colors.grey),
+                              ),
+                            const SizedBox(height: 3),
+                            // "If missed: next Route in Xm (at HH:MM)"
+                            if (waitSecs != null)
+                              RichText(
+                                text: TextSpan(
+                                  style: const TextStyle(
+                                      fontSize: 12, color: Colors.black87),
+                                  children: [
+                                    const TextSpan(
+                                        text: 'If missed: ',
+                                        style: TextStyle(color: Colors.grey)),
+                                    TextSpan(
+                                        text:
+                                            'next $departingLabel in ${displayTime(waitSecs)}'),
+                                    if (nextClockTime != null)
+                                      TextSpan(
+                                        text: '  (at $nextClockTime)',
+                                        style: const TextStyle(
+                                            color: Colors.grey),
+                                      ),
+                                  ],
+                                ),
+                              )
+                            else
+                              RichText(
+                                text: TextSpan(
+                                  style: const TextStyle(fontSize: 12),
+                                  children: [
+                                    const TextSpan(
+                                        text: 'If missed: ',
+                                        style: TextStyle(color: Colors.grey)),
+                                    TextSpan(
+                                      text:
+                                          'no more $departingLabel departures today',
+                                      style:
+                                          const TextStyle(color: Colors.red),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      // Reliability %
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8, top: 2),
+                        child: Text(
+                          '$legPct%',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: legColor,
+                              fontSize: 15),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Short label for a transit leg used in the risk sheet.
+  String _routeLabel(Leg leg) {
+    final short = leg.route?.shortName;
+    if (short != null && short.isNotEmpty) return short;
+    final m = leg.mode;
+    return m[0] + m.substring(1).toLowerCase();
+  }
+
+  /// Clock time of the next departure after a missed connection.
+  String? _nextDepartureClockTime(TransferRisk risk, Leg leg) {
+    final waitSecs = risk.waitIfMissedSecs;
+    if (waitSecs == null) return null;
+    final isoStr = leg.from.departure?.scheduledTime;
+    if (isoStr == null) return null;
+    final dt = DateTime.tryParse(isoStr);
+    if (dt == null) return null;
+    return formatTime(dt.add(Duration(seconds: waitSecs)).toIso8601String());
   }
 
   @override
@@ -302,6 +557,12 @@ class SmallRoute extends StatelessWidget {
                                                 100) {
                                           leftOffset = -27;
                                         }
+                                        final risk = leg.transferRisk;
+                                        final isRisky = risk != null &&
+                                            _isTransferRisky(risk);
+                                        final chipBg = isRisky
+                                            ? _transferFg(risk.reliability)
+                                            : Colors.grey.withValues(alpha: 0.7);
                                         return Stack(
                                           clipBehavior: Clip.none,
                                           children: [
@@ -316,8 +577,7 @@ class SmallRoute extends StatelessWidget {
                                                       horizontal: 6,
                                                       vertical: 2),
                                                   decoration: BoxDecoration(
-                                                    color: Colors.grey
-                                                        .withOpacity(0.7),
+                                                    color: chipBg,
                                                     borderRadius:
                                                         BorderRadius.circular(
                                                             8),
@@ -430,72 +690,142 @@ class SmallRoute extends StatelessWidget {
                   );
                 },
               ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    margin: EdgeInsets.only(left: 8),
-                    padding: EdgeInsets.symmetric(horizontal: 4),
-                    decoration: BoxDecoration(
-                      color: isShortest ? Colors.blue.shade100 : null,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.timelapse, color: Colors.blue.shade500),
-                        const SizedBox(width: 2),
-                        Text(
-                          duration,
-                          style: TextStyle(
-                            color: Colors.blue.shade800,
+              Builder(
+                builder: (context) {
+                  final planReliability = _planReliability();
+                  final showRisk = _hasRiskyTransfer() ||
+                      (planReliability != null && planReliability < 0.95);
+                  final showUnknown =
+                      planReliability == null && _hasTransfers();
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        margin: const EdgeInsets.only(left: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        decoration: BoxDecoration(
+                          color: isShortest ? Colors.blue.shade100 : null,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.timelapse, color: Colors.blue.shade500),
+                            const SizedBox(width: 2),
+                            Text(
+                              duration,
+                              style: TextStyle(
+                                color: Colors.blue.shade800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        decoration: BoxDecoration(
+                          color: isLowestWalk ? Colors.purple.shade100 : null,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.directions_walk,
+                                color: Colors.purple.shade500),
+                            const SizedBox(width: 2),
+                            Text(
+                              displayDistanceShort(walkingDistance),
+                              style: TextStyle(
+                                color: Colors.purple.shade800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        margin: (showRisk && planReliability != null) || showUnknown
+                            ? EdgeInsets.zero
+                            : const EdgeInsets.only(right: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        decoration: BoxDecoration(
+                          color: isEcofriendliest
+                              ? Colors.green.shade100
+                              : null,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.eco, color: ecoColor),
+                            const SizedBox(width: 2),
+                            Text(
+                              '${round(plan.getEmissions(), 1)}kg CO₂e',
+                              style: TextStyle(
+                                color: Colors.green.shade800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (showRisk && planReliability != null) ...[
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: () =>
+                              _showPlanRiskSheet(context, planReliability),
+                          child: Container(
+                            margin: const EdgeInsets.only(right: 8),
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 4),
+                            decoration: BoxDecoration(
+                              color: _transferBg(planReliability),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                  color: _transferFg(planReliability)
+                                      .withValues(alpha: 0.4),
+                                  width: 0.5),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.shield_outlined,
+                                    color: _transferFg(planReliability),
+                                    size: 16),
+                                const SizedBox(width: 2),
+                                Text(
+                                  '${(planReliability * 100).round()}%',
+                                  style: TextStyle(
+                                      color: _transferFg(planReliability)),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ] else if (showUnknown) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          margin: const EdgeInsets.only(right: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(
+                                color: Colors.grey.shade400, width: 0.5),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.shield_outlined,
+                                  color: Colors.grey.shade600, size: 16),
+                              const SizedBox(width: 2),
+                              Text(
+                                '?',
+                                style:
+                                    TextStyle(color: Colors.grey.shade600),
+                              ),
+                            ],
                           ),
                         ),
                       ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 4),
-                    decoration: BoxDecoration(
-                      color: isLowestWalk ? Colors.purple.shade100 : null,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.directions_walk,
-                            color: Colors.purple.shade500),
-                        const SizedBox(width: 2),
-                        Text(
-                          displayDistanceShort(walkingDistance),
-                          style: TextStyle(
-                            color: Colors.purple.shade800,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    margin: EdgeInsets.only(right: 8),
-                    padding: EdgeInsets.symmetric(horizontal: 4),
-                    decoration: BoxDecoration(
-                      color: isEcofriendliest ? Colors.green.shade100 : null,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.eco, color: ecoColor),
-                        const SizedBox(width: 2),
-                        Text(
-                          '${round(plan.getEmissions(), 1)}kg CO₂e',
-                          style: TextStyle(
-                            color: Colors.green.shade800,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                    ],
+                  );
+                },
               )
             ],
           ),
@@ -549,6 +879,36 @@ class _LegTile extends StatelessWidget {
             style: TextStyle(fontWeight: FontWeight.w600, color: textColor),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Small colored route pill used in the plan risk sheet.
+class _SmallRoutePill extends StatelessWidget {
+  final Leg leg;
+  const _SmallRoutePill({required this.leg});
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = leg.color;
+    final fg = ThemeData.estimateBrightnessForColor(bg) == Brightness.dark
+        ? Colors.white
+        : Colors.black87;
+    final short = leg.route?.shortName;
+    final label = short != null && short.isNotEmpty
+        ? short
+        : leg.mode[0] + leg.mode.substring(1).toLowerCase();
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+            fontSize: 12, fontWeight: FontWeight.bold, color: fg),
       ),
     );
   }

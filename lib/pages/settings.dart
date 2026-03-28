@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:device_calendar/device_calendar.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator_android/geolocator_android.dart';
-import 'package:otpand/api/gtfs.dart';
+import 'package:otpand/api/gtfs_maas.dart';
 import 'package:otpand/db/helper.dart';
 import 'package:otpand/objects/config.dart';
 import 'package:otpand/pages/otpconfig.dart';
@@ -187,8 +187,8 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           ListTile(
             leading: const Icon(Icons.settings_applications),
-            title: const Text('OTP Configuration'),
-            subtitle: const Text('Configure your OpenTripPlanner instance'),
+            title: const Text('maas-rs Configuration'),
+            subtitle: const Text('Configure and test the routing backend connection'),
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
@@ -222,7 +222,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 );
               }
 
-              await checkAndSyncGtfsData(force: true);
+              await checkAndSyncMaasGtfsData(force: true);
 
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(

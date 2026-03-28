@@ -10,6 +10,34 @@ import 'package:otpand/objects/trip.dart';
 import 'package:otpand/utils.dart';
 import 'package:otpand/utils/maps.dart';
 
+class TransferRisk {
+  final double reliability;       // 0.0–1.0
+  final int scheduledDeparture;   // seconds since midnight
+  final int? nextDeparture;       // seconds since midnight; null = no more trips
+
+  const TransferRisk({
+    required this.reliability,
+    required this.scheduledDeparture,
+    this.nextDeparture,
+  });
+
+  /// Seconds until next departure if this connection is missed.
+  /// Returns null when there is no next departure or the computed gap is
+  /// non-positive (data anomaly — e.g. negative delay pushed nextDeparture
+  /// before scheduledDeparture).
+  int? get waitIfMissedSecs {
+    if (nextDeparture == null) return null;
+    final wait = nextDeparture! - scheduledDeparture;
+    return wait > 0 ? wait : null;
+  }
+
+  factory TransferRisk.fromJson(Map<String, dynamic> json) => TransferRisk(
+        reliability: (json['reliability'] as num).toDouble(),
+        scheduledDeparture: json['scheduledDeparture'] as int,
+        nextDeparture: json['nextDeparture'] as int?,
+      );
+}
+
 class Leg {
   final String? id;
   final String mode;
@@ -28,6 +56,13 @@ class Leg {
   final String? serviceDate;
   final String? geometry;
 
+  /// Ordered coordinate points for rendering the leg on the map.
+  /// Populated from maas-rs `geometry { lat lon }` response.
+  /// Takes precedence over the OTP-style encoded [geometry] string.
+  final List<LatLng>? geometryPoints;
+
+  final TransferRisk? transferRisk;
+
   Leg({
     required this.id,
     required this.mode,
@@ -45,26 +80,28 @@ class Leg {
     this.trip,
     this.serviceDate,
     this.geometry,
+    this.geometryPoints,
+    this.transferRisk,
   });
 
   Color get color {
     if (route?.color != null) return route!.color!;
     if (mode == 'BUS') return Colors.amber;
-    if (mode == 'RAIL' || mode == 'TRAIN') {
-      return Colors.teal;
-    }
+    if (mode == 'RAIL' || mode == 'TRAIN') return Colors.teal;
+    if (mode == 'TRAM') return Colors.purple;
+    if (mode == 'SUBWAY' || mode == 'METRO') return Colors.deepOrange;
+    if (mode == 'FERRY') return Colors.lightBlue;
     return Colors.grey.shade400;
   }
 
   Color get lineColor {
     if (route?.color != null) return route!.color!;
-    if (mode == 'WALK' || mode == 'CAR' || mode == 'BICYCLE') {
-      return Colors.black;
-    }
+    if (mode == 'WALK' || mode == 'CAR' || mode == 'BICYCLE') return Colors.black;
     if (mode == 'BUS') return Colors.amber;
-    if (mode == 'RAIL' || mode == 'TRAIN') {
-      return Colors.teal;
-    }
+    if (mode == 'RAIL' || mode == 'TRAIN') return Colors.teal;
+    if (mode == 'TRAM') return Colors.purple;
+    if (mode == 'SUBWAY' || mode == 'METRO') return Colors.deepOrange;
+    if (mode == 'FERRY') return Colors.lightBlue;
     return Colors.grey.shade400;
   }
 
@@ -114,15 +151,22 @@ class Leg {
   }
 
   Polyline get polyline {
-    if (geometry == null) {
+    final List<LatLng>? points;
+    if (geometryPoints != null && geometryPoints!.length >= 2) {
+      points = geometryPoints;
+    } else if (geometry != null) {
+      points = decodePolyline(geometry!).unpackPolyline();
+    } else {
+      points = null;
+    }
+
+    if (points == null) {
       return Polyline(
         points: [LatLng(from.lat, from.lon), LatLng(to.lat, to.lon)],
         color: lineColor,
         strokeWidth: 8.0,
       );
     }
-
-    final points = decodePolyline(geometry!).unpackPolyline();
 
     return Polyline(
       points: points,
@@ -132,31 +176,36 @@ class Leg {
   }
 
   LatLng get midPoint {
-    final distance = Distance();
+    final dist = Distance();
 
-    if (geometry == null) {
+    final List<LatLng>? points;
+    if (geometryPoints != null && geometryPoints!.length >= 2) {
+      points = geometryPoints;
+    } else if (geometry != null) {
+      points = decodePolyline(geometry!).unpackPolyline();
+    } else {
+      points = null;
+    }
+
+    if (points == null) {
       return LatLng((from.lat + to.lat) / 2, (from.lon + to.lon) / 2);
     }
 
-    final points = decodePolyline(geometry!).unpackPolyline();
     double totalDistance = 0.0;
-
     for (int i = 0; i < points.length - 1; i++) {
-      totalDistance += distance(points[i], points[i + 1]);
+      totalDistance += dist(points[i], points[i + 1]);
     }
 
     double middleDistance = totalDistance / 2;
     double currentDistance = 0.0;
 
     for (int i = 0; i < points.length - 1; i++) {
-      final newDist = distance(points[i], points[i + 1]);
+      final newDist = dist(points[i], points[i + 1]);
       if (currentDistance + newDist < middleDistance) {
         currentDistance += newDist;
         continue;
       }
-
       final ratio = (middleDistance - currentDistance) / newDist;
-
       return LatLng(
         points[i].latitude +
             ratio * (points[i + 1].latitude - points[i].latitude),

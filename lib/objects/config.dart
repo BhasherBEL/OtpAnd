@@ -6,6 +6,7 @@ enum ConfigKey {
   otpUsername('otp_username', String, ''),
   otpPassword('otp_password', String, ''),
   otpCountry('otp_country', String, 'be'),
+  maasUrl('maas_url', String, 'http://192.168.0.211:3000'),
   sortStopsByDistance('sort_stops_by_distance', bool, false),
   useContactsLocation('use_contacts_location', bool, false),
   useCalendarsLocation('use_calendars_location', bool, false),
@@ -82,6 +83,7 @@ class Config {
   String get otpUsername => get<String>(ConfigKey.otpUsername);
   String get otpPassword => get<String>(ConfigKey.otpPassword);
   String get otpCountry => get<String>(ConfigKey.otpCountry);
+  String get maasUrl => get<String>(ConfigKey.maasUrl);
   bool get sortStopsByDistance => get<bool>(ConfigKey.sortStopsByDistance);
   bool get useContactsLocation => get<bool>(ConfigKey.useContactsLocation);
   bool get useCalendarsLocation => get<bool>(ConfigKey.useCalendarsLocation);

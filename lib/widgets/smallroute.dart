@@ -19,6 +19,11 @@ Color _transferBg(double r) {
   return Colors.red.shade50;
 }
 
+Color _nextFg(double r) {
+  if (r >= 0.9) return Colors.green.shade700;
+  return _transferFg(r);
+}
+
 /// Mirrors the same predicate in plan_timeline.dart.
 bool _isTransferRisky(TransferRisk risk) =>
     risk.reliability < 0.95 ||
@@ -203,13 +208,13 @@ class SmallRoute extends StatelessWidget {
                 final legColor = _transferFg(risk.reliability);
                 final waitSecs = risk.waitIfMissedSecs;
                 final prev = prevTransit[leg];
-                final departingLabel = _routeLabel(leg);
                 final nextClockTime = _nextDepartureClockTime(risk, leg);
 
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: IntrinsicHeight(
                   child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       // Route A → Route B
                       Expanded(
@@ -257,60 +262,74 @@ class SmallRoute extends StatelessWidget {
                                     fontSize: 11, color: Colors.grey),
                               ),
                             const SizedBox(height: 3),
-                            // "If missed: next Route in Xm (at HH:MM)"
+                            // "If missed: next [ROUTE] Xm later (HH:MM)"
                             if (waitSecs != null)
-                              RichText(
-                                text: TextSpan(
-                                  style: const TextStyle(
-                                      fontSize: 12, color: Colors.black87),
-                                  children: [
-                                    const TextSpan(
-                                        text: 'If missed: ',
-                                        style: TextStyle(color: Colors.grey)),
-                                    TextSpan(
-                                        text:
-                                            'next $departingLabel in ${displayTime(waitSecs)}'),
-                                    if (nextClockTime != null)
-                                      TextSpan(
-                                        text: '  (at $nextClockTime)',
+                              Wrap(
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                spacing: 4,
+                                runSpacing: 2,
+                                children: [
+                                  const Text('If missed:',
+                                      style: TextStyle(
+                                          fontSize: 12, color: Colors.grey)),
+                                  const Text('next',
+                                      style: TextStyle(fontSize: 12)),
+                                  _SmallRoutePill(leg: leg),
+                                  Text('${displayTime(waitSecs)} later',
+                                      style:
+                                          const TextStyle(fontSize: 12)),
+                                  if (nextClockTime != null)
+                                    Text('($nextClockTime)',
                                         style: const TextStyle(
-                                            color: Colors.grey),
-                                      ),
-                                  ],
-                                ),
+                                            fontSize: 12,
+                                            color: Colors.grey)),
+                                ],
                               )
                             else
-                              RichText(
-                                text: TextSpan(
-                                  style: const TextStyle(fontSize: 12),
-                                  children: [
-                                    const TextSpan(
-                                        text: 'If missed: ',
-                                        style: TextStyle(color: Colors.grey)),
-                                    TextSpan(
-                                      text:
-                                          'no more $departingLabel departures today',
-                                      style:
-                                          const TextStyle(color: Colors.red),
-                                    ),
-                                  ],
-                                ),
+                              Wrap(
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                spacing: 4,
+                                runSpacing: 2,
+                                children: [
+                                  const Text('If missed:',
+                                      style: TextStyle(
+                                          fontSize: 12, color: Colors.grey)),
+                                  _SmallRoutePill(leg: leg),
+                                  const Text('no more departures today',
+                                      style: TextStyle(
+                                          fontSize: 12, color: Colors.red)),
+                                ],
                               ),
                           ],
                         ),
                       ),
-                      // Reliability %
+                      // Reliability % (current top, next bottom)
                       Padding(
-                        padding: const EdgeInsets.only(left: 8, top: 2),
-                        child: Text(
-                          '$legPct%',
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: legColor,
-                              fontSize: 15),
+                        padding: const EdgeInsets.only(left: 8),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              '$legPct%',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: legColor,
+                                  fontSize: 15),
+                            ),
+                            if (risk.nextReliability != null)
+                              Text(
+                                '${(risk.nextReliability! * 100).round()}%',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: _nextFg(risk.nextReliability!),
+                                    fontSize: 13),
+                              ),
+                          ],
                         ),
                       ),
                     ],
+                  ),
                   ),
                 );
               }),
@@ -319,14 +338,6 @@ class SmallRoute extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  /// Short label for a transit leg used in the risk sheet.
-  String _routeLabel(Leg leg) {
-    final short = leg.route?.shortName;
-    if (short != null && short.isNotEmpty) return short;
-    final m = leg.mode;
-    return m[0] + m.substring(1).toLowerCase();
   }
 
   /// Clock time of the next departure after a missed connection.

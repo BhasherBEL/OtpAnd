@@ -11,14 +11,18 @@ import 'package:otpand/utils.dart';
 import 'package:otpand/utils/maps.dart';
 
 class TransferRisk {
-  final double reliability;       // 0.0–1.0
-  final int scheduledDeparture;   // seconds since midnight
-  final int? nextDeparture;       // seconds since midnight; null = no more trips
+  final double reliability;        // 0.0–1.0
+  final int scheduledDeparture;    // seconds since midnight
+  final int? nextDeparture;        // seconds since midnight; null = no more trips
+  /// P(boarding next trip on time) — null when no next departure or no delay
+  /// model. Always ≥ reliability because the next departure is further away.
+  final double? nextReliability;
 
   const TransferRisk({
     required this.reliability,
     required this.scheduledDeparture,
     this.nextDeparture,
+    this.nextReliability,
   });
 
   /// Seconds until next departure if this connection is missed.
@@ -35,6 +39,7 @@ class TransferRisk {
         reliability: (json['reliability'] as num).toDouble(),
         scheduledDeparture: json['scheduledDeparture'] as int,
         nextDeparture: json['nextDeparture'] as int?,
+        nextReliability: (json['nextReliability'] as num?)?.toDouble(),
       );
 }
 

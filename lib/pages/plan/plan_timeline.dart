@@ -255,6 +255,18 @@ Color _transferBg(double r) {
   return Colors.red.shade50;
 }
 
+/// Foreground color for the "next departure" half of a split badge.
+/// Green for comfortable connections (≥ 90 %), otherwise same risk tiers.
+Color _nextFg(double r) {
+  if (r >= 0.9) return Colors.green.shade700;
+  return _transferFg(r);
+}
+
+Color _nextBg(double r) {
+  if (r >= 0.9) return Colors.green.shade50;
+  return _transferBg(r);
+}
+
 /// Human-readable label for a transit leg: short name when available,
 /// otherwise the mode capitalized (e.g. "Bus", "Tram").
 String _legLabel(Leg leg) {
@@ -355,31 +367,86 @@ Widget _buildTransferBadge(
 
   final fg = _transferFg(risk.reliability);
   final bg = _transferBg(risk.reliability);
+  final waitSecs = risk.waitIfMissedSecs;
+  final nextR = risk.nextReliability;
+
+  // Build the top (current) row — always present in the risky branch.
+  Widget topRow = Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Icon(Icons.warning_amber_rounded, size: 11, color: fg),
+      const SizedBox(width: 3),
+      Text(
+        '${(risk.reliability * 100).round()}%',
+        style: TextStyle(fontSize: 12, color: fg, fontWeight: FontWeight.bold),
+      ),
+      Text(
+        '  $timeStr',
+        style: TextStyle(fontSize: 11, color: fg.withValues(alpha: 0.8)),
+      ),
+    ],
+  );
+
+  // Split badge when the next departure's reliability is known.
+  final bool showSplit = nextR != null && waitSecs != null;
+
+  if (showSplit) {
+    final nfg = _nextFg(nextR);
+    final nbg = _nextBg(nextR);
+    return GestureDetector(
+      onTap: () => _showTransferRiskSheet(context, risk, leg!, previousLeg),
+      child: Container(
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: fg.withValues(alpha: 0.4), width: 0.5),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              color: bg,
+              child: topRow,
+            ),
+            Container(height: 0.5, color: fg.withValues(alpha: 0.25)),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              color: nbg,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '${(nextR * 100).round()}%',
+                    style: TextStyle(
+                        fontSize: 12, color: nfg, fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    '  +${displayTime(waitSecs)}',
+                    style:
+                        TextStyle(fontSize: 11, color: nfg.withValues(alpha: 0.8)),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   return GestureDetector(
     onTap: () => _showTransferRiskSheet(context, risk, leg!, previousLeg),
     child: Container(
+      clipBehavior: Clip.antiAlias,
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(4),
         border: Border.all(color: fg.withValues(alpha: 0.4), width: 0.5),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.warning_amber_rounded, size: 11, color: fg),
-          const SizedBox(width: 3),
-          Text(
-            '${(risk.reliability * 100).round()}%',
-            style: TextStyle(fontSize: 12, color: fg, fontWeight: FontWeight.bold),
-          ),
-          Text(
-            '  $timeStr',
-            style: TextStyle(fontSize: 11, color: fg.withValues(alpha: 0.8)),
-          ),
-        ],
-      ),
+      child: topRow,
     ),
   );
 }
@@ -390,7 +457,6 @@ void _showTransferRiskSheet(
   final pct = (risk.reliability * 100).round();
   final barColor = _transferFg(risk.reliability);
   final waitSecs = risk.waitIfMissedSecs;
-  final departingLabel = _legLabel(leg);
   final nextClockTime = _nextDepartureTime(risk, leg);
 
   showModalBottomSheet<void>(
@@ -479,37 +545,71 @@ void _showTransferRiskSheet(
             const SizedBox(height: 8),
 
             // ── Fallback ──────────────────────────────────────────────────
-            if (waitSecs != null)
-              RichText(
-                text: TextSpan(
-                  style: const TextStyle(fontSize: 13, color: Colors.black87),
+            if (waitSecs != null) ...[
+              Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 4,
+                runSpacing: 2,
+                children: [
+                  const Text('If missed:',
+                      style: TextStyle(fontSize: 13, color: Colors.grey)),
+                  const Text('next', style: TextStyle(fontSize: 13)),
+                  _RoutePill(leg: leg),
+                  Text('${displayTime(waitSecs)} later',
+                      style: const TextStyle(fontSize: 13)),
+                  if (nextClockTime != null)
+                    Text('($nextClockTime)',
+                        style: const TextStyle(fontSize: 13, color: Colors.grey)),
+                ],
+              ),
+              if (risk.nextReliability != null) ...[
+                const SizedBox(height: 10),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    const TextSpan(
-                        text: 'If missed: ',
-                        style: TextStyle(color: Colors.grey)),
-                    TextSpan(text: 'next $departingLabel in ${displayTime(waitSecs)}'),
-                    if (nextClockTime != null)
-                      TextSpan(
-                        text: '  (at $nextClockTime)',
-                        style: const TextStyle(color: Colors.grey),
+                    Text(
+                      '${(risk.nextReliability! * 100).round()}%',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: _nextFg(risk.nextReliability!),
+                        height: 1,
                       ),
-                  ],
-                ),
-              )
-            else
-              RichText(
-                text: TextSpan(
-                  style: const TextStyle(fontSize: 13),
-                  children: [
-                    const TextSpan(
-                        text: 'If missed: ',
-                        style: TextStyle(color: Colors.grey)),
-                    TextSpan(
-                      text: 'no more $departingLabel departures today',
-                      style: const TextStyle(color: Colors.red),
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Text(
+                          'chance of catching the next departure',
+                          style: const TextStyle(
+                              color: Colors.grey, fontSize: 13),
+                        ),
+                      ),
                     ),
                   ],
                 ),
+                const SizedBox(height: 8),
+                LinearProgressIndicator(
+                  value: risk.nextReliability,
+                  color: _nextFg(risk.nextReliability!),
+                  backgroundColor: Colors.grey.shade200,
+                  minHeight: 6,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ],
+            ] else
+              Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 4,
+                runSpacing: 2,
+                children: [
+                  const Text('If missed:',
+                      style: TextStyle(fontSize: 13, color: Colors.grey)),
+                  _RoutePill(leg: leg),
+                  const Text('no more departures today',
+                      style: TextStyle(fontSize: 13, color: Colors.red)),
+                ],
               ),
           ],
         ),

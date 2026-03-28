@@ -114,7 +114,6 @@ List<LatLng>? _parseGeometryPoints(List<dynamic>? json) {
 ///
 /// **Not available from maas-rs (see MISSING_FEATURES.md):**
 /// - Leg geometry / polyline
-/// - Leg distance → emissions always 0
 /// - Intermediate stops
 /// - Real-time flag
 /// - Service date
@@ -194,7 +193,7 @@ Leg parseMaasTransitLeg(Map<String, dynamic> legJson, DateTime queryDate) {
     route: route,
     trip: trip,
     duration: (legJson['duration'] as int?) ?? 0,
-    distance: 0, // maas-rs does not return leg distances
+    distance: (legJson['length'] as int?) ?? 0,
     tripStops: null, // maas-rs does not expose intermediate stops
     interlineWithPreviousLeg: false, // not tracked by maas-rs
     otherDepartures: otherDepartures,
@@ -229,7 +228,7 @@ Leg parseMaasWalkLeg(Map<String, dynamic> legJson, DateTime queryDate) {
     route: null,
     trip: null,
     duration: (legJson['duration'] as int?) ?? 0,
-    distance: 0, // maas-rs does not return leg distances
+    distance: (legJson['length'] as int?) ?? 0,
     tripStops: null,
     interlineWithPreviousLeg: false,
     otherDepartures: const [],
@@ -352,6 +351,7 @@ const String _raptorQuery = r'''
           start
           end
           duration
+          length
           from { arrival departure node { lat lon name mode } }
           to   { arrival departure node { lat lon name mode } }
           geometry { lat lon }
@@ -360,6 +360,7 @@ const String _raptorQuery = r'''
           start
           end
           duration
+          length
           from { arrival departure node { lat lon name mode } }
           to   { arrival departure node { lat lon name mode } }
           geometry { lat lon }
@@ -367,6 +368,7 @@ const String _raptorQuery = r'''
             reliability
             scheduledDeparture
             nextDeparture
+            nextReliability
           }
           trip {
             headsign

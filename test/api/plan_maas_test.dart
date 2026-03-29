@@ -651,6 +651,127 @@ void main() {
       expect(raw['end'], isA<String>());
       expect(raw['legs'], isA<List>());
     });
+
+    // Helpers for trivial-walk filtering tests.
+    Map<String, dynamic> makeTrivialWalkJson({
+      int start = 36000,
+      int durationSecs = 3,
+    }) {
+      final end = start + durationSecs;
+      return {
+        '__typename': 'PlanWalkLeg',
+        'start': start,
+        'end': end,
+        'duration': durationSecs,
+        'length': (durationSecs * 1.2).round(), // metres = secs × 1.2 m/s
+        'from': {
+          'departure': start,
+          'arrival': null,
+          'node': {'lat': 50.8, 'lon': 4.3, 'name': null}, // OSM node — no name
+        },
+        'to': {
+          'departure': null,
+          'arrival': end,
+          'node': {'lat': 50.85, 'lon': 4.35, 'name': 'Gare du Nord'},
+        },
+      };
+    }
+
+    Map<String, dynamic> makeMinimalTransitJson({
+      int start = 36010,
+      int end = 37800,
+      String fromName = 'Gare du Nord',
+      String toName = 'Bruxelles-Midi',
+    }) => {
+          '__typename': 'PlanTransitLeg',
+          'start': start,
+          'end': end,
+          'duration': end - start,
+          'length': 5000,
+          'from': {
+            'departure': start,
+            'arrival': null,
+            'node': {'lat': 50.85, 'lon': 4.35, 'name': fromName},
+          },
+          'to': {
+            'departure': null,
+            'arrival': end,
+            'node': {'lat': 50.84, 'lon': 4.35, 'name': toName},
+          },
+          'trip': {
+            'headsign': 'Direction',
+            'route': {
+              'shortName': '1',
+              'longName': 'Line 1',
+              'mode': 'SUBWAY',
+              'color': null,
+              'textColor': null,
+            },
+          },
+          'previousDepartures': <dynamic>[],
+          'nextDepartures': <dynamic>[],
+        };
+
+    test('trivial walk (< 60 s) at start is stripped', () {
+      final json = {
+        'start': 36000,
+        'end': 37800,
+        'legs': [makeTrivialWalkJson(), makeMinimalTransitJson()],
+      };
+      final plan = parseMaasPlan(json, queryDate);
+      expect(plan.legs, hasLength(1));
+      expect(plan.legs.first.transitLeg, isTrue);
+    });
+
+    test('trivial walk at end is stripped', () {
+      final json = {
+        'start': 36000,
+        'end': 37803,
+        'legs': [
+          makeMinimalTransitJson(end: 37800),
+          makeTrivialWalkJson(start: 37800),
+        ],
+      };
+      final plan = parseMaasPlan(json, queryDate);
+      expect(plan.legs, hasLength(1));
+      expect(plan.legs.last.transitLeg, isTrue);
+    });
+
+    test('fromName uses transit stop name after trivial walk is stripped', () {
+      final json = {
+        'start': 36000,
+        'end': 37800,
+        'legs': [makeTrivialWalkJson(), makeMinimalTransitJson(fromName: 'Gare du Nord')],
+      };
+      expect(parseMaasPlan(json, queryDate).fromName, 'Gare du Nord');
+    });
+
+    test('walk of exactly 60 s is NOT stripped (at threshold)', () {
+      final json = {
+        'start': 36000,
+        'end': 37800,
+        'legs': [
+          makeWalkLegJson(36000, 36060, 'My Street', 'Stop'),
+          makeMinimalTransitJson(start: 36060),
+        ],
+      };
+      final plan = parseMaasPlan(json, queryDate);
+      expect(plan.legs, hasLength(2));
+      expect(plan.legs.first.transitLeg, isFalse);
+    });
+
+    test('real walk (> 60 s) at start is preserved', () {
+      final json = {
+        'start': 36000,
+        'end': 37800,
+        'legs': [
+          makeWalkLegJson(36000, 36300, 'My Street', 'Stop'), // 5 min walk
+          makeMinimalTransitJson(start: 36300),
+        ],
+      };
+      final plan = parseMaasPlan(json, queryDate);
+      expect(plan.legs, hasLength(2));
+    });
   });
 
   // ---------------------------------------------------------------------------

@@ -309,6 +309,21 @@ Plan parseMaasPlan(Map<String, dynamic> planJson, DateTime queryDate) {
   final legs =
       legsJson.map((l) => parseMaasLeg(l as Map<String, dynamic>, queryDate)).toList();
 
+  // Drop trivial walk legs at journey start/end that are artefacts of
+  // coordinate-snapping when the user picks a transit stop as origin or
+  // destination.  The backend snaps the stop's lat/lng to the nearest OSM
+  // node, which may be a few metres away, producing a 1–5 s walk with no
+  // meaningful name ("Unknown").  Threshold: strictly less than 60 s / 72 m
+  // (= 60 s × 1.2 m/s).  Real first/last walks are always longer.
+  bool _isTrivialWalk(Leg l) =>
+      !l.transitLeg && l.duration < 60 && l.distance < 72;
+  while (legs.isNotEmpty && _isTrivialWalk(legs.first)) {
+    legs.removeAt(0);
+  }
+  while (legs.isNotEmpty && _isTrivialWalk(legs.last)) {
+    legs.removeLast();
+  }
+
   // Build a Plan.parse-compatible raw map for DB persistence.
   final raw = {
     'start': start,

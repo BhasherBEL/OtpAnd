@@ -3,6 +3,7 @@ import 'package:timelines_plus/timelines_plus.dart';
 import 'package:otpand/objects/leg.dart';
 import 'package:otpand/objects/plan.dart';
 import 'package:otpand/utils.dart';
+import 'package:otpand/utils/colors.dart';
 import 'package:otpand/pages/trip.dart';
 import 'package:otpand/pages/stop.dart';
 import 'package:otpand/pages/plan/other_departures.dart';
@@ -236,36 +237,10 @@ class PlanTimeline extends StatelessWidget {
 // Transfer risk helpers — used by PlanTimeline
 // ---------------------------------------------------------------------------
 
-/// Color tier for a given reliability value.
-/// 90–95 %: amber  (caution)
-/// 70–90 %: orange (warning)
-/// 50–70 %: deep-orange (serious)
-/// < 50 %:  red    (critical)
-Color _transferFg(double r) {
-  if (r >= 0.9) return Colors.amber.shade800;
-  if (r >= 0.7) return Colors.orange.shade800;
-  if (r >= 0.5) return Colors.deepOrange.shade800;
-  return Colors.red.shade800;
-}
-
-Color _transferBg(double r) {
-  if (r >= 0.9) return Colors.amber.shade50;
-  if (r >= 0.7) return Colors.orange.shade50;
-  if (r >= 0.5) return Colors.deepOrange.shade50;
-  return Colors.red.shade50;
-}
-
-/// Foreground color for the "next departure" half of a split badge.
-/// Green for comfortable connections (≥ 90 %), otherwise same risk tiers.
-Color _nextFg(double r) {
-  if (r >= 0.9) return Colors.green.shade700;
-  return _transferFg(r);
-}
-
-Color _nextBg(double r) {
-  if (r >= 0.9) return Colors.green.shade50;
-  return _transferBg(r);
-}
+Color _transferFg(double r) => transferReliabilityFg(r);
+Color _transferBg(double r) => transferReliabilityBg(r);
+Color _nextFg(double r) => transferReliabilityFg(r);
+Color _nextBg(double r) => transferReliabilityBg(r);
 
 /// Human-readable label for a transit leg: short name when available,
 /// otherwise the mode capitalized (e.g. "Bus", "Tram").

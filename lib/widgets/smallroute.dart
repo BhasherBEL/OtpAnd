@@ -4,25 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:otpand/objects/leg.dart';
 import 'package:otpand/objects/plan.dart';
 import 'package:otpand/utils.dart';
+import 'package:otpand/utils/colors.dart';
 
-Color _transferFg(double r) {
-  if (r >= 0.9) return Colors.amber.shade800;
-  if (r >= 0.7) return Colors.orange.shade800;
-  if (r >= 0.5) return Colors.deepOrange.shade800;
-  return Colors.red.shade800;
-}
-
-Color _transferBg(double r) {
-  if (r >= 0.9) return Colors.amber.shade50;
-  if (r >= 0.7) return Colors.orange.shade50;
-  if (r >= 0.5) return Colors.deepOrange.shade50;
-  return Colors.red.shade50;
-}
-
-Color _nextFg(double r) {
-  if (r >= 0.9) return Colors.green.shade700;
-  return _transferFg(r);
-}
+Color _transferFg(double r) => transferReliabilityFg(r);
+Color _transferBg(double r) => transferReliabilityBg(r);
+Color _nextFg(double r) => transferReliabilityFg(r);
 
 /// Effective minimum wait if a connection is missed: lesser of same-route
 /// next departure and any cross-route alternative in [leg.otherDepartures].
@@ -154,14 +140,21 @@ class SmallRoute extends StatelessWidget {
     final pct = (planReliability * 100).round();
     final barColor = _transferFg(planReliability);
 
-    // Build a map from each transit leg to the previous transit leg so we can
-    // show "Route A → Route B" in each row.
+    // Build a map from each transit leg to the previous transit leg and the
+    // total walk distance between them so we can show "Route A → Route B" and
+    // the transfer walk distance in each row.
     final Map<Leg, Leg?> prevTransit = {};
+    final Map<Leg, int> walkDistBefore = {};
     Leg? lastTransit;
+    int pendingWalkDist = 0;
     for (final l in plan.legs) {
       if (l.transitLeg) {
         prevTransit[l] = lastTransit;
+        walkDistBefore[l] = pendingWalkDist;
         lastTransit = l;
+        pendingWalkDist = 0;
+      } else {
+        pendingWalkDist += l.distance.round();
       }
     }
 
@@ -220,6 +213,7 @@ class SmallRoute extends StatelessWidget {
                 final legColor = _transferFg(risk.reliability);
                 final waitSecs = _effectiveWaitSecs(risk, leg);
                 final prev = prevTransit[leg];
+                final walkDist = walkDistBefore[leg] ?? 0;
                 final nextClockTime = _nextDepartureClockTime(risk, leg);
                 final sameRouteIsSoonest =
                     leg.soonestNextDepartureWaitSecs == null ||
@@ -267,9 +261,10 @@ class SmallRoute extends StatelessWidget {
                               ],
                             ),
                             const SizedBox(height: 3),
-                            // "arrives HH:MM  ·  departs HH:MM"
+                            // "arrives HH:MM  ·  departs HH:MM  ·  X m"
                             if (prev?.to.arrival?.scheduledTime != null ||
-                                leg.from.departure?.scheduledTime != null)
+                                leg.from.departure?.scheduledTime != null ||
+                                walkDist > 0)
                               Text(
                                 [
                                   if (prev?.to.arrival?.scheduledTime != null)
@@ -277,6 +272,8 @@ class SmallRoute extends StatelessWidget {
                                   if (leg.from.departure?.scheduledTime !=
                                       null)
                                     'departs ${formatTime(leg.from.departure!.scheduledTime)}',
+                                  if (walkDist > 0)
+                                    displayDistance(walkDist),
                                 ].join('  ·  '),
                                 style: const TextStyle(
                                     fontSize: 11, color: Colors.grey),
@@ -654,6 +651,7 @@ class SmallRoute extends StatelessWidget {
 
                   return SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
+                    clipBehavior: Clip.none,
                     child: ConstrainedBox(
                       constraints: BoxConstraints(minWidth: totalMinWidth),
                       child: row,

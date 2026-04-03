@@ -438,7 +438,7 @@ Future<Map<String, dynamic>> fetchMaasPlans({
     'toLng': toLocation.lon,
     'date': date,
     'time': time,
-    'windowMinutes': 60,
+    'windowMinutes': 180,
   };
 
   final resp = await http.post(
